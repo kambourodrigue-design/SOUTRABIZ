@@ -1,0 +1,14 @@
+name = "soutrabiz"
+compatibility_date = "2025-01-01"
+pages_build_output_dir = "dist"
+
+# Remplacez database_id par l'identifiant affiché lors de la création de la base D1
+# (uniquement nécessaire pour le déploiement en ligne de commande avec wrangler).
+[[d1_databases]]
+binding = "DB"
+database_name = "soutrabiz-db"
+database_id = "7b85e126-4b5a-4aeb-a995-24c3eaa49890"
+
+[vars]
+# Email qui devient automatiquement ADMINISTRATEUR à l'inscription.
+ADMIN_EMAIL = "kambourodrigue@gmail.com"

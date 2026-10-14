@@ -8,10 +8,13 @@ export class ApiError extends Error {
   }
 }
 
-async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
+async function call<T>(method: string, path: string, body?: unknown, timeoutMs = 20000): Promise<T> {
   let res: Response;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     res = await fetch(`/api/${path}`, {
+      signal: ctrl.signal,
       method,
       credentials: 'same-origin',
       headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
@@ -19,6 +22,8 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
     });
   } catch {
     throw new ApiError('Réseau indisponible', 0);
+  } finally {
+    clearTimeout(timer);
   }
   let data: any = null;
   try { data = await res.json(); } catch { /* corps vide ou non JSON */ }
@@ -38,6 +43,7 @@ export interface ShopBundle {
 export interface MeResponse extends ShopBundle { user: UserAccount }
 export interface AdminStats { salesCount: number; revenue30d: number; revenueTotal: number }
 export interface AdminListResponse {
+  resetRequests: { userId: string; createdAt: string }[];
   users: UserAccount[];
   shops: ShopSettings[];
   stats: Record<string, AdminStats>;
@@ -49,7 +55,9 @@ export interface RegisterInput {
 }
 
 export const api = {
-  me: () => call<MeResponse>('GET', 'auth/me'),
+  me: () => call<MeResponse>('GET', 'auth/me', undefined, 8000),
+  forgot: (identifier: string) =>
+    call<{ ok: true; contact: string }>('POST', 'auth/forgot', { identifier }),
   login: (identifier: string, password: string) =>
     call<{ user: UserAccount; shop: ShopSettings | null }>('POST', 'auth/login', { identifier, password }),
   register: (input: RegisterInput) =>

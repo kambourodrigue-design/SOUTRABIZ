@@ -50,6 +50,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   currentUser,
 }) => {
   const users = data?.users || [];
+  const resetRequests = data?.resetRequests || [];
   const shops = data?.shops || [];
   const stats = data?.stats || {};
   const [searchQuery, setSearchQuery] = useState('');
@@ -70,6 +71,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleDelete = async (user: UserAccount) => {
     if (!confirm(`Supprimer définitivement le compte de ${user.name} et toutes ses données ? Cette action est irréversible.`)) return;
     try { await onDeleteUser(user.id); } catch (e) { alert((e as Error).message); }
+  };
+
+  const genTempPassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+    const a = crypto.getRandomValues(new Uint32Array(10));
+    return Array.from(a, n => chars[n % chars.length]).join('');
+  };
+
+  const handleTempPasswordWhatsApp = async (user: UserAccount) => {
+    if (!confirm(`Générer un mot de passe temporaire pour ${user.name} et ouvrir WhatsApp ?`)) return;
+    const pw = genTempPassword();
+    try {
+      await onResetPassword(user.id, pw);
+      const phone = user.phone.replace(/\D/g, '');
+      const msg = `Bonjour ${user.name}, voici votre mot de passe temporaire SoutraBiz : ${pw}\nConnectez-vous puis changez-le dans Paramètres > Mon mot de passe.`;
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
+      onRefresh();
+    } catch (e) { alert((e as Error).message); }
   };
 
   // Filter only merchant users
@@ -185,6 +204,32 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </button>
         </div>
       </div>
+
+      {resetRequests.length > 0 && (
+        <div className="bg-amber-50 border border-amber-300 rounded-2xl p-4 space-y-2">
+          <h3 className="font-extrabold text-amber-900 text-sm flex items-center gap-2">
+            <KeyRound className="w-4 h-4" /> Demandes de mot de passe oublié ({resetRequests.length})
+          </h3>
+          {resetRequests.map(r => {
+            const u = users.find(x => x.id === r.userId);
+            if (!u) return null;
+            return (
+              <div key={r.userId} className="flex flex-wrap items-center justify-between gap-2 bg-white rounded-xl p-3 border border-amber-200">
+                <div className="text-xs sm:text-sm">
+                  <span className="font-bold text-stone-900">{u.name}</span>
+                  <span className="text-stone-500"> • 📞 {u.phone} • {new Date(r.createdAt).toLocaleString('fr-FR')}</span>
+                </div>
+                <button
+                  onClick={() => handleTempPasswordWhatsApp(u)}
+                  className="px-3 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs"
+                >
+                  💬 Mot de passe temporaire → WhatsApp
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Platform Macro KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

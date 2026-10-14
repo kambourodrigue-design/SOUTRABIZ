@@ -4,6 +4,7 @@
 interface Env {
   DB: D1Database;
   ADMIN_EMAIL?: string;
+  SUPPORT_WHATSAPP?: string;
 }
 
 const SESSION_DAYS = 30;
@@ -192,6 +193,27 @@ async function login(req: Request, env: Env) {
     { 'Set-Cookie': sessionCookie(token, SESSION_DAYS * 86400) });
 }
 
+async function forgot(req: Request, env: Env) {
+  const b = await readBody(req, 5_000);
+  const idRaw = str(b.identifier, 120);
+  const contact = (env.SUPPORT_WHATSAPP || '').replace(/\D/g, '');
+  if (!idRaw) return fail('Indiquez votre téléphone ou votre email.');
+  const email = normEmail(idRaw);
+  const phone = normPhone(idRaw);
+  if (!(await checkRate(env, 'forgot:' + (email || phone)))) return fail('Trop de demandes. Réessayez plus tard.', 429);
+  await recordFailure(env, 'forgot:' + (email || phone));
+  const user = await env.DB.prepare('SELECT id FROM users WHERE email = ? OR phone = ?')
+    .bind(email, phone || '\u0000').first<{ id: string }>();
+  if (user) {
+    await env.DB.prepare(
+      `INSERT INTO reset_requests (user_id, created_at) VALUES (?,?)
+       ON CONFLICT(user_id) DO UPDATE SET created_at=excluded.created_at`)
+      .bind(user.id, new Date().toISOString()).run();
+  }
+  // réponse identique que le compte existe ou non (pas de fuite d'information)
+  return json({ ok: true, contact });
+}
+
 async function logout(req: Request, env: Env) {
   const token = getCookie(req, COOKIE);
   if (token) await env.DB.prepare('DELETE FROM sessions WHERE token_hash=?').bind(await sha256(token)).run();
@@ -259,7 +281,9 @@ async function adminList(env: Env) {
     }
     stats[r.shop_id] = { salesCount: n, revenue30d: rev30, revenueTotal: tot };
   }
+  const rr = await env.DB.prepare('SELECT user_id, created_at FROM reset_requests ORDER BY created_at DESC').all<any>();
   return json({
+    resetRequests: rr.results.map((r: any) => ({ userId: r.user_id, createdAt: r.created_at })),
     users: users.results.map(publicUser),
     shops: shops.results.map((s: any) => JSON.parse(s.settings)),
     stats,
@@ -290,6 +314,7 @@ async function adminUser(req: Request, env: Env, admin: UserRow, id: string, sub
     await env.DB.batch([
       env.DB.prepare('UPDATE users SET password_hash=?, salt=? WHERE id=?').bind(await hashPassword(pw, salt), salt, id),
       env.DB.prepare('DELETE FROM sessions WHERE user_id=?').bind(id),
+      env.DB.prepare('DELETE FROM reset_requests WHERE user_id=?').bind(id),
     ]);
     return json({ ok: true });
   }
@@ -298,6 +323,7 @@ async function adminUser(req: Request, env: Env, admin: UserRow, id: string, sub
       env.DB.prepare('DELETE FROM shop_data WHERE shop_id=?').bind(target.shop_id),
       env.DB.prepare('DELETE FROM shops WHERE shop_id=?').bind(target.shop_id),
       env.DB.prepare('DELETE FROM sessions WHERE user_id=?').bind(id),
+      env.DB.prepare('DELETE FROM reset_requests WHERE user_id=?').bind(id),
       env.DB.prepare('DELETE FROM users WHERE id=?').bind(id),
     ]);
     return json({ ok: true });
@@ -321,6 +347,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
     if (route === 'auth/register' && m === 'POST') return await register(request, env);
     if (route === 'auth/login' && m === 'POST') return await login(request, env);
     if (route === 'auth/logout' && m === 'POST') return await logout(request, env);
+    if (route === 'auth/forgot' && m === 'POST') return await forgot(request, env);
 
     const user = await currentUser(request, env);
     if (!user) return fail('Non connecté.', 401);

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ShopSettings, CurrencyCode } from '../../types';
 import { storage } from '../../services/storage';
+import { api } from '../../services/api';
 import { 
   Settings as SettingsIcon, 
   X, 
@@ -18,6 +19,7 @@ interface SettingsModalProps {
   onSaveSettings: (settings: ShopSettings) => void;
   onClose: () => void;
   onReloadAllData: () => void;
+  onClearData: (kind: 'sales' | 'expenses' | 'customers' | 'suppliers' | 'products' | 'all' | 'sample') => void;
   isDemo?: boolean;
 }
 
@@ -26,10 +28,47 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onSaveSettings,
   onClose,
   onReloadAllData,
+  onClearData,
   isDemo = false,
 }) => {
   const [formData, setFormData] = useState<ShopSettings>({ ...settings });
   const [importStatus, setImportStatus] = useState<string | null>(null);
+
+  const [pwCur, setPwCur] = useState('');
+  const [pwNew, setPwNew] = useState('');
+  const [pwMsg, setPwMsg] = useState<string | null>(null);
+
+  const handleChangePassword = async () => {
+    setPwMsg(null);
+    if (pwNew.length < 8) { setPwMsg('Nouveau mot de passe : 8 caractères minimum.'); return; }
+    try {
+      await api.changePassword(pwCur, pwNew);
+      setPwMsg('✅ Mot de passe modifié.');
+      setPwCur(''); setPwNew('');
+    } catch (e) { setPwMsg('❌ ' + (e as Error).message); }
+  };
+
+  const handleLogoFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const max = 256;
+      const ratio = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * ratio);
+      c.height = Math.round(img.height * ratio);
+      c.getContext('2d')!.drawImage(img, 0, 0, c.width, c.height);
+      let data = c.toDataURL('image/png');
+      if (data.length > 90_000) data = c.toDataURL('image/jpeg', 0.8); // garde le fichier léger
+      setFormData(f => ({ ...f, logo: data }));
+      URL.revokeObjectURL(url);
+    };
+    img.onerror = () => { alert('Image illisible.'); URL.revokeObjectURL(url); };
+    img.src = url;
+    e.target.value = '';
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,8 +113,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       ? "Réinitialiser les données avec les exemples par défaut ?"
       : "Effacer TOUTES les données de votre boutique (produits, ventes, dépenses, clients) ? Cette action est définitive.";
     if (confirm(msg)) {
-      if (isDemo) storage.resetToDemo(); else storage.clearAll();
-      onReloadAllData();
+      if (isDemo) { storage.resetToDemo(); onReloadAllData(); } else { onClearData('all'); }
       onClose();
     }
   };
@@ -97,6 +135,27 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           
+          <div className="flex items-center gap-3 p-3 rounded-2xl bg-stone-50 border border-stone-200">
+            <div className="w-16 h-16 rounded-xl bg-white border border-stone-200 flex items-center justify-center overflow-hidden shrink-0">
+              {formData.logo
+                ? <img src={formData.logo} alt="Logo" className="w-full h-full object-contain" />
+                : <span className="text-2xl">🏪</span>}
+            </div>
+            <div className="flex-1 space-y-1.5">
+              <span className="text-xs font-bold text-stone-700 block">Logo de la boutique (reçus PDF)</span>
+              <div className="flex gap-2">
+                <label className="px-3 py-1.5 rounded-lg bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs cursor-pointer">
+                  Choisir une image
+                  <input type="file" accept="image/*" onChange={handleLogoFile} className="hidden" />
+                </label>
+                {formData.logo && (
+                  <button type="button" onClick={() => setFormData({ ...formData, logo: undefined })}
+                    className="px-3 py-1.5 rounded-lg bg-stone-200 text-stone-700 font-bold text-xs">Retirer</button>
+                )}
+              </div>
+            </div>
+          </div>
+
           <div>
             <label className="text-xs font-bold text-stone-700">Nom du Commerce / Boutique *</label>
             <input
@@ -277,33 +336,61 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </label>
           </div>
 
-          {/* Déploiement Vercel / Cloudflare */}
-          <div className="pt-2 border-t border-stone-200/80">
-            <span className="text-[11px] font-extrabold text-stone-600 uppercase tracking-wider block mb-1.5">
-              Déploiement Vercel / Cloudflare Pages
-            </span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <a
-                href="/bizflow-africa-source.zip"
-                download="bizflow-africa-source.zip"
-                className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs shadow-xs transition"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Code Source Complet (.ZIP)</span>
-              </a>
-
-              <a
-                href="/bizflow-africa-dist.zip"
-                download="bizflow-africa-dist.zip"
-                className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-stone-800 hover:bg-stone-900 text-white font-bold text-xs shadow-xs transition"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Site Compilé Prêt (.ZIP)</span>
-              </a>
+          {!isDemo && (
+            <div className="pt-2 border-t border-stone-200/80 space-y-2">
+              <span className="text-[11px] font-extrabold text-stone-600 uppercase tracking-wider block">
+                Mon mot de passe
+              </span>
+              <div className="grid grid-cols-2 gap-2">
+                <input type="password" placeholder="Mot de passe actuel" autoComplete="current-password" value={pwCur}
+                  onChange={(e) => setPwCur(e.target.value)}
+                  className="px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-sm" />
+                <input type="password" placeholder="Nouveau (8 car. min.)" autoComplete="new-password" value={pwNew}
+                  onChange={(e) => setPwNew(e.target.value)}
+                  className="px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-sm" />
+              </div>
+              <button type="button" onClick={handleChangePassword}
+                className="w-full py-2 rounded-xl bg-stone-800 hover:bg-stone-900 text-white font-bold text-xs">
+                Changer mon mot de passe
+              </button>
+              {pwMsg && <p className="text-xs font-semibold text-stone-700">{pwMsg}</p>}
             </div>
-            <p className="text-[10px] text-stone-400 mt-1">
-              Prêt à importer sur GitHub, Vercel ou en glisser-déposer sur Cloudflare Pages.
-            </p>
+          )}
+
+          {/* Gestion des données */}
+          <div className="pt-2 border-t border-stone-200/80 space-y-2">
+            <span className="text-[11px] font-extrabold text-stone-600 uppercase tracking-wider block">
+              Effacer des données (pour saisir vos vraies données)
+            </span>
+            <div className="grid grid-cols-2 gap-2">
+              {([
+                ['sales', '🧾 Ventes'],
+                ['expenses', '💸 Dépenses / achats'],
+                ['customers', '👥 Clients & créances'],
+                ['suppliers', '🚚 Fournisseurs & dettes'],
+                ['products', '📦 Produits & stock'],
+              ] as const).map(([kind, label]) => (
+                <button
+                  key={kind}
+                  type="button"
+                  onClick={() => {
+                    if (confirm(`Effacer définitivement : ${label.slice(3)} ?`)) onClearData(kind);
+                  }}
+                  className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold text-xs border border-rose-200 transition"
+                >
+                  {label}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirm("Charger un catalogue d'exemple de votre secteur ? Il REMPLACERA vos produits actuels.")) onClearData('sample');
+                }}
+                className="p-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs border border-stone-200 transition"
+              >
+                ✨ Catalogue d'exemple
+              </button>
+            </div>
           </div>
 
           <div className="pt-2 text-center">

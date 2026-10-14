@@ -193,5 +193,6 @@ export interface ShopSettings {
   businessType: string;  // Alimentation, Quincaillerie, Mode, etc.
   businessCategory: BusinessCategoryType;
   foundedYear: number;
+  logo?: string;         // Logo de la boutique (data URL, redimensionné)
 }
 

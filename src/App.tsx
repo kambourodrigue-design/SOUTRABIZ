@@ -245,10 +245,18 @@ export default function App() {
   const handleSaveSettings = (updated: ShopSettings) => {
     setSettings(updated);
     // If business category changed, offer to adapt products
-    if (updated.businessCategory !== settings.businessCategory) {
-      const sectorProducts = getSectorProducts(updated.businessCategory);
-      setProducts(sectorProducts);
+    if (isDemo && updated.businessCategory !== settings.businessCategory) {
+      setProducts(getSectorProducts(updated.businessCategory));
     }
+  };
+
+  const handleClearData = (kind: 'sales' | 'expenses' | 'customers' | 'suppliers' | 'products' | 'all' | 'sample') => {
+    if (kind === 'sales' || kind === 'all') setSales([]);
+    if (kind === 'expenses' || kind === 'all') setExpenses([]);
+    if (kind === 'customers' || kind === 'all') setCustomers([]);
+    if (kind === 'suppliers' || kind === 'all') setSuppliers([]);
+    if (kind === 'products' || kind === 'all') setProducts([]);
+    if (kind === 'sample') setProducts(getSectorProducts(settings.businessCategory));
   };
 
   const handleReloadAllData = () => {
@@ -266,10 +274,10 @@ export default function App() {
     setCurrentUser(user);
     authCache.set(user);
     if (isNew && shop) {
-      // nouveau compte : catalogue du secteur, le reste vide ; tout est envoyé au serveur
+      // nouveau compte : tout démarre vide ; tout est envoyé au serveur
       lastSentRef.current = {};
       setSettings(shop);
-      setProducts(getSectorProducts(shop.businessCategory));
+      setProducts([]);
       setSales([]); setExpenses([]); setCustomers([]); setSuppliers([]);
       hydratedRef.current = true;
       setSession('in');
@@ -532,6 +540,7 @@ export default function App() {
           onSaveSettings={handleSaveSettings}
           onClose={() => setIsSettingsOpen(false)}
           onReloadAllData={handleReloadAllData}
+          onClearData={handleClearData}
           isDemo={isDemo}
         />
       )}

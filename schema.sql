@@ -39,3 +39,9 @@ CREATE TABLE IF NOT EXISTS login_attempts (
   count        INTEGER NOT NULL,
   window_start INTEGER NOT NULL
 );
+
+-- Demandes de "mot de passe oublié" (une demande en attente par utilisateur)
+CREATE TABLE IF NOT EXISTS reset_requests (
+  user_id    TEXT PRIMARY KEY,
+  created_at TEXT NOT NULL
+);

@@ -38,6 +38,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [forgotMode, setForgotMode] = useState(false);
+  const [forgotId, setForgotId] = useState('');
+  const [forgotDone, setForgotDone] = useState<{ contact: string } | null>(null);
 
   // Register fields
   const [regFullName, setRegFullName] = useState('');
@@ -64,6 +67,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         err instanceof ApiError && err.status === 0
           ? 'Connexion internet requise pour se connecter.'
           : (err as Error).message
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError(null);
+    setBusy(true);
+    try {
+      const res = await api.forgot(forgotId);
+      setForgotDone({ contact: res.contact || '' });
+    } catch (err) {
+      setLoginError(
+        err instanceof ApiError && err.status === 0 ? 'Connexion internet requise.' : (err as Error).message
       );
     } finally {
       setBusy(false);
@@ -155,7 +174,60 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         </div>
 
         {/* LOGIN TAB */}
-        {activeTab === 'login' && (
+        {activeTab === 'login' && forgotMode && (
+          <div className="space-y-4">
+            {forgotDone ? (
+              <div className="space-y-3">
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-sm font-semibold">
+                  ✅ Demande envoyée. Si ce compte existe, l'administrateur vous enverra un mot de passe temporaire.
+                </div>
+                {forgotDone.contact && (
+                  <a
+                    href={`https://wa.me/${forgotDone.contact}?text=${encodeURIComponent(`Bonjour, j'ai oublié mon mot de passe SoutraBiz. Mon identifiant : ${forgotId}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full text-center py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm"
+                  >
+                    💬 Contacter l'administrateur sur WhatsApp
+                  </a>
+                )}
+              </div>
+            ) : (
+              <form onSubmit={handleForgotSubmit} className="space-y-3.5">
+                <p className="text-xs text-stone-600">
+                  Indiquez votre téléphone ou email. L'administrateur sera prévenu et vous enverra un mot de passe temporaire.
+                </p>
+                <input
+                  type="text"
+                  required
+                  placeholder="Téléphone ou email du compte"
+                  value={forgotId}
+                  onChange={(e) => setForgotId(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm font-medium"
+                />
+                {loginError && (
+                  <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold">{loginError}</div>
+                )}
+                <button
+                  type="submit"
+                  disabled={busy}
+                  className="w-full py-3 rounded-xl bg-emerald-800 hover:bg-emerald-900 disabled:opacity-60 text-white font-black text-sm"
+                >
+                  {busy ? 'Envoi…' : 'Envoyer la demande'}
+                </button>
+              </form>
+            )}
+            <button
+              type="button"
+              onClick={() => { setForgotMode(false); setForgotDone(null); setLoginError(null); }}
+              className="w-full text-xs text-stone-500 underline"
+            >
+              ← Retour à la connexion
+            </button>
+          </div>
+        )}
+
+        {activeTab === 'login' && !forgotMode && (
           <div className="space-y-4">
             <form onSubmit={handleLoginSubmit} className="space-y-3.5">
               <div>
@@ -198,6 +270,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <span>{busy ? 'Connexion…' : 'Se Connecter'}</span>
               </button>
             </form>
+
+            <button
+              type="button"
+              onClick={() => { setForgotMode(true); setLoginError(null); setForgotId(loginIdentifier); }}
+              className="w-full text-xs text-emerald-800 font-bold underline"
+            >
+              Mot de passe oublié ?
+            </button>
 
             {onDemo && (
               <div className="pt-3 border-t border-stone-100">

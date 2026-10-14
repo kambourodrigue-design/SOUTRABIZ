@@ -2,13 +2,15 @@ import React from 'react';
 import { Sale, ShopSettings } from '../../types';
 import { formatCurrency, getPaymentMethodDetails } from '../../services/financials';
 import { generateReceiptWhatsAppUrl } from '../../services/whatsapp';
-import { Printer, Share2, CheckCircle, X, ShoppingCart } from 'lucide-react';
+import { shareReceiptPdf, downloadReceiptPdf } from '../../services/receiptPdf';
+import { Printer, Share2, CheckCircle, X, ShoppingCart, FileDown } from 'lucide-react';
 
 interface ReceiptModalProps {
   sale: Sale;
   settings: ShopSettings;
   onClose: () => void;
   onNewSale: () => void;
+  customerPhone?: string;
 }
 
 export const ReceiptModal: React.FC<ReceiptModalProps> = ({
@@ -16,9 +18,25 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   settings,
   onClose,
   onNewSale,
+  customerPhone,
 }) => {
+  const [busy, setBusy] = React.useState(false);
   const paymentDetails = getPaymentMethodDetails(sale.paymentMethod);
-  const whatsappUrl = generateReceiptWhatsAppUrl(sale, settings, undefined);
+  const whatsappUrl = generateReceiptWhatsAppUrl(sale, settings, customerPhone);
+
+  const handleSharePdf = async () => {
+    setBusy(true);
+    try { await shareReceiptPdf(sale, settings, whatsappUrl); }
+    catch { alert('Impossible de générer le PDF. Réessayez.'); }
+    finally { setBusy(false); }
+  };
+
+  const handleDownloadPdf = async () => {
+    setBusy(true);
+    try { await downloadReceiptPdf(sale, settings); }
+    catch { alert('Impossible de générer le PDF. Réessayez.'); }
+    finally { setBusy(false); }
+  };
 
   const handlePrint = () => {
     window.print();
@@ -47,9 +65,13 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
           
           {/* Receipt Header */}
           <div className="text-center pb-4 border-b border-dashed border-stone-300">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-800 text-white font-black text-2xl flex items-center justify-center mx-auto mb-2 shadow-xs">
-              S
-            </div>
+            {settings.logo ? (
+              <img src={settings.logo} alt="Logo" className="w-16 h-16 object-contain mx-auto mb-2" />
+            ) : (
+              <div className="w-12 h-12 rounded-2xl bg-emerald-800 text-white font-black text-2xl flex items-center justify-center mx-auto mb-2 shadow-xs">
+                {settings.shopName.charAt(0).toUpperCase()}
+              </div>
+            )}
             <h2 className="font-extrabold text-lg tracking-tight uppercase text-stone-900">
               {settings.shopName}
             </h2>
@@ -150,22 +172,35 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
         {/* Action Buttons for Merchant */}
         <div className="p-4 bg-white border-t border-stone-200 space-y-2 no-print">
           
-          <div className="grid grid-cols-2 gap-2">
-            {/* WhatsApp Share */}
+          <button
+            onClick={handleSharePdf}
+            disabled={busy}
+            className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-bold text-sm transition shadow-sm active:scale-95"
+          >
+            <Share2 className="w-4 h-4" />
+            <span>{busy ? 'Préparation du PDF…' : 'Envoyer le reçu PDF (WhatsApp)'}</span>
+          </button>
+
+          <div className="grid grid-cols-3 gap-2">
             <a
               href={whatsappUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 p-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm transition shadow-sm active:scale-95"
+              className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs transition active:scale-95 border border-stone-200"
             >
-              <Share2 className="w-4 h-4" />
-              <span>WhatsApp</span>
+              <span>💬 Texte</span>
             </a>
-
-            {/* Print / PDF */}
+            <button
+              onClick={handleDownloadPdf}
+              disabled={busy}
+              className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs transition active:scale-95 border border-stone-200"
+            >
+              <FileDown className="w-4 h-4" />
+              <span>PDF</span>
+            </button>
             <button
               onClick={handlePrint}
-              className="flex items-center justify-center gap-2 p-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs sm:text-sm transition active:scale-95 border border-stone-200"
+              className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs transition active:scale-95 border border-stone-200"
             >
               <Printer className="w-4 h-4" />
               <span>Imprimer</span>

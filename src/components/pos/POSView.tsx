@@ -642,6 +642,7 @@ export const POSView: React.FC<POSViewProps> = ({
           settings={settings}
           onClose={() => setCompletedSale(null)}
           onNewSale={() => setCompletedSale(null)}
+          customerPhone={customers.find(c => c.id === completedSale.customerId)?.phone}
         />
       )}
 

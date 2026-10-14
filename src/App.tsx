@@ -426,7 +426,7 @@ export default function App() {
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 lg:p-6 pb-24 lg:pb-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 lg:p-6 pb-24 xl:pb-8">
         {activeTab === 'dashboard' && (
           <DailyDashboard
             sales={sales}
@@ -547,7 +547,7 @@ export default function App() {
 
       {/* Indicateur de synchronisation */}
       {syncEnabled && syncState !== 'idle' && (
-        <div className={`fixed left-3 bottom-20 lg:bottom-4 z-40 px-3 py-1.5 rounded-full text-[11px] font-bold shadow-md border ${
+        <div className={`fixed left-3 bottom-20 xl:bottom-4 z-40 px-3 py-1.5 rounded-full text-[11px] font-bold shadow-md border ${
           syncState === 'error' ? 'bg-rose-100 text-rose-800 border-rose-200'
           : syncState === 'offline' ? 'bg-amber-100 text-amber-900 border-amber-200'
           : 'bg-white text-stone-700 border-stone-200'

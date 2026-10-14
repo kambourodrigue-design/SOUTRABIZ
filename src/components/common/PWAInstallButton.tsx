@@ -9,9 +9,9 @@ export const PWAInstallButton: React.FC = () => {
   // If already running as an installed PWA, hide the button
   if (isInstalled) {
     return (
-      <div className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-emerald-800 bg-emerald-100/80 rounded-full border border-emerald-300">
+      <div title="Application installée" className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 text-xs font-medium text-emerald-800 bg-emerald-100/80 rounded-full border border-emerald-300">
         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-        <span>Installé</span>
+        <span className="hidden sm:inline">Installé</span>
       </div>
     );
   }
@@ -21,12 +21,11 @@ export const PWAInstallButton: React.FC = () => {
     return (
       <button
         onClick={install}
-        className="flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-900 px-3.5 py-1.5 text-xs sm:text-sm font-bold shadow-sm transition active:scale-95"
+        className="flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-900 px-2.5 sm:px-3.5 py-2 sm:py-1.5 text-xs sm:text-sm font-bold shadow-sm transition active:scale-95"
         title="Installer l'application sur votre téléphone"
       >
         <Download className="w-4 h-4 text-stone-950" />
-        <span className="hidden xs:inline">Installer l'App</span>
-        <span className="xs:hidden">Installer</span>
+        <span className="hidden sm:inline">Installer l'App</span>
       </button>
     );
   }
@@ -40,7 +39,7 @@ export const PWAInstallButton: React.FC = () => {
           className="flex items-center gap-1.5 rounded-xl border border-stone-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 shadow-xs"
         >
           <Smartphone className="w-3.5 h-3.5 text-emerald-700" />
-          <span>Installer</span>
+          <span className="hidden sm:inline">Installer</span>
         </button>
 
         {showIOSGuide && (

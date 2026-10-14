@@ -342,7 +342,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-bold text-stone-700">Téléphone / WhatsApp *</label>
                 <input
@@ -367,7 +367,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-bold text-stone-700">Pays *</label>
                 <input
@@ -391,7 +391,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-bold text-stone-700">Mot de passe * (8 car. min.)</label>
                 <input

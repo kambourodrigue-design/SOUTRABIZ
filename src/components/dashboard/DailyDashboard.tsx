@@ -118,14 +118,8 @@ export const DailyDashboard: React.FC<DailyDashboardProps> = ({
       const fullName = d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
 
       const mSales = sales.filter(s => s.date.startsWith(monthKey));
-      let revenue = mSales.reduce((sum, s) => sum + s.total, 0);
-      let grossProfit = mSales.reduce((sum, s) => sum + s.profit, 0);
-
-      if (revenue === 0) {
-        const growthStep = 5 - i;
-        revenue = Math.max(380000, Math.round((todayRevenue || 40000) * 25 * (0.45 + (growthStep * 0.11))));
-        grossProfit = Math.round(revenue * 0.22);
-      }
+      const revenue = mSales.reduce((sum, s) => sum + s.total, 0);
+      const grossProfit = mSales.reduce((sum, s) => sum + s.profit, 0);
 
       months.push({
         monthLabel,
@@ -135,7 +129,7 @@ export const DailyDashboard: React.FC<DailyDashboardProps> = ({
       });
     }
     return months;
-  }, [sales, todayRevenue]);
+  }, [sales]);
 
   const sixMonthsTotalRevenue = useMemo(() => {
     return monthlySalesTrend.reduce((sum, m) => sum + m.revenue, 0);

@@ -1,6 +1,7 @@
 import { newId } from '../../../shared/syncCore';
 import React, { useState, useMemo } from 'react';
-import { Customer, DebtPayment, Supplier, SupplierPayment, PaymentMethod, ShopSettings } from '../../types';
+import { Customer, DebtPayment, Supplier, SupplierPayment, PaymentMethod, ShopSettings, Expense } from '../../types';
+import { PurchaseModal } from '../common/PurchaseModal';
 import { formatCurrency, getPaymentMethodDetails } from '../../services/financials';
 import { generateDebtReminderWhatsAppUrl, cleanPhoneNumber } from '../../services/whatsapp';
 import { 
@@ -28,6 +29,7 @@ interface DebtsViewProps {
   onUpdateCustomers: (customers: Customer[]) => void;
   onUpdateSuppliers: (suppliers: Supplier[]) => void;
   allowSuppliers?: boolean;
+  onAddExpense?: (expense: Expense) => void;
 }
 
 export const DebtsView: React.FC<DebtsViewProps> = ({
@@ -37,7 +39,9 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
   onUpdateCustomers,
   onUpdateSuppliers,
   allowSuppliers = true,
+  onAddExpense,
 }) => {
+  const [isPurchaseOpen, setIsPurchaseOpen] = useState(false);
   const [activeTabRaw, setActiveTab] = useState<'customers' | 'suppliers'>('customers');
   const activeTab = allowSuppliers ? activeTabRaw : 'customers';
   const [searchQuery, setSearchQuery] = useState('');
@@ -312,6 +316,16 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
             <span>Nouveau Client Débiteur</span>
           </button>
         ) : (
+          <div className="flex flex-wrap gap-2 shrink-0">
+          {onAddExpense && (
+            <button
+              onClick={() => setIsPurchaseOpen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-bold text-xs sm:text-sm shadow-sm transition active:scale-95"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Achat fournisseur (à crédit)</span>
+            </button>
+          )}
           <button
             onClick={() => setIsNewSupplierModalOpen(true)}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-xs sm:text-sm shadow-sm transition active:scale-95 shrink-0"
@@ -319,6 +333,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
             <Plus className="w-4 h-4" />
             <span>Nouveau Fournisseur Grossiste</span>
           </button>
+          </div>
         )}
       </div>
 
@@ -1052,6 +1067,13 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
         </div>
       )}
 
+      {isPurchaseOpen && onAddExpense && (
+        <PurchaseModal
+          settings={settings} suppliers={suppliers}
+          onUpdateSuppliers={onUpdateSuppliers} onAddExpense={onAddExpense}
+          onClose={() => setIsPurchaseOpen(false)}
+        />
+      )}
     </div>
   );
 };

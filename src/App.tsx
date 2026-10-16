@@ -421,6 +421,7 @@ export default function App() {
             onUpdateCustomers={handleUpdateCustomers}
             onUpdateSuppliers={handleUpdateSuppliers}
             allowSuppliers={shopRole !== 'cashier'}
+            onAddExpense={shopRole !== 'cashier' ? handleAddExpense : undefined}
           />
         )}
 

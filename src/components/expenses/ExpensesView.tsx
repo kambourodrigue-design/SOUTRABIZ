@@ -1,6 +1,7 @@
 import { newId } from '../../../shared/syncCore';
 import React, { useState, useMemo } from 'react';
 import { Expense, ExpenseCategory, PaymentMethod, ShopSettings, Supplier } from '../../types';
+import { PurchaseModal } from '../common/PurchaseModal';
 import { SupplierCreditFields } from '../common/SupplierCreditFields';
 import { applyPurchaseCredit } from '../../services/purchases';
 import { creditPart } from '../../services/treasury';
@@ -34,6 +35,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
   onUpdateSuppliers,
 }) => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isPurchaseOpen, setIsPurchaseOpen] = useState(false);
   const [filterCategory, setFilterCategory] = useState<string>('all');
 
   // Form states
@@ -158,6 +160,16 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
           </p>
         </div>
 
+        <div className="flex flex-wrap gap-2 shrink-0">
+          {onUpdateSuppliers && (
+            <button
+              onClick={() => setIsPurchaseOpen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-sm shadow-sm transition active:scale-95"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Achat fournisseur</span>
+            </button>
+          )}
         <button
           onClick={() => setIsAddModalOpen(true)}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm shadow-sm transition active:scale-95 shrink-0"
@@ -165,6 +177,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
           <Plus className="w-4 h-4" />
           <span>Nouvelle Dépense</span>
         </button>
+        </div>
       </div>
 
       {/* Summary KPI Cards */}
@@ -434,6 +447,13 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
         </div>
       )}
 
+      {isPurchaseOpen && onUpdateSuppliers && (
+        <PurchaseModal
+          settings={settings} suppliers={suppliers}
+          onUpdateSuppliers={onUpdateSuppliers} onAddExpense={onAddExpense}
+          onClose={() => setIsPurchaseOpen(false)}
+        />
+      )}
     </div>
   );
 };

@@ -23,7 +23,7 @@ Votre site actuel et ses données sont conservés. **Respectez l'ordre.**
 - **Admin** : liste paginée (25/page), recherche/filtres côté serveur, chiffres précalculés, export CSV complet.
 
 ## Achats à crédit et trésorerie
-- **Achat à crédit** : Stocks → « + Réappro » (et Dépenses → catégorie Approvisionnement) : choisissez le fournisseur (ou créez-le), indiquez le montant payé maintenant (tout, moitié, rien). Le reste est ajouté automatiquement aux **dettes fournisseurs** ; le paiement ultérieur se fait dans Dettes → Fournisseurs.
+- **Achat à crédit** : bouton **« Achat fournisseur (à crédit) »** dans Dettes → onglet Fournisseurs, et bouton « Achat fournisseur » dans Dépenses. Aussi possible depuis Stocks → « + Réappro » (et Dépenses → catégorie Approvisionnement) : choisissez le fournisseur (ou créez-le), indiquez le montant payé maintenant (tout, moitié, rien). Le reste est ajouté automatiquement aux **dettes fournisseurs** ; le paiement ultérieur se fait dans Dettes → Fournisseurs.
 - **Trésorerie** (tableau de bord) : espèces / Mobile Money / banque réellement disponibles, entrées et sorties sur 30 jours, à encaisser (clients), à payer (fournisseurs) et trésorerie nette prévue. Renseignez votre **trésorerie de départ** dans Paramètres pour qu'elle soit exacte.
 - **Correction du bénéfice** : les achats de marchandises ne sont plus déduits une seconde fois du bénéfice (leur coût est déjà dans le coût des ventes).
 

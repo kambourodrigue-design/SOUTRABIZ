@@ -27,6 +27,11 @@ Votre site actuel et ses données sont conservés. **Respectez l'ordre.**
 - **Trésorerie** (tableau de bord) : espèces / Mobile Money / banque réellement disponibles, entrées et sorties sur 30 jours, à encaisser (clients), à payer (fournisseurs) et trésorerie nette prévue. Renseignez votre **trésorerie de départ** dans Paramètres pour qu'elle soit exacte.
 - **Correction du bénéfice** : les achats de marchandises ne sont plus déduits une seconde fois du bénéfice (leur coût est déjà dans le coût des ventes).
 
+## Hors-ligne
+- Les ventes faites sans réseau restent sur l'appareil, même si vous fermez l'application, et partent automatiquement au retour de la connexion. Un compteur « N modification(s) en attente » s'affiche en bas à gauche.
+- Ne vous déconnectez pas tant que ce compteur n'est pas à zéro (l'application vous prévient).
+- Ne vendez pas hors-ligne avec une ancienne version de l'application encore en cache : fermez-la et rouvrez-la une fois avec du réseau après chaque mise à jour.
+
 ## Limites à connaître
 - Le prix d'achat est masqué au caissier dans l'interface, mais reste dans les données synchronisées de la boutique.
 - Chaque appareil garde les données de la boutique dans le navigateur (~5 Mo) : environ 5 000 à 8 000 ventes avant de devoir archiver.

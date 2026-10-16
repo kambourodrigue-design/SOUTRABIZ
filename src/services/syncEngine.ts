@@ -117,7 +117,10 @@ export class SyncEngine {
       this.st = p!;
     } else {
       this.st = { v: 3, shopId, cursor: 0, shadow: {}, pending: {}, inflight: null, skew: 0 };
-      await this.bootstrap();
+      // Données locales de CETTE boutique jamais envoyées (ex. ventes faites hors-ligne avant la mise à jour,
+      // ou état de synchronisation perdu) : on les garde et on les envoie au lieu de les écraser.
+      const sameShop = !!snap.settings && snap.settings.shopId === shopId && localCount > 0;
+      await this.bootstrap(sameShop ? snap : undefined);
     }
     this.active = true;
     this.attach();
@@ -521,8 +524,9 @@ export class SyncEngine {
 
   // ---------- premier chargement ----------
 
-  /** Le serveur fait foi : remplace toutes les données locales. */
-  async bootstrap(): Promise<void> {
+  /** Le serveur fait foi : remplace les données locales, sauf les enregistrements que le serveur ne connaît pas
+   *  (keepLocal) : ceux-là sont conservés et seront envoyés. */
+  async bootstrap(keepLocal?: Snapshot): Promise<void> {
     const st = this.st!;
     const t0 = Date.now();
     const { changes, cursor, now } = await fetchAllChanges();
@@ -535,6 +539,14 @@ export class SyncEngine {
       st.shadow[keyOf(c.k, c.id)] = this.encode(c.k, c.d);
     }
     this.seen.clear();
+    if (keepLocal) {
+      const known = new Set(changes.map((c) => keyOf(c.k, c.id))); // y compris les suppressions (le serveur gagne)
+      for (const kind of DATA_KINDS) {
+        const extra = keepLocal[kind].filter((r: any) => r && typeof r.id === 'string' && r.id && !known.has(keyOf(kind, r.id)));
+        if (extra.length) (snap as any)[kind] = [...snap[kind], ...extra];
+      }
+      sortDesc(snap.sales); sortDesc(snap.expenses);
+    }
     const patch: Partial<Snapshot> = { products: snap.products, sales: snap.sales, expenses: snap.expenses, customers: snap.customers, suppliers: snap.suppliers };
     if (snap.settings) patch.settings = snap.settings;
     this.host.setSnapshot(patch);

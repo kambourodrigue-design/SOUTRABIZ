@@ -24,6 +24,8 @@ interface NavbarProps {
   currentUser: UserAccount;
   onOpenAuth: (mode: 'login' | 'register') => void;
   onLogout: () => void;
+  allowedTabs?: string[];
+  roleLabel?: string;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -34,6 +36,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   currentUser,
   onOpenAuth,
   onLogout,
+  allowedTabs,
+  roleLabel,
 }) => {
   const isOnline = useOnlineStatus();
   const preset = BUSINESS_PRESETS[settings.businessCategory] || BUSINESS_PRESETS.other;
@@ -77,7 +81,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             { id: 'debts', label: 'Dettes', short: 'Dettes' },
             { id: 'credit', label: 'Score Crédit', short: 'Crédit' },
             { id: 'formalization', label: 'Formalisation', short: 'Formaliser' },
-          ].map((tab) => (
+          ].filter((tab) => !allowedTabs || allowedTabs.includes(tab.id)).map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -136,7 +140,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 {currentUser.name.split(' ')[0]}
               </span>
               <span className={`hidden sm:inline text-[10px] px-1 rounded font-mono ${currentUser.role === 'admin' ? 'bg-amber-400 text-stone-950 font-bold' : 'bg-emerald-950/60 text-emerald-300'}`}>
-                {currentUser.role === 'admin' ? 'ADMIN' : 'PRO'}
+                {currentUser.role === 'admin' ? 'ADMIN' : (roleLabel || 'PRO')}
               </span>
               <LogOut className="w-3.5 h-3.5 text-emerald-300" />
             </button>

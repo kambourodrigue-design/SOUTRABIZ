@@ -1,76 +1,102 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { UserAccount, ShopSettings } from '../../types';
-import { AdminListResponse } from '../../services/api';
+import { api, ApiError, AdminListResponse } from '../../services/api';
 import { BUSINESS_PRESETS } from '../../services/businessPresets';
 import { formatCurrency } from '../../services/financials';
-import { 
-  Users, 
-  Store, 
-  ShieldCheck, 
-  Search, 
-  Filter, 
-  CheckCircle2, 
-  XCircle, 
-  ArrowUpRight, 
-  Landmark, 
-  Eye, 
-  UserCheck, 
-  UserX, 
-  TrendingUp, 
-  Phone, 
-  MapPin, 
+import {
+  Users,
+  Store,
+  ShieldCheck,
+  Search,
+  TrendingUp,
+  MapPin,
   Download,
-  AlertTriangle,
+  Landmark,
+  Eye,
+  UserCheck,
+  UserX,
   Building2,
-  Calendar,
   KeyRound,
   Trash2,
-  RefreshCw
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 interface AdminDashboardProps {
-  data: AdminListResponse | null;
-  error: string | null;
-  onRefresh: () => void;
-  onToggleUserStatus: (userId: string) => void;
-  onResetPassword: (userId: string, newPassword: string) => Promise<void>;
-  onDeleteUser: (userId: string) => Promise<void>;
-  onImpersonateShop: (shop: ShopSettings, user: UserAccount) => void;
   currentUser: UserAccount;
+  onImpersonate: (user: UserAccount) => void;
+  onUnauthorized: () => void;
 }
 
-export const AdminDashboard: React.FC<AdminDashboardProps> = ({
-  data,
-  error,
-  onRefresh,
-  onToggleUserStatus,
-  onResetPassword,
-  onDeleteUser,
-  onImpersonateShop,
-  currentUser,
-}) => {
-  const users = data?.users || [];
-  const resetRequests = data?.resetRequests || [];
-  const shops = data?.shops || [];
-  const stats = data?.stats || {};
+const EMPTY_SHOP = (user: UserAccount): ShopSettings => ({
+  shopId: user.shopId,
+  shopName: 'Commerce',
+  ownerName: user.name,
+  country: '',
+  city: '',
+  phone: user.phone,
+  currency: 'XOF' as const,
+  isFormalized: false,
+  businessType: 'Commerce Général',
+  businessCategory: 'retail_food' as const,
+  foundedYear: new Date().getFullYear(),
+});
+
+export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onImpersonate, onUnauthorized }) => {
+  // La liste est chargée page par page (25 commerçants) ; les chiffres viennent de statistiques précalculées.
+  const [data, setData] = useState<AdminListResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSector, setSelectedSector] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [inspectUser, setInspectUser] = useState<{ user: UserAccount; shop: ShopSettings } | null>(null);
+  const reqId = useRef(0);
+
+  useEffect(() => {
+    const t = setTimeout(() => { setSearchQuery(searchInput.trim()); setPage(1); }, 350);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  const load = useCallback(async () => {
+    const id = ++reqId.current;
+    try {
+      setError(null);
+      const res = await api.adminList({ page, q: searchQuery, status: selectedStatus, sector: selectedSector });
+      if (id === reqId.current) setData(res);
+    } catch (e) {
+      if (id !== reqId.current) return;
+      if (e instanceof ApiError && (e.status === 401 || e.status === 403)) { onUnauthorized(); return; }
+      setError((e as Error).message);
+    }
+  }, [page, searchQuery, selectedStatus, selectedSector, onUnauthorized]);
+  useEffect(() => { load(); }, [load]);
+
+  const resetRequests = data?.resetRequests || [];
+  const kpis = data?.kpis;
 
   const handleResetPw = async (user: UserAccount) => {
     const pw = prompt(`Nouveau mot de passe pour ${user.name} (8 caractères minimum) :`);
     if (!pw) return;
     if (pw.length < 8) { alert('Mot de passe trop court (8 caractères minimum).'); return; }
     try {
-      await onResetPassword(user.id, pw);
+      await api.adminResetPassword(user.id, pw);
       alert(`Mot de passe modifié. Communiquez-le à ${user.name} ; ses sessions ont été fermées.`);
+      load();
     } catch (e) { alert((e as Error).message); }
   };
 
   const handleDelete = async (user: UserAccount) => {
-    if (!confirm(`Supprimer définitivement le compte de ${user.name} et toutes ses données ? Cette action est irréversible.`)) return;
-    try { await onDeleteUser(user.id); } catch (e) { alert((e as Error).message); }
+    if (!confirm(`Supprimer définitivement la boutique de ${user.name}, son équipe et toutes ses données ? Cette action est irréversible.`)) return;
+    try { await api.adminDelete(user.id); load(); } catch (e) { alert((e as Error).message); }
+  };
+
+  const handleToggleStatus = async (user: UserAccount) => {
+    const next = user.status === 'active' ? 'suspended' : 'active';
+    if (next === 'suspended' && !confirm(`Suspendre ${user.name} ? Son équipe sera aussi bloquée.`)) return;
+    try { await api.adminSetStatus(user.id, next); load(); } catch (e) { alert((e as Error).message); }
   };
 
   const genTempPassword = () => {
@@ -79,97 +105,49 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     return Array.from(a, n => chars[n % chars.length]).join('');
   };
 
-  const handleTempPasswordWhatsApp = async (user: UserAccount) => {
-    if (!confirm(`Générer un mot de passe temporaire pour ${user.name} et ouvrir WhatsApp ?`)) return;
+  const handleTempPasswordWhatsApp = async (u: { id: string; name: string; phone: string }) => {
+    if (!confirm(`Générer un mot de passe temporaire pour ${u.name} et ouvrir WhatsApp ?`)) return;
     const pw = genTempPassword();
     try {
-      await onResetPassword(user.id, pw);
-      const phone = user.phone.replace(/\D/g, '');
-      const msg = `Bonjour ${user.name}, voici votre mot de passe temporaire SoutraBiz : ${pw}\nConnectez-vous puis changez-le dans Paramètres > Mon mot de passe.`;
+      await api.adminResetPassword(u.id, pw);
+      const phone = u.phone.replace(/\D/g, '');
+      const msg = `Bonjour ${u.name}, voici votre mot de passe temporaire SoutraBiz : ${pw}\nConnectez-vous puis changez-le dans Paramètres > Mon mot de passe.`;
       window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
-      onRefresh();
+      load();
     } catch (e) { alert((e as Error).message); }
   };
 
-  // Filter only merchant users
-  const merchantUsers = useMemo(() => users.filter(u => u.role === 'merchant'), [users]);
+  const filteredMerchants = useMemo(() => (data?.items || []).map(({ user, shop, stats, teamCount }) => {
+    const sh = shop || EMPTY_SHOP(user);
+    return {
+      user,
+      shop: sh,
+      preset: BUSINESS_PRESETS[sh.businessCategory] || BUSINESS_PRESETS.other,
+      revenue30d: stats.revenue30d,
+      salesCount: stats.salesCount,
+      teamCount,
+    };
+  }), [data]);
 
-  // Map users to their shops, with real statistics
-  const merchantsWithShops = useMemo(() => {
-    return merchantUsers.map(user => {
-      const shop = shops.find(s => s.shopId === user.shopId) || {
-        shopId: user.shopId,
-        shopName: 'Commerce',
-        ownerName: user.name,
-        country: '',
-        city: '',
-        phone: user.phone,
-        currency: 'XOF' as const,
-        isFormalized: false,
-        businessType: 'Commerce Général',
-        businessCategory: 'retail_food' as const,
-        foundedYear: new Date().getFullYear(),
-      };
-      const st = stats[user.shopId] || { salesCount: 0, revenue30d: 0, revenueTotal: 0 };
-      return {
-        user,
-        shop,
-        preset: BUSINESS_PRESETS[shop.businessCategory] || BUSINESS_PRESETS.other,
-        revenue30d: st.revenue30d,
-        salesCount: st.salesCount,
-      };
-    });
-  }, [merchantUsers, shops, stats]);
+  const totalMerchants = kpis?.merchants ?? 0;
+  const activeMerchants = kpis?.active ?? 0;
+  const formalizedCount = kpis?.formalized ?? 0;
+  const totalVolume = kpis?.revenue30d ?? 0;
+  const newThisMonth = kpis?.new30 ?? 0;
 
-  // Filtered merchants
-  const filteredMerchants = useMemo(() => {
-    const q = searchQuery.toLowerCase();
-    return merchantsWithShops.filter(item => {
-      const matchSearch =
-        item.user.name.toLowerCase().includes(q) ||
-        item.shop.shopName.toLowerCase().includes(q) ||
-        (item.shop.city || '').toLowerCase().includes(q) ||
-        (item.user.email || '').toLowerCase().includes(q) ||
-        item.user.phone.includes(searchQuery);
-      const matchSector = selectedSector === 'all' || item.shop.businessCategory === selectedSector;
-      const matchStatus = selectedStatus === 'all' || item.user.status === selectedStatus;
-      return matchSearch && matchSector && matchStatus;
-    });
-  }, [merchantsWithShops, searchQuery, selectedSector, selectedStatus]);
-
-  // Overall platform KPIs
-  const totalMerchants = merchantUsers.length;
-  const activeMerchants = merchantUsers.filter(u => u.status === 'active').length;
-  const formalizedCount = merchantsWithShops.filter(m => m.shop.isFormalized).length;
-  const totalVolume = merchantsWithShops.reduce((sum, m) => sum + m.revenue30d, 0);
-  const newThisMonth = merchantUsers.filter(
-    u => Date.now() - new Date(u.createdAt).getTime() < 30 * 86400000
-  ).length;
-
-  const handleExportCsv = () => {
-    const headers = ['Nom Commercant', 'Boutique', 'Secteur', 'Pays', 'Ville', 'Telephone', 'Statut Legal', 'Email', 'Inscription', 'Nb Ventes', 'CA 30 jours'];
-    const rows = merchantsWithShops.map(m => [
-      m.user.name,
-      m.shop.shopName,
-      m.preset.title,
-      m.shop.country,
-      m.shop.city,
-      m.user.phone,
-      m.shop.isFormalized ? 'Formalisé (RCCM)' : 'Informel',
-      m.user.email,
-      m.user.createdAt.split('T')[0],
-      m.salesCount,
-      m.revenue30d,
-    ]);
-
-    const csvContent = [headers, ...rows].map(r => r.join(';')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `soutrabiz_commercants_${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+  // L'export complet est préparé par le serveur (tous les commerçants, pas seulement la page affichée)
+  const handleExportCsv = async () => {
+    try {
+      const res = await fetch(api.adminExportUrl, { credentials: 'same-origin' });
+      if (!res.ok) throw new Error(`Export impossible (erreur ${res.status}).`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `soutrabiz_commercants_${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (e) { alert((e as Error).message); }
   };
 
   return (
@@ -211,8 +189,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <KeyRound className="w-4 h-4" /> Demandes de mot de passe oublié ({resetRequests.length})
           </h3>
           {resetRequests.map(r => {
-            const u = users.find(x => x.id === r.userId);
-            if (!u) return null;
+            const u = { id: r.userId, name: r.name, phone: r.phone };
             return (
               <div key={r.userId} className="flex flex-wrap items-center justify-between gap-2 bg-white rounded-xl p-3 border border-amber-200">
                 <div className="text-xs sm:text-sm">
@@ -311,8 +288,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <input
             type="text"
             placeholder="Rechercher par gérant, boutique, ville..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-emerald-700"
           />
         </div>
@@ -320,7 +297,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto text-xs font-medium">
           <select
             value={selectedSector}
-            onChange={(e) => setSelectedSector(e.target.value)}
+            onChange={(e) => { setSelectedSector(e.target.value); setPage(1); }}
             className="px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl font-bold text-stone-700"
           >
             <option value="all">Tous les secteurs d'activité</option>
@@ -334,7 +311,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           <select
             value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
+            onChange={(e) => { setSelectedStatus(e.target.value); setPage(1); }}
             className="px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl font-bold text-stone-700"
           >
             <option value="all">Tous les statuts</option>
@@ -349,9 +326,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <div className="p-4 border-b border-stone-100 flex items-center justify-between">
           <h3 className="font-extrabold text-stone-900 text-base flex items-center gap-2">
             <Users className="w-4 h-4 text-emerald-800" />
-            <span>Répertoire des Commerçants et PME ({filteredMerchants.length})</span>
+            <span>Répertoire des Commerçants et PME ({data?.total ?? 0})</span>
           </h3>
-          <button onClick={onRefresh} className="text-xs text-stone-600 hover:text-stone-900 flex items-center gap-1 font-semibold">
+          <button onClick={load} className="text-xs text-stone-600 hover:text-stone-900 flex items-center gap-1 font-semibold">
             <RefreshCw className="w-3.5 h-3.5" /> Actualiser
           </button>
         </div>
@@ -377,7 +354,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </td>
                 </tr>
               ) : (
-                filteredMerchants.map(({ user, shop, preset, revenue30d, salesCount }) => (
+                filteredMerchants.map(({ user, shop, preset, revenue30d, salesCount, teamCount }) => (
                   <tr key={user.id} className="hover:bg-stone-50/70 transition">
                     
                     {/* User and Shop info */}
@@ -396,7 +373,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             )}
                           </div>
                           <div className="text-[11px] text-stone-500 font-normal mt-0.5">
-                            Gérant : {user.name} • 📞 {user.phone}{user.email ? ` • ✉️ ${user.email}` : ''}
+                            Gérant : {user.name} • 📞 {user.phone}{user.email ? ` • ✉️ ${user.email}` : ''}{teamCount > 1 ? ` • 👥 ${teamCount} comptes` : ''}
                           </div>
                         </div>
                       </div>
@@ -448,7 +425,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         
                         {/* Switch / Impersonate */}
                         <button
-                          onClick={() => onImpersonateShop(shop, user)}
+                          onClick={() => onImpersonate(user)}
                           className="px-2.5 py-1 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs transition flex items-center gap-1"
                           title="Accéder à la gestion de cette boutique"
                         >
@@ -483,7 +460,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                         {/* Toggle active / suspend */}
                         <button
-                          onClick={() => onToggleUserStatus(user.id)}
+                          onClick={() => handleToggleStatus(user)}
                           className={`p-1.5 rounded-xl transition ${
                             user.status === 'active' 
                               ? 'text-stone-400 hover:text-rose-600 hover:bg-rose-50' 
@@ -503,6 +480,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </tbody>
           </table>
         </div>
+
+        {data && data.pages > 1 && (
+          <div className="flex items-center justify-between gap-2 p-3 border-t border-stone-100 text-xs font-semibold text-stone-600">
+            <button disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}
+              className="px-3 py-1.5 rounded-xl border border-stone-200 disabled:opacity-40 flex items-center gap-1">
+              <ChevronLeft className="w-3.5 h-3.5" /> Précédent
+            </button>
+            <span>Page {data.page} / {data.pages}</span>
+            <button disabled={page >= data.pages} onClick={() => setPage(p => p + 1)}
+              className="px-3 py-1.5 rounded-xl border border-stone-200 disabled:opacity-40 flex items-center gap-1">
+              Suivant <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Inspect Merchant Audit Modal */}
@@ -570,7 +561,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  onImpersonateShop(inspectUser.shop, inspectUser.user);
+                  onImpersonate(inspectUser.user);
                   setInspectUser(null);
                 }}
                 className="flex-1 py-2.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs flex items-center justify-center gap-1.5"

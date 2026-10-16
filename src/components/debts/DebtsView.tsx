@@ -1,3 +1,4 @@
+import { newId } from '../../../shared/syncCore';
 import React, { useState, useMemo } from 'react';
 import { Customer, DebtPayment, Supplier, SupplierPayment, PaymentMethod, ShopSettings } from '../../types';
 import { formatCurrency, getPaymentMethodDetails } from '../../services/financials';
@@ -26,6 +27,7 @@ interface DebtsViewProps {
   settings: ShopSettings;
   onUpdateCustomers: (customers: Customer[]) => void;
   onUpdateSuppliers: (suppliers: Supplier[]) => void;
+  allowSuppliers?: boolean;
 }
 
 export const DebtsView: React.FC<DebtsViewProps> = ({
@@ -34,8 +36,10 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
   settings,
   onUpdateCustomers,
   onUpdateSuppliers,
+  allowSuppliers = true,
 }) => {
-  const [activeTab, setActiveTab] = useState<'customers' | 'suppliers'>('customers');
+  const [activeTabRaw, setActiveTab] = useState<'customers' | 'suppliers'>('customers');
+  const activeTab = allowSuppliers ? activeTabRaw : 'customers';
   const [searchQuery, setSearchQuery] = useState('');
   const [filterDebtorsOnly, setFilterDebtorsOnly] = useState(true);
 
@@ -117,7 +121,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
     if (!custName.trim()) return;
 
     const newCust: Customer = {
-      id: `cust-${Date.now()}`,
+      id: newId('cust'),
       name: custName.trim(),
       phone: custPhone.trim() || 'Non renseigné',
       address: custAddress.trim() || undefined,
@@ -142,7 +146,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
     if (!selectedCustomer || repayAmount <= 0) return;
 
     const newPayment: DebtPayment = {
-      id: `pay-${Date.now()}`,
+      id: newId('pay'),
       date: new Date().toISOString(),
       amount: Number(repayAmount),
       paymentMethod: repayMethod,
@@ -192,7 +196,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
     if (!supName.trim()) return;
 
     const newSup: Supplier = {
-      id: `sup-${Date.now()}`,
+      id: newId('sup'),
       name: supName.trim(),
       phone: supPhone.trim() || 'Non renseigné',
       companyOrMarket: supMarket.trim() || undefined,
@@ -218,7 +222,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
     if (!selectedSupplier || supRepayAmount <= 0) return;
 
     const newPayment: SupplierPayment = {
-      id: `spay-${Date.now()}`,
+      id: newId('spay'),
       date: new Date().toISOString(),
       amount: Number(supRepayAmount),
       paymentMethod: supRepayMethod,
@@ -342,6 +346,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
           </div>
         </div>
 
+        {allowSuppliers && (<>
         {/* Total Owed to Suppliers */}
         <div 
           onClick={() => setActiveTab('suppliers')}
@@ -379,6 +384,8 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
           </div>
         </div>
 
+        </>)}
+
       </div>
 
       {/* Main Tab Switcher: Clients vs Fournisseurs */}
@@ -395,6 +402,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
           <span>Dettes Clients (À Encaisser) • {formatCurrency(totalCustomerDebts, settings.currency)}</span>
         </button>
 
+        {allowSuppliers && (
         <button
           onClick={() => setActiveTab('suppliers')}
           className={`flex-1 py-2.5 rounded-xl transition flex items-center justify-center gap-2 ${
@@ -406,6 +414,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
           <Truck className="w-4 h-4 text-indigo-700" />
           <span>Dettes Fournisseurs (À Payer) • {formatCurrency(totalSupplierDebts, settings.currency)}</span>
         </button>
+        )}
       </div>
 
       {/* Search and Filter */}

@@ -1,3 +1,4 @@
+import { newId } from '../../../shared/syncCore';
 import React, { useState, useMemo } from 'react';
 import { Product, SaleItem, Sale, PaymentMethod, Customer, ShopSettings } from '../../types';
 import { formatCurrency, getPaymentMethodDetails } from '../../services/financials';
@@ -156,7 +157,7 @@ export const POSView: React.FC<POSViewProps> = ({
         if (found) customerName = found.name;
       } else if (newCustomerName.trim()) {
         const newCust: Customer = {
-          id: `cust-${Date.now()}`,
+          id: newId('cust'),
           name: newCustomerName.trim(),
           phone: newCustomerPhone.trim() || 'Non spécifié',
           totalDebt: 0,
@@ -193,10 +194,10 @@ export const POSView: React.FC<POSViewProps> = ({
     const finalAmountPaid = isCredit ? 0 : amountPaid;
     const changeGiven = isCredit ? 0 : Math.max(0, amountPaid - cartSubtotal);
 
-    const invoiceNumber = `FAC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const invoiceNumber = `FAC-${new Date().getFullYear()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
 
     const newSale: Sale = {
-      id: `sale-${Date.now()}`,
+      id: newId('sale'),
       date: new Date().toISOString(),
       items: [...cart],
       subtotal: cartSubtotal,

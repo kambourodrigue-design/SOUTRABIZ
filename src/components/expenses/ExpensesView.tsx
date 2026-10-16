@@ -1,5 +1,9 @@
+import { newId } from '../../../shared/syncCore';
 import React, { useState, useMemo } from 'react';
-import { Expense, ExpenseCategory, PaymentMethod, ShopSettings } from '../../types';
+import { Expense, ExpenseCategory, PaymentMethod, ShopSettings, Supplier } from '../../types';
+import { SupplierCreditFields } from '../common/SupplierCreditFields';
+import { applyPurchaseCredit } from '../../services/purchases';
+import { creditPart } from '../../services/treasury';
 import { formatCurrency, getExpenseCategoryDetails, getPaymentMethodDetails } from '../../services/financials';
 import { 
   Receipt, 
@@ -17,6 +21,8 @@ interface ExpensesViewProps {
   settings: ShopSettings;
   onAddExpense: (expense: Expense) => void;
   onDeleteExpense: (expenseId: string) => void;
+  suppliers?: Supplier[];
+  onUpdateSuppliers?: (suppliers: Supplier[]) => void;
 }
 
 export const ExpensesView: React.FC<ExpensesViewProps> = ({
@@ -24,6 +30,8 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
   settings,
   onAddExpense,
   onDeleteExpense,
+  suppliers = [],
+  onUpdateSuppliers,
 }) => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [filterCategory, setFilterCategory] = useState<string>('all');
@@ -34,6 +42,11 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
   const [category, setCategory] = useState<ExpenseCategory>('transport');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
   const [notes, setNotes] = useState('');
+  const [supplierId, setSupplierId] = useState('');
+  const [newSupplierName, setNewSupplierName] = useState('');
+  const [paidInput, setPaidInput] = useState<number | null>(null);
+  const isPurchase = category === 'supply' && !!onUpdateSuppliers;
+  const paidValue = paidInput ?? amount;
 
   // 30 days cutoff
   const now = Date.now();
@@ -74,14 +87,33 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
     e.preventDefault();
     if (!title.trim() || amount <= 0) return;
 
+    let supplierRef: string | undefined;
+    let paidAmount: number | undefined;
+    if (isPurchase) {
+      const paid = Math.min(Math.max(0, paidValue), Number(amount));
+      if (paid < Number(amount) && !supplierId && !newSupplierName.trim()) {
+        alert('Pour un achat à crédit, choisissez ou saisissez le fournisseur.');
+        return;
+      }
+      const res = applyPurchaseCredit({
+        total: Number(amount), paid, supplierId, newSupplierName, suppliers,
+      });
+      if (res.supplierId) {
+        if (res.suppliers !== suppliers) onUpdateSuppliers!(res.suppliers);
+        supplierRef = res.supplierId;
+      }
+      paidAmount = paid;
+    }
+
     const newExpense: Expense = {
-      id: `exp-${Date.now()}`,
+      id: newId('exp'),
       date: new Date().toISOString(),
       title: title.trim(),
       amount: Number(amount),
       category,
       paymentMethod,
       notes: notes.trim() || undefined,
+      ...(isPurchase ? { supplierId: supplierRef, paidAmount } : {}),
     };
 
     onAddExpense(newExpense);
@@ -89,6 +121,20 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
     setTitle('');
     setAmount(0);
     setNotes('');
+    setSupplierId('');
+    setNewSupplierName('');
+    setPaidInput(null);
+  };
+
+  const handleDelete = (exp: Expense) => {
+    const credit = creditPart(exp);
+    if (exp.supplierId && credit > 0 && onUpdateSuppliers) {
+      const sup = suppliers.find(x => x.id === exp.supplierId);
+      if (sup && confirm(`Cet achat avait ${formatCurrency(credit, settings.currency)} à crédit chez ${sup.name}. Annuler aussi cette dette ?`)) {
+        onUpdateSuppliers(suppliers.map(x => x.id === sup.id ? { ...x, totalDebt: Math.max(0, x.totalDebt - credit) } : x));
+      }
+    }
+    onDeleteExpense(exp.id);
   };
 
   const filteredExpenses = useMemo(() => {
@@ -245,6 +291,11 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
                           {payDetails.label}
                         </span>
                       </div>
+                      {creditPart(expense) > 0 && (
+                        <p className="text-[11px] font-bold text-indigo-700 mt-0.5">
+                          🚚 À crédit : {formatCurrency(creditPart(expense), settings.currency)} dû{expense.supplierId ? ` à ${suppliers.find(x => x.id === expense.supplierId)?.name || 'un fournisseur'}` : ''}
+                        </p>
+                      )}
                       {expense.notes && (
                         <p className="text-[11px] text-stone-400 italic mt-0.5">{expense.notes}</p>
                       )}
@@ -256,7 +307,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
                       -{formatCurrency(expense.amount, settings.currency)}
                     </span>
                     <button
-                      onClick={() => onDeleteExpense(expense.id)}
+                      onClick={() => handleDelete(expense)}
                       className="text-stone-300 hover:text-rose-600 p-1 rounded-lg"
                       title="Supprimer"
                     >
@@ -326,7 +377,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-stone-700">Payé par</label>
+                  <label className="text-xs font-bold text-stone-700">{isPurchase ? 'Partie payée par' : 'Payé par'}</label>
                   <select
                     value={paymentMethod}
                     onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
@@ -341,6 +392,15 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
                   </select>
                 </div>
               </div>
+
+              {isPurchase && amount > 0 && (
+                <SupplierCreditFields
+                  total={Number(amount)} currency={settings.currency} suppliers={suppliers}
+                  supplierId={supplierId} setSupplierId={setSupplierId}
+                  newSupplierName={newSupplierName} setNewSupplierName={setNewSupplierName}
+                  paid={Math.min(paidValue, Number(amount))} setPaid={setPaidInput}
+                />
+              )}
 
               <div>
                 <label className="text-xs font-bold text-stone-700">Notes / Précisions</label>

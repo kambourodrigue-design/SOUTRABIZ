@@ -88,8 +88,9 @@ export function calculateSummaryForPeriod(sales: Sale[], expenses: Expense[], da
   const grossProfit = revenue - cogs;
   const grossMarginPct = revenue > 0 ? (grossProfit / revenue) * 100 : 0;
 
+  // Les achats de marchandises ne sont pas des charges : leur coût est déjà dans le coût des ventes (cogs).
   const operatingExpenses = periodExpenses
-    .filter(e => e.category !== 'personal_draw')
+    .filter(e => e.category !== 'personal_draw' && e.category !== 'supply')
     .reduce((acc, e) => acc + e.amount, 0);
 
   const personalDraws = periodExpenses

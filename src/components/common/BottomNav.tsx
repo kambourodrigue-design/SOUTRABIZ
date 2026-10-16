@@ -19,6 +19,7 @@ interface BottomNavProps {
   lowStockCount: number;
   totalDebtorsCount: number;
   isAdmin?: boolean;
+  allowedTabs?: string[];
 }
 
 export const BottomNav: React.FC<BottomNavProps> = ({
@@ -27,13 +28,15 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   lowStockCount,
   totalDebtorsCount,
   isAdmin = false,
+  allowedTabs,
 }) => {
   const [moreOpen, setMoreOpen] = useState(false);
+  const ok = (id: string) => !allowedTabs || allowedTabs.includes(id);
   const moreTabs = [
     { id: 'expenses', label: 'Dépenses', icon: Wallet },
     { id: 'credit', label: 'Score Crédit', icon: Landmark },
     { id: 'formalization', label: 'Formalisation', icon: ShieldCheck },
-  ];
+  ].filter(t => ok(t.id));
   const moreActive = moreTabs.some(t => t.id === activeTab);
 
   const tabs = [
@@ -43,11 +46,12 @@ export const BottomNav: React.FC<BottomNavProps> = ({
     { id: 'stock', label: 'Stocks', icon: Package, badge: lowStockCount > 0 ? lowStockCount : null },
     { id: 'debts', label: 'Dettes', icon: BookUser, badge: totalDebtorsCount > 0 ? totalDebtorsCount : null },
     ...(isAdmin ? [{ id: 'admin', label: 'Admin', icon: Landmark, badge: '👑' }] : []),
-  ];
+  ].filter(t => t.id === 'admin' || ok(t.id));
+  const cols = tabs.length + (moreTabs.length ? 1 : 0);
 
   return (
     <div className="xl:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-stone-200 px-1 py-1.5 shadow-lg safe-bottom">
-      <div className={`grid ${isAdmin ? 'grid-cols-7' : 'grid-cols-6'} gap-0.5 max-w-xl mx-auto`}>
+      <div className="grid gap-0.5 max-w-xl mx-auto" style={{ gridTemplateColumns: `repeat(${Math.max(cols, 2)}, minmax(0, 1fr))` }}>
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -83,7 +87,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
         })}
 
         {/* Menu "Plus" : rubriques secondaires */}
-        <button
+        {moreTabs.length > 0 && <button
           onClick={() => setMoreOpen(o => !o)}
           className={`relative flex flex-col items-center justify-center py-1 rounded-xl transition ${
             moreActive || moreOpen ? 'text-emerald-800 font-bold' : 'text-stone-500 hover:text-stone-800'
@@ -93,7 +97,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
             <MoreHorizontal className="w-5 h-5" />
           </div>
           <span className="text-[10px] tracking-tight mt-0.5">Plus</span>
-        </button>
+        </button>}
       </div>
 
       {moreOpen && (

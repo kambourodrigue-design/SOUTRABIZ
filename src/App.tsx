@@ -4,11 +4,13 @@
  */
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { flushSync } from 'react-dom';
 import { Product, Sale, Expense, Customer, Supplier, ShopSettings, UserAccount } from './types';
 import { storage } from './services/storage';
 import { calculateCreditScore } from './services/creditScore';
 import { authCache, DEMO_USER } from './services/auth';
-import { api, ApiError, AdminListResponse, ShopBundle } from './services/api';
+import { api, ApiError } from './services/api';
+import { SyncEngine, fetchAllChanges, buildSnapshot, type Snapshot, type SyncInfo } from './services/syncEngine';
 import { initialShopSettings } from './data/initialData';
 import { getSectorProducts } from './data/sectorCatalogSeeds';
 
@@ -30,8 +32,11 @@ import { FormalizationGuide } from './components/formalization/FormalizationGuid
 import { AdminDashboard } from './components/admin/AdminDashboard';
 
 type SessionState = 'loading' | 'out' | 'in';
-type SyncState = 'idle' | 'pending' | 'saving' | 'error' | 'offline';
-const DATA_KEYS = ['products', 'sales', 'expenses', 'customers', 'suppliers'] as const;
+type ShopRole = 'owner' | 'manager' | 'cashier';
+const ALL_TABS = ['dashboard', 'pos', 'finances', 'stock', 'expenses', 'debts', 'credit', 'formalization'];
+const tabsFor = (role: ShopRole): string[] =>
+  role === 'cashier' ? ['pos', 'debts'] : ALL_TABS;
+const ROLE_LABEL: Record<ShopRole, string> = { owner: 'PRO', manager: 'GÉRANT', cashier: 'CAISSIER' };
 
 export default function App() {
   // Authentification
@@ -39,9 +44,7 @@ export default function App() {
   const [isDemo, setIsDemo] = useState(false);
   const [currentUser, setCurrentUser] = useState<UserAccount>(DEMO_USER);
   const [viewingAs, setViewingAs] = useState<UserAccount | null>(null); // admin en consultation
-  const [adminData, setAdminData] = useState<AdminListResponse | null>(null);
-  const [adminError, setAdminError] = useState<string | null>(null);
-  const [syncState, setSyncState] = useState<SyncState>('idle');
+  const [syncInfo, setSyncInfo] = useState<SyncInfo>({ status: 'idle', pending: 0, lastSync: null });
 
   // Master application states
   const [products, setProducts] = useState<Product[]>(() => storage.getProducts());
@@ -61,29 +64,38 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
 
-  // --- Synchronisation serveur ---------------------------------------------
+  // --- Synchronisation serveur (voir services/syncEngine.ts) -----------------
+  const shopRole: ShopRole = isDemo ? 'owner' : (currentUser.shopRole || 'owner');
+  const isPlatformAdmin = currentUser.role === 'admin';
   const syncEnabled = session === 'in' && !isDemo && !viewingAs;
-  const hydratedRef = useRef(false);
-  const lastSentRef = useRef<Record<string, string>>({});
 
-  const applyBundle = useCallback((bundle: ShopBundle, fallback?: ShopSettings) => {
-    const d = bundle.data || {};
-    setProducts((d.products as Product[]) || []);
-    setSales((d.sales as Sale[]) || []);
-    setExpenses((d.expenses as Expense[]) || []);
-    setCustomers((d.customers as Customer[]) || []);
-    setSuppliers((d.suppliers as Supplier[]) || []);
-    const st = bundle.settings || fallback;
-    if (st) setSettings(st);
-    // ce qui vient du serveur est considéré comme déjà synchronisé
-    lastSentRef.current = {
-      ...Object.fromEntries(DATA_KEYS.filter(k => d[k] !== undefined).map(k => [k, JSON.stringify(d[k])])),
-      settings: st ? JSON.stringify(st) : '',
-    };
-  }, []);
+  const latest = useRef<Snapshot>({ products, sales, expenses, customers, suppliers, settings });
+  latest.current = { products, sales, expenses, customers, suppliers, settings };
+  const unauthorizedRef = useRef<() => void>(() => {});
+  const engineRef = useRef<SyncEngine | null>(null);
+  if (!engineRef.current) {
+    engineRef.current = new SyncEngine({
+      getSnapshot: () => latest.current,
+      flush: () => { try { flushSync(() => {}); } catch { /* ignore */ } },
+      setSnapshot: (p) => {
+        latest.current = { ...latest.current, ...p };
+        flushSync(() => {
+          if (p.products) setProducts(p.products);
+          if (p.sales) setSales(p.sales);
+          if (p.expenses) setExpenses(p.expenses);
+          if (p.customers) setCustomers(p.customers);
+          if (p.suppliers) setSuppliers(p.suppliers);
+          if (p.settings) setSettings(p.settings);
+        });
+      },
+      onInfo: setSyncInfo,
+      onUnauthorized: () => unauthorizedRef.current(),
+    });
+  }
+  const engine = engineRef.current;
 
   const goLoggedOut = useCallback(() => {
-    hydratedRef.current = false;
+    engine.destroy();
     authCache.clear();
     storage.wipeLocal();
     setProducts(storage.getProducts());
@@ -94,10 +106,16 @@ export default function App() {
     setSettings(storage.getSettings());
     setIsDemo(false);
     setViewingAs(null);
-    setAdminData(null);
     setActiveTab('dashboard');
     setSession('out');
-  }, []);
+  }, [engine]);
+  unauthorizedRef.current = () => {
+    alert('Votre session a expiré ou votre accès a été suspendu. Veuillez vous reconnecter.');
+    goLoggedOut();
+  };
+
+  const firstTab = (u: UserAccount) =>
+    u.role === 'admin' ? 'admin' : (u.shopRole === 'cashier' ? 'pos' : 'dashboard');
 
   // Au démarrage : reprendre la session si elle existe
   useEffect(() => {
@@ -108,87 +126,40 @@ export default function App() {
         if (cancelled) return;
         setCurrentUser(me.user);
         authCache.set(me.user);
-        applyBundle(me);
-        hydratedRef.current = true;
+        await engine.start(me.user.shopId);
+        if (cancelled) return;
         setSession('in');
-        setActiveTab(me.user.role === 'admin' ? 'admin' : 'dashboard');
+        setActiveTab(firstTab(me.user));
       } catch (e) {
         if (cancelled) return;
         const cached = authCache.get();
         if (e instanceof ApiError && e.status === 0 && cached) {
-          // hors-ligne : on continue avec les données locales
+          // hors-ligne : on continue avec les données locales, tout sera envoyé au retour du réseau
           setCurrentUser(cached);
-          lastSentRef.current = {}; // tout renvoyer au retour du réseau
-          hydratedRef.current = true;
+          try { await engine.start(cached.shopId); } catch { /* données locales seulement */ }
+          if (cancelled) return;
           setSession('in');
-          setSyncState('offline');
+          setActiveTab(firstTab(cached));
         } else {
           goLoggedOut();
         }
       }
     })();
     return () => { cancelled = true; };
-  }, [applyBundle, goLoggedOut]);
+  }, [engine, goLoggedOut]);
 
-  // Cache local (sert au mode hors-ligne)
-  useEffect(() => { storage.saveProducts(products); }, [products]);
-  useEffect(() => { storage.saveSales(sales); }, [sales]);
-  useEffect(() => { storage.saveExpenses(expenses); }, [expenses]);
-  useEffect(() => { storage.saveCustomers(customers); }, [customers]);
-  useEffect(() => { storage.saveSuppliers(suppliers); }, [suppliers]);
-  useEffect(() => { storage.saveSettings(settings); }, [settings]);
+  // Cache local (sert au mode hors-ligne) — pas pendant la consultation d'une autre boutique
+  useEffect(() => { if (!viewingAs) storage.saveProducts(products); }, [products, viewingAs]);
+  useEffect(() => { if (!viewingAs) storage.saveSales(sales); }, [sales, viewingAs]);
+  useEffect(() => { if (!viewingAs) storage.saveExpenses(expenses); }, [expenses, viewingAs]);
+  useEffect(() => { if (!viewingAs) storage.saveCustomers(customers); }, [customers, viewingAs]);
+  useEffect(() => { if (!viewingAs) storage.saveSuppliers(suppliers); }, [suppliers, viewingAs]);
+  useEffect(() => { if (!viewingAs) storage.saveSettings(settings); }, [settings, viewingAs]);
 
-  const latest = useRef({ products, sales, expenses, customers, suppliers, settings });
-  latest.current = { products, sales, expenses, customers, suppliers, settings };
-
-  const pushToServer = useCallback(async () => {
-    if (!hydratedRef.current) return;
-    const cur: Record<string, unknown> = latest.current;
-    const payload: Record<string, unknown> = {};
-    const sent: Record<string, string> = {};
-    for (const k of [...DATA_KEYS, 'settings'] as const) {
-      const str = JSON.stringify(cur[k]);
-      if (lastSentRef.current[k] !== str) { payload[k] = cur[k]; sent[k] = str; }
-    }
-    if (Object.keys(payload).length === 0) { setSyncState('idle'); return; }
-    if (!navigator.onLine) { setSyncState('offline'); return; }
-    setSyncState('saving');
-    try {
-      await api.saveData(payload);
-      lastSentRef.current = { ...lastSentRef.current, ...sent };
-      // des changements ont pu arriver pendant l'envoi
-      const again = [...DATA_KEYS, 'settings'].some(
-        k => lastSentRef.current[k] !== JSON.stringify((latest.current as any)[k])
-      );
-      setSyncState(again ? 'pending' : 'idle');
-    } catch (e) {
-      if (e instanceof ApiError && e.status === 401) {
-        alert('Votre session a expiré. Veuillez vous reconnecter.');
-        goLoggedOut();
-      } else {
-        setSyncState(e instanceof ApiError && e.status === 0 ? 'offline' : 'error');
-      }
-    }
-  }, [goLoggedOut]);
-
-  // Envoi différé à chaque modification
+  // Chaque modification est repérée par le moteur, qui l'enverra en différé
   useEffect(() => {
-    if (!syncEnabled || !hydratedRef.current) return;
-    setSyncState(s => (s === 'saving' ? s : 'pending'));
-    const t = setTimeout(pushToServer, 1500);
-    return () => clearTimeout(t);
-  }, [products, sales, expenses, customers, suppliers, settings, syncEnabled, pushToServer]);
-
-  // Nouvelle tentative : retour du réseau + toutes les 30 s si en attente
-  useEffect(() => {
-    if (!syncEnabled) return;
-    const retry = () => { pushToServer(); };
-    window.addEventListener('online', retry);
-    const iv = setInterval(() => {
-      setSyncState(s => { if (s === 'error' || s === 'offline' || s === 'pending') retry(); return s; });
-    }, 30000);
-    return () => { window.removeEventListener('online', retry); clearInterval(iv); };
-  }, [syncEnabled, pushToServer]);
+    if (syncEnabled) engine.notify();
+  }, [products, sales, expenses, customers, suppliers, settings, syncEnabled, engine]);
 
   // Dynamic Credit Score Calculation (incorporating both customers and suppliers)
   const creditScore = useMemo(() => {
@@ -243,6 +214,7 @@ export default function App() {
   };
 
   const handleSaveSettings = (updated: ShopSettings) => {
+    if (!isDemo && shopRole === 'cashier') return;
     setSettings(updated);
     // If business category changed, offer to adapt products
     if (isDemo && updated.businessCategory !== settings.businessCategory) {
@@ -251,6 +223,7 @@ export default function App() {
   };
 
   const handleClearData = (kind: 'sales' | 'expenses' | 'customers' | 'suppliers' | 'products' | 'all' | 'sample') => {
+    if (!isDemo && shopRole !== 'owner') return;
     if (kind === 'sales' || kind === 'all') setSales([]);
     if (kind === 'expenses' || kind === 'all') setExpenses([]);
     if (kind === 'customers' || kind === 'all') setCustomers([]);
@@ -269,31 +242,24 @@ export default function App() {
   };
 
   // Auth Handlers
-  const handleAuthSuccess = (user: UserAccount, shop: ShopSettings | null, isNew: boolean) => {
+  const handleAuthSuccess = async (user: UserAccount, _shop: ShopSettings | null, _isNew: boolean) => {
     setIsDemo(false);
     setCurrentUser(user);
     authCache.set(user);
-    if (isNew && shop) {
-      // nouveau compte : tout démarre vide ; tout est envoyé au serveur
-      lastSentRef.current = {};
-      setSettings(shop);
-      setProducts([]);
-      setSales([]); setExpenses([]); setCustomers([]); setSuppliers([]);
-      hydratedRef.current = true;
+    setSession('loading');
+    try {
+      await engine.start(user.shopId); // le serveur fait foi : on charge les données de la boutique
       setSession('in');
-      setActiveTab('dashboard');
-      return;
+      setActiveTab(firstTab(user));
+    } catch {
+      alert('Impossible de charger vos données. Vérifiez votre connexion et réessayez.');
+      try { await api.logout(); } catch { /* ignore */ }
+      goLoggedOut();
     }
-    // connexion : on charge les données du serveur
-    api.me().then(me => {
-      applyBundle(me, shop || undefined);
-      hydratedRef.current = true;
-      setSession('in');
-      setActiveTab(user.role === 'admin' ? 'admin' : 'dashboard');
-    }).catch(() => { alert('Impossible de charger vos données. Réessayez.'); goLoggedOut(); });
   };
 
   const handleStartDemo = () => {
+    engine.destroy();
     storage.wipeLocal();
     setProducts(storage.getProducts());
     setSales(storage.getSales());
@@ -303,70 +269,41 @@ export default function App() {
     setSettings({ ...initialShopSettings });
     setCurrentUser(DEMO_USER);
     setIsDemo(true);
-    hydratedRef.current = false;
     setSession('in');
     setActiveTab('dashboard');
   };
 
   const handleLogout = async () => {
     if (!isDemo && syncEnabled) {
-      await pushToServer(); // dernière sauvegarde avant de partir
+      try { await engine.syncNow(); } catch { /* dernière sauvegarde au mieux */ }
+      if (engine.pendingCount() > 0 && !confirm(
+        `${engine.pendingCount()} modification(s) n'ont pas encore été envoyées (pas de réseau ?). Elles seront PERDUES si vous vous déconnectez. Se déconnecter quand même ?`
+      )) return;
     }
     if (!isDemo) { try { await api.logout(); } catch { /* ignore */ } }
     goLoggedOut();
   };
 
-  // --- Espace admin ---
-  const refreshAdmin = useCallback(async () => {
+  // --- Espace admin : consultation d'une boutique (lecture seule) ---
+  const handleImpersonate = async (user: UserAccount) => {
     try {
-      setAdminError(null);
-      setAdminData(await api.adminList());
-    } catch (e) {
-      setAdminError((e as Error).message);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (activeTab === 'admin' && currentUser.role === 'admin' && session === 'in' && !isDemo) {
-      refreshAdmin();
-    }
-  }, [activeTab, currentUser.role, session, isDemo, refreshAdmin]);
-
-  const handleToggleUserStatus = async (userId: string) => {
-    const u = adminData?.users.find(x => x.id === userId);
-    if (!u) return;
-    try {
-      await api.adminSetStatus(userId, u.status === 'active' ? 'suspended' : 'active');
-      await refreshAdmin();
-    } catch (e) { alert((e as Error).message); }
-  };
-
-  const handleResetUserPassword = async (userId: string, newPassword: string) => {
-    await api.adminResetPassword(userId, newPassword);
-  };
-
-  const handleDeleteUser = async (userId: string) => {
-    await api.adminDelete(userId);
-    await refreshAdmin();
-  };
-
-  const handleImpersonateShop = async (_shop: ShopSettings, user: UserAccount) => {
-    try {
-      // l'envoi des données de l'admin doit être terminé avant de changer de boutique
-      await pushToServer();
-      const bundle = await api.adminShopData(user.id);
+      await engine.syncNow();                    // envoyer d'abord ce qui attend
+      engine.stop(true);                         // plus aucun envoi pendant la consultation
+      const { changes } = await fetchAllChanges(user.shopId);
+      const snap = buildSnapshot(changes, { settings: null });
+      engine.applyForeign(snap);
       setViewingAs(user);
-      applyBundle(bundle, _shop);
       setActiveTab('dashboard');
     } catch (e) { alert((e as Error).message); }
   };
 
   const handleExitViewing = async () => {
     try {
-      const me = await api.me();
+      setSession('loading');
+      await engine.restart(currentUser.shopId);
       setViewingAs(null);
-      applyBundle(me);
       setActiveTab('admin');
+      setSession('in');
     } catch { goLoggedOut(); }
   };
 
@@ -407,6 +344,8 @@ export default function App() {
         currentUser={currentUser}
         onOpenAuth={() => {}}
         onLogout={handleLogout}
+        allowedTabs={isPlatformAdmin ? undefined : tabsFor(shopRole)}
+        roleLabel={ROLE_LABEL[shopRole]}
       />
 
       {viewingAs && (
@@ -457,6 +396,9 @@ export default function App() {
             products={products}
             settings={settings}
             onUpdateProducts={handleUpdateProducts}
+            suppliers={suppliers}
+            onUpdateSuppliers={handleUpdateSuppliers}
+            onAddExpense={handleAddExpense}
           />
         )}
 
@@ -466,6 +408,8 @@ export default function App() {
             settings={settings}
             onAddExpense={handleAddExpense}
             onDeleteExpense={handleDeleteExpense}
+            suppliers={suppliers}
+            onUpdateSuppliers={handleUpdateSuppliers}
           />
         )}
 
@@ -476,6 +420,7 @@ export default function App() {
             settings={settings}
             onUpdateCustomers={handleUpdateCustomers}
             onUpdateSuppliers={handleUpdateSuppliers}
+            allowSuppliers={shopRole !== 'cashier'}
           />
         )}
 
@@ -512,14 +457,9 @@ export default function App() {
 
         {activeTab === 'admin' && (
           <AdminDashboard
-            data={adminData}
-            error={adminError}
-            onRefresh={refreshAdmin}
-            onToggleUserStatus={handleToggleUserStatus}
-            onResetPassword={handleResetUserPassword}
-            onDeleteUser={handleDeleteUser}
-            onImpersonateShop={handleImpersonateShop}
             currentUser={currentUser}
+            onImpersonate={handleImpersonate}
+            onUnauthorized={() => unauthorizedRef.current()}
           />
         )}
       </main>
@@ -530,7 +470,8 @@ export default function App() {
         setActiveTab={setActiveTab}
         lowStockCount={lowStockCount}
         totalDebtorsCount={debtorsCount + supplierDebtsCount}
-        isAdmin={currentUser.role === 'admin'}
+        isAdmin={isPlatformAdmin}
+        allowedTabs={isPlatformAdmin ? undefined : tabsFor(shopRole)}
       />
 
       {/* Settings & Offline Backup Modal */}
@@ -542,20 +483,21 @@ export default function App() {
           onReloadAllData={handleReloadAllData}
           onClearData={handleClearData}
           isDemo={isDemo}
+          shopRole={shopRole}
         />
       )}
 
       {/* Indicateur de synchronisation */}
-      {syncEnabled && syncState !== 'idle' && (
+      {syncEnabled && syncInfo.status !== 'idle' && (
         <div className={`fixed left-3 bottom-20 xl:bottom-4 z-40 px-3 py-1.5 rounded-full text-[11px] font-bold shadow-md border ${
-          syncState === 'error' ? 'bg-rose-100 text-rose-800 border-rose-200'
-          : syncState === 'offline' ? 'bg-amber-100 text-amber-900 border-amber-200'
+          syncInfo.status === 'error' ? 'bg-rose-100 text-rose-800 border-rose-200'
+          : syncInfo.status === 'offline' ? 'bg-amber-100 text-amber-900 border-amber-200'
           : 'bg-white text-stone-700 border-stone-200'
         }`}>
-          {syncState === 'saving' && '☁️ Enregistrement…'}
-          {syncState === 'pending' && '☁️ Modifications en attente…'}
-          {syncState === 'offline' && '📴 Hors-ligne — sera synchronisé au retour du réseau'}
-          {syncState === 'error' && '⚠️ Échec de synchronisation — nouvelle tentative…'}
+          {syncInfo.status === 'syncing' && '☁️ Synchronisation…'}
+          {syncInfo.status === 'pending' && `☁️ ${syncInfo.pending} modification(s) en attente…`}
+          {syncInfo.status === 'offline' && `📴 Hors-ligne — ${syncInfo.pending} modification(s) seront envoyées au retour du réseau`}
+          {syncInfo.status === 'error' && '⚠️ Échec de synchronisation — nouvelle tentative…'}
         </div>
       )}
 

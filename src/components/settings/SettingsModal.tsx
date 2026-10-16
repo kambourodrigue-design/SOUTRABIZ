@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ShopSettings, CurrencyCode } from '../../types';
 import { storage } from '../../services/storage';
 import { api } from '../../services/api';
+import { TeamPanel } from './TeamPanel';
 import { 
   Settings as SettingsIcon, 
   X, 
@@ -21,6 +22,7 @@ interface SettingsModalProps {
   onReloadAllData: () => void;
   onClearData: (kind: 'sales' | 'expenses' | 'customers' | 'suppliers' | 'products' | 'all' | 'sample') => void;
   isDemo?: boolean;
+  shopRole?: 'owner' | 'manager' | 'cashier';
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -30,7 +32,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onReloadAllData,
   onClearData,
   isDemo = false,
+  shopRole = 'owner',
 }) => {
+  const isOwner = isDemo || shopRole === 'owner';
+  const isCashier = !isDemo && shopRole === 'cashier';
   const [formData, setFormData] = useState<ShopSettings>({ ...settings });
   const [importStatus, setImportStatus] = useState<string | null>(null);
 
@@ -133,7 +138,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <button onClick={onClose} className="text-stone-400 hover:text-stone-700 p-1 rounded-xl">✕</button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {!isCashier && (<form onSubmit={handleSubmit} className="space-y-4">
           
           <div className="flex items-center gap-3 p-3 rounded-2xl bg-stone-50 border border-stone-200">
             <div className="w-16 h-16 rounded-xl bg-white border border-stone-200 flex items-center justify-center overflow-hidden shrink-0">
@@ -295,7 +300,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <span>Enregistrer les Paramètres</span>
           </button>
 
-        </form>
+        </form>)}
 
         {/* Offline Storage & Backup Management */}
         <div className="pt-3 border-t border-stone-200 space-y-3">
@@ -324,7 +329,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <span>Exporter Données</span>
             </button>
 
-            <label className="flex items-center justify-center gap-1.5 p-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs transition cursor-pointer">
+            {isOwner && (            <label className="flex items-center justify-center gap-1.5 p-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs transition cursor-pointer">
               <Upload className="w-3.5 h-3.5" />
               <span>Restaurer Fichier</span>
               <input
@@ -333,7 +338,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 onChange={handleImportBackup}
                 className="hidden"
               />
-            </label>
+            </label>)}
           </div>
 
           {!isDemo && (
@@ -357,7 +362,33 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
           )}
 
+          {isOwner && (
+            <div className="pt-2 border-t border-stone-200/80 space-y-2">
+              <span className="text-[11px] font-extrabold text-stone-600 uppercase tracking-wider block">
+                Trésorerie de départ
+              </span>
+              <p className="text-[11px] text-stone-500">L'argent que vous aviez avant de commencer à enregistrer (sert au calcul de la trésorerie du tableau de bord).</p>
+              <div className="grid grid-cols-3 gap-2">
+                {([['openingCash', 'Espèces'], ['openingMobile', 'Mobile Money'], ['openingBank', 'Banque']] as const).map(([k, label]) => (
+                  <div key={k}>
+                    <label className="text-[10px] font-bold text-stone-600">{label}</label>
+                    <input type="number" min="0" value={(formData as any)[k] ?? ''}
+                      onChange={(e) => setFormData({ ...formData, [k]: e.target.value === '' ? undefined : Number(e.target.value) } as ShopSettings)}
+                      className="w-full px-2 py-2 bg-stone-50 border border-stone-200 rounded-xl text-sm font-mono-num" />
+                  </div>
+                ))}
+              </div>
+              <button type="button" onClick={() => { onSaveSettings(formData); setImportStatus('Trésorerie de départ enregistrée.'); }}
+                className="w-full py-2 rounded-xl bg-stone-800 hover:bg-stone-900 text-white font-bold text-xs">
+                Enregistrer la trésorerie de départ
+              </button>
+            </div>
+          )}
+
+          {!isDemo && isOwner && <TeamPanel />}
+
           {/* Gestion des données */}
+          {isOwner && (<>
           <div className="pt-2 border-t border-stone-200/80 space-y-2">
             <span className="text-[11px] font-extrabold text-stone-600 uppercase tracking-wider block">
               Effacer des données (pour saisir vos vraies données)
@@ -402,6 +433,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <RotateCcw className="w-3 h-3" /> {isDemo ? 'Réinitialiser les données exemples' : 'Effacer toutes les données de la boutique'}
             </button>
           </div>
+          </>)}
 
         </div>
 

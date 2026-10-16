@@ -1,5 +1,8 @@
+import { newId } from '../../../shared/syncCore';
 import React, { useState, useMemo } from 'react';
-import { Product, ShopSettings } from '../../types';
+import { Product, ShopSettings, Supplier, Expense, PaymentMethod } from '../../types';
+import { SupplierCreditFields } from '../common/SupplierCreditFields';
+import { applyPurchaseCredit } from '../../services/purchases';
 import { formatCurrency } from '../../services/financials';
 import { 
   Package, 
@@ -19,12 +22,18 @@ interface StockViewProps {
   products: Product[];
   settings: ShopSettings;
   onUpdateProducts: (products: Product[]) => void;
+  suppliers?: Supplier[];
+  onUpdateSuppliers?: (suppliers: Supplier[]) => void;
+  onAddExpense?: (expense: Expense) => void;
 }
 
 export const StockView: React.FC<StockViewProps> = ({
   products,
   settings,
   onUpdateProducts,
+  suppliers = [],
+  onUpdateSuppliers,
+  onAddExpense,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'low' | 'out'>('all');
@@ -46,6 +55,12 @@ export const StockView: React.FC<StockViewProps> = ({
   // Quick Restock form
   const [restockQty, setRestockQty] = useState<number>(10);
   const [restockNewPurchasePrice, setRestockNewPurchasePrice] = useState<number>(0);
+  const [restockRecord, setRestockRecord] = useState(true);
+  const [restockMethod, setRestockMethod] = useState<PaymentMethod>('cash');
+  const [restockSupplierId, setRestockSupplierId] = useState('');
+  const [restockNewSupplier, setRestockNewSupplier] = useState('');
+  const [restockPaidInput, setRestockPaidInput] = useState<number | null>(null);
+  const canRecordPurchase = !!onAddExpense && !!onUpdateSuppliers;
 
   // Stats
   const totalStockItemsCount = useMemo(() => {
@@ -122,7 +137,7 @@ export const StockView: React.FC<StockViewProps> = ({
     } else {
       // Add
       const newProd: Product = {
-        id: `prod-${Date.now()}`,
+        id: newId('prod'),
         name: formName.trim(),
         category: formCategory,
         purchasePrice: Number(formPurchasePrice),
@@ -142,12 +157,40 @@ export const StockView: React.FC<StockViewProps> = ({
     setTargetProduct(product);
     setRestockQty(10);
     setRestockNewPurchasePrice(product.purchasePrice);
+    setRestockRecord(true);
+    setRestockMethod('cash');
+    setRestockSupplierId('');
+    setRestockNewSupplier('');
+    setRestockPaidInput(null);
     setIsRestockModalOpen(true);
   };
 
   const handleSaveRestock = (e: React.FormEvent) => {
     e.preventDefault();
     if (!targetProduct || restockQty <= 0) return;
+
+    // Achat : sortie de trésorerie, et dette fournisseur pour la partie non payée
+    const unitPrice = restockNewPurchasePrice > 0 ? Number(restockNewPurchasePrice) : targetProduct.purchasePrice;
+    const total = Math.round(Number(restockQty) * unitPrice);
+    if (canRecordPurchase && restockRecord && total > 0) {
+      const paid = Math.min(Math.max(0, restockPaidInput ?? total), total);
+      if (paid < total && !restockSupplierId && !restockNewSupplier.trim()) {
+        alert('Pour un achat à crédit, choisissez ou saisissez le fournisseur.');
+        return;
+      }
+      const res = applyPurchaseCredit({ total, paid, supplierId: restockSupplierId, newSupplierName: restockNewSupplier, suppliers });
+      if (res.suppliers !== suppliers) onUpdateSuppliers!(res.suppliers);
+      onAddExpense!({
+        id: newId('exp'),
+        date: new Date().toISOString(),
+        title: `Achat : ${targetProduct.name} ×${restockQty}`,
+        amount: total,
+        category: 'supply',
+        paymentMethod: restockMethod,
+        supplierId: res.supplierId,
+        paidAmount: paid,
+      });
+    }
 
     const updated = products.map(p => {
       if (p.id === targetProduct.id) {
@@ -575,6 +618,38 @@ export const StockView: React.FC<StockViewProps> = ({
                   {formatCurrency(restockQty * restockNewPurchasePrice, settings.currency)}
                 </span>
               </div>
+
+              {canRecordPurchase && (
+                <div className="space-y-2.5">
+                  <label className="flex items-center gap-2 text-xs font-bold text-stone-700">
+                    <input type="checkbox" checked={restockRecord} onChange={(e) => setRestockRecord(e.target.checked)} />
+                    Enregistrer cet achat (trésorerie / dette fournisseur)
+                  </label>
+                  {restockRecord && restockQty * restockNewPurchasePrice > 0 && (
+                    <>
+                      <SupplierCreditFields
+                        total={Math.round(restockQty * restockNewPurchasePrice)} currency={settings.currency} suppliers={suppliers}
+                        supplierId={restockSupplierId} setSupplierId={setRestockSupplierId}
+                        newSupplierName={restockNewSupplier} setNewSupplierName={setRestockNewSupplier}
+                        paid={Math.min(restockPaidInput ?? Math.round(restockQty * restockNewPurchasePrice), Math.round(restockQty * restockNewPurchasePrice))}
+                        setPaid={setRestockPaidInput}
+                      />
+                      <div>
+                        <label className="text-[11px] font-bold text-stone-700">Partie payée par</label>
+                        <select value={restockMethod} onChange={(e) => setRestockMethod(e.target.value as PaymentMethod)}
+                          className="w-full mt-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium">
+                          <option value="cash">Espèces Caisse</option>
+                          <option value="wave">Wave</option>
+                          <option value="orange_money">Orange Money</option>
+                          <option value="mtn_momo">MTN MoMo</option>
+                          <option value="moov_money">Moov Money</option>
+                          <option value="bank_transfer">Compte Bancaire</option>
+                        </select>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
 
               <div className="pt-2 flex gap-2">
                 <button

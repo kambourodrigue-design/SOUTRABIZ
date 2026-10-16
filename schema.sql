@@ -1,4 +1,6 @@
--- SoutraBiz — schéma D1 (exécuter une seule fois dans la console D1)
+-- SoutraBiz — schéma D1 v3 (NOUVELLE installation uniquement).
+-- Si votre base existe déjà (version précédente), exécutez plutôt migration-v3.sql.
+
 CREATE TABLE IF NOT EXISTS users (
   id            TEXT PRIMARY KEY,
   email         TEXT UNIQUE,
@@ -6,26 +8,70 @@ CREATE TABLE IF NOT EXISTS users (
   name          TEXT NOT NULL,
   password_hash TEXT NOT NULL,
   salt          TEXT NOT NULL,
-  role          TEXT NOT NULL DEFAULT 'merchant' CHECK (role IN ('admin','merchant')),
-  status        TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','suspended')),
+  role          TEXT NOT NULL DEFAULT 'merchant',      -- 'admin' (plateforme) ou 'merchant'
+  status        TEXT NOT NULL DEFAULT 'active',        -- 'active' ou 'suspended'
   shop_id       TEXT NOT NULL,
+  shop_role     TEXT NOT NULL DEFAULT 'owner',         -- 'owner', 'manager' ou 'cashier'
   created_at    TEXT NOT NULL,
   last_login_at TEXT NOT NULL
 );
+CREATE INDEX IF NOT EXISTS idx_users_shop ON users(shop_id);
 
 CREATE TABLE IF NOT EXISTS shops (
-  shop_id  TEXT PRIMARY KEY,
-  user_id  TEXT NOT NULL,
-  settings TEXT NOT NULL
+  shop_id    TEXT PRIMARY KEY,
+  user_id    TEXT NOT NULL,
+  settings   TEXT NOT NULL,
+  seq        INTEGER NOT NULL DEFAULT 0,               -- compteur de modifications de la boutique
+  shop_name  TEXT,
+  category   TEXT,
+  city       TEXT,
+  country    TEXT,
+  formalized INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_shops_category ON shops(category);
+
+-- Un enregistrement = une vente, un produit, un client, une dépense, un fournisseur ou les paramètres.
+CREATE TABLE IF NOT EXISTS records (
+  shop_id    TEXT NOT NULL,
+  kind       TEXT NOT NULL,
+  id         TEXT NOT NULL,
+  json       TEXT NOT NULL,
+  updated_at INTEGER NOT NULL,                         -- millisecondes
+  deleted    INTEGER NOT NULL DEFAULT 0,
+  seq        INTEGER NOT NULL,
+  PRIMARY KEY (shop_id, kind, id)
+);
+CREATE INDEX IF NOT EXISTS idx_records_seq ON records(shop_id, seq);
+
+-- Statistiques précalculées (mises à jour à chaque envoi, jamais recalculées en lisant les ventes)
+CREATE TABLE IF NOT EXISTS shop_daily (
+  shop_id     TEXT NOT NULL,
+  day         TEXT NOT NULL,                           -- AAAA-MM-JJ
+  sales_count INTEGER NOT NULL DEFAULT 0,
+  revenue     REAL NOT NULL DEFAULT 0,
+  profit      REAL NOT NULL DEFAULT 0,
+  expenses    REAL NOT NULL DEFAULT 0,
+  PRIMARY KEY (shop_id, day)
+);
+CREATE INDEX IF NOT EXISTS idx_daily_day ON shop_daily(day);
+
+CREATE TABLE IF NOT EXISTS shop_stats (
+  shop_id        TEXT PRIMARY KEY,
+  sales_count    INTEGER NOT NULL DEFAULT 0,
+  revenue_total  REAL NOT NULL DEFAULT 0,
+  profit_total   REAL NOT NULL DEFAULT 0,
+  expenses_total REAL NOT NULL DEFAULT 0,
+  last_activity  TEXT
 );
 
-CREATE TABLE IF NOT EXISTS shop_data (
+-- Journal des lots reçus : un lot renvoyé après une coupure réseau n'est jamais appliqué deux fois.
+CREATE TABLE IF NOT EXISTS push_log (
+  batch_id   TEXT PRIMARY KEY,
   shop_id    TEXT NOT NULL,
-  key        TEXT NOT NULL CHECK (key IN ('products','sales','expenses','customers','suppliers')),
-  json       TEXT NOT NULL,
-  updated_at TEXT NOT NULL,
-  PRIMARY KEY (shop_id, key)
+  created_at INTEGER NOT NULL,
+  response   TEXT NOT NULL
 );
+CREATE INDEX IF NOT EXISTS idx_push_log_created ON push_log(created_at);
 
 CREATE TABLE IF NOT EXISTS sessions (
   token_hash TEXT PRIMARY KEY,
@@ -40,7 +86,6 @@ CREATE TABLE IF NOT EXISTS login_attempts (
   window_start INTEGER NOT NULL
 );
 
--- Demandes de "mot de passe oublié" (une demande en attente par utilisateur)
 CREATE TABLE IF NOT EXISTS reset_requests (
   user_id    TEXT PRIMARY KEY,
   created_at TEXT NOT NULL

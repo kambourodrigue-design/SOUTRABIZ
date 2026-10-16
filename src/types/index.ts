@@ -71,6 +71,8 @@ export interface Expense {
   paymentMethod: PaymentMethod;
   notes?: string;
   isRecurring?: boolean;
+  supplierId?: string;      // achat chez un fournisseur
+  paidAmount?: number;      // montant payé tout de suite (le reste = dette fournisseur)
 }
 
 export interface DebtPayment {
@@ -146,6 +148,7 @@ export interface UserAccount {
   name: string;
   phone: string;
   role: UserRole;
+  shopRole?: 'owner' | 'manager' | 'cashier';
   shopId: string;
   createdAt: string;
   lastLoginAt: string;
@@ -194,5 +197,8 @@ export interface ShopSettings {
   businessCategory: BusinessCategoryType;
   foundedYear: number;
   logo?: string;         // Logo de la boutique (data URL, redimensionné)
+  openingCash?: number;   // Trésorerie de départ : espèces en caisse
+  openingMobile?: number; // … sur les comptes Mobile Money
+  openingBank?: number;   // … en banque
 }
 

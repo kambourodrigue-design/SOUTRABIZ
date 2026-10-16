@@ -105,7 +105,7 @@ export const FinancesView: React.FC<FinancesViewProps> = ({
       const revenue = mSales.reduce((sum, s) => sum + s.total, 0);
       const grossProfit = mSales.reduce((sum, s) => sum + s.profit, 0);
       const totalCost = mSales.reduce((sum, s) => sum + s.totalCost, 0);
-      const expAmount = mExpenses.reduce((sum, e) => sum + e.amount, 0);
+      const expAmount = mExpenses.filter(e => e.category !== 'supply').reduce((sum, e) => sum + e.amount, 0); // achats de marchandises exclus (déjà dans le coût des ventes)
 
       const netProfit = Math.max(0, grossProfit - expAmount);
 

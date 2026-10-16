@@ -1,3 +1,4 @@
+import { TreasuryCard } from './TreasuryCard';
 import React, { useMemo } from 'react';
 import { Sale, Expense, Customer, Supplier, Product, ShopSettings, CreditScoreResult } from '../../types';
 import { formatCurrency } from '../../services/financials';
@@ -67,7 +68,7 @@ export const DailyDashboard: React.FC<DailyDashboardProps> = ({
   const todayGrossProfit = todayRevenue - todayCogs;
   
   const todayOperatingExpenses = todayExpenses
-    .filter(e => e.category !== 'personal_draw')
+    .filter(e => e.category !== 'personal_draw' && e.category !== 'supply')
     .reduce((sum, e) => sum + e.amount, 0);
 
   const todayEstimatedNet = todayGrossProfit - todayOperatingExpenses;
@@ -241,6 +242,12 @@ export const DailyDashboard: React.FC<DailyDashboardProps> = ({
           </div>
         </button>
       </div>
+
+      {/* Trésorerie */}
+      <TreasuryCard
+        sales={sales} expenses={expenses} customers={customers} suppliers={suppliers || []}
+        settings={settings} onNavigate={onNavigate}
+      />
 
       {/* Primary KPI Metrics Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-4">

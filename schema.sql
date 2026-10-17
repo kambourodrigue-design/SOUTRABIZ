@@ -1,5 +1,5 @@
--- SoutraBiz — schéma D1 v3 (NOUVELLE installation uniquement).
--- Si votre base existe déjà (version précédente), exécutez plutôt migration-v3.sql.
+-- SoutraBiz — schéma D1 v4 (NOUVELLE installation uniquement).
+-- Si votre base existe déjà (version précédente), exécutez plutôt migration-v3.sql puis migration-v4.sql.
 
 CREATE TABLE IF NOT EXISTS users (
   id            TEXT PRIMARY KEY,
@@ -89,4 +89,32 @@ CREATE TABLE IF NOT EXISTS login_attempts (
 CREATE TABLE IF NOT EXISTS reset_requests (
   user_id    TEXT PRIMARY KEY,
   created_at TEXT NOT NULL
+);
+
+-- v4 : statistiques du site, messages, réglages
+CREATE TABLE IF NOT EXISTS site_daily (
+  day    TEXT PRIMARY KEY,
+  visits INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS announcements (
+  id         TEXT PRIMARY KEY,
+  title      TEXT NOT NULL,
+  body       TEXT NOT NULL,
+  audience   TEXT NOT NULL DEFAULT 'all',
+  level      TEXT NOT NULL DEFAULT 'info',
+  created_at TEXT NOT NULL,
+  expires_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_ann_created ON announcements(created_at);
+
+CREATE TABLE IF NOT EXISTS announcement_reads (
+  announcement_id TEXT NOT NULL,
+  user_id         TEXT NOT NULL,
+  PRIMARY KEY (announcement_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS app_settings (
+  key   TEXT PRIMARY KEY,
+  value TEXT NOT NULL
 );

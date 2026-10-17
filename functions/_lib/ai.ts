@@ -48,6 +48,19 @@ export function buildMessages(body: any): { messages: Array<{ role: string; cont
       ],
     };
   }
+  if (mode === 'sale') {
+    const said = clean(body.utterance, 300);
+    if (!said) throw new Error('Phrase manquante.');
+    const names = (Array.isArray(body.products) ? body.products : []).slice(0, 200)
+      .map((n: unknown) => clean(n, 60)).filter(Boolean);
+    return {
+      maxTokens: 260,
+      messages: [
+        { role: 'system', content: 'Tu extrais une vente à partir d\'une phrase dite à voix haute par un commerçant (français d\'Afrique de l\'Ouest, parfois approximatif). Réponds UNIQUEMENT par un objet JSON valide, sans texte autour, de la forme {"items":[{"name":"<nom EXACT copié de la liste>","qty":<nombre>}],"payment":"cash|credit|mobile|null","customer":"<prénom ou null>"}. N\'utilise que des noms de la liste. Si un article n\'est pas dans la liste, ignore-le. "à crédit", "il paiera plus tard", "sur le carnet" => payment "credit". "Wave", "Orange Money", "momo", "mobile money" => "mobile". Quantité par défaut : 1.' },
+        { role: 'user', content: `LISTE DES PRODUITS :\n${names.join('\n')}\n\nPHRASE : ${said}` },
+      ],
+    };
+  }
   const summary = clean(body?.summary, MAX_SUMMARY);
   if (!summary) throw new Error('Résumé manquant.');
   if (mode === 'advice') {
@@ -72,18 +85,22 @@ export function buildMessages(body: any): { messages: Array<{ role: string; cont
 
 export async function handleAi(req: Request, env: Env, user: UserRow) {
   if (!env.AI) return fail("L'assistant IA n'est pas encore activé sur ce site (liaison « AI » manquante).", 503);
-  if (shopRoleOf(user) === 'cashier') return fail("L'assistant est réservé au propriétaire et au gérant.", 403);
+  const cashier = shopRoleOf(user) === 'cashier';
 
   const body = await readBody(req, 12_000);
-  if (!['ask', 'advice', 'reminder'].includes(body?.mode)) return fail('Demande invalide.');
+  if (!['ask', 'advice', 'reminder', 'sale'].includes(body?.mode)) return fail('Demande invalide.');
+  const isSale = body.mode === 'sale';
+  if (cashier && !isSale) return fail("L'assistant est réservé au propriétaire et au gérant.", 403);
   let built;
   try { built = buildMessages(body); } catch (e: any) { return fail(e.message || 'Demande invalide.'); }
 
   const d = day();
-  const shopLimit = Math.max(1, parseInt(env.AI_DAILY_SHOP || '15', 10) || 15);
+  const shopLimit = isSale
+    ? Math.max(1, parseInt(env.AI_DAILY_SALE || '60', 10) || 60)
+    : Math.max(1, parseInt(env.AI_DAILY_SHOP || '15', 10) || 15);
   const globalLimit = Math.max(1, parseInt(env.AI_DAILY_GLOBAL || '400', 10) || 400);
   const gKey = `ai:g:${d}`;
-  const sKey = `ai:s:${user.shop_id}:${d}`;
+  const sKey = `ai:s:${user.shop_id}:${isSale ? 'v:' : ''}${d}`;
 
   const g = await bump(env, gKey);
   if (g > globalLimit) {
@@ -103,6 +120,15 @@ export async function handleAi(req: Request, env: Env, user: UserRow) {
     if (Math.random() < 0.05) {
       await env.DB.prepare(`DELETE FROM login_attempts WHERE key LIKE 'ai:%' AND window_start < ?1`)
         .bind(Math.floor(Date.now() / 1000) - 3 * 86400).run();
+    }
+    if (isSale) {
+      const m = text.match(/\{[\s\S]*\}/);
+      let parsed: any = null;
+      try { parsed = m ? JSON.parse(m[0]) : null; } catch { /* JSON invalide */ }
+      if (!parsed || !Array.isArray(parsed.items)) throw new Error('Réponse illisible');
+      const items = parsed.items.slice(0, 20).map((i: any) => ({ name: clean(i?.name, 60), qty: Math.min(9999, Math.max(1, Number(i?.qty) || 1)) })).filter((i: any) => i.name);
+      const pay = ['cash', 'credit', 'mobile'].includes(parsed.payment) ? parsed.payment : null;
+      return json({ parsed: { items, payment: pay, customer: clean(parsed.customer, 40) || null }, remaining: Math.max(0, shopLimit - s) });
     }
     return json({ text, remaining: Math.max(0, shopLimit - s) });
   } catch (e: any) {

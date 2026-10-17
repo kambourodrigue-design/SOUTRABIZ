@@ -18,3 +18,10 @@ Sans cette liaison, l'assistant affiche « indisponible » et le reste de l'appl
 
 ## Fichiers modifiés / ajoutés
 functions/_lib/ai.ts, functions/_lib/util.ts, functions/api/[[path]].ts, src/services/{api,aiSummary}.ts, src/components/assistant/AssistantView.tsx, src/components/debts/DebtsView.tsx, src/components/common/{Navbar,BottomNav}.tsx, src/App.tsx
+
+## Saisie de vente à la voix (v3.2)
+Dans **Caisse**, bouton **Dicter** : dites ou tapez « deux sucre, une huile, à crédit pour Moussa ». L'application reconnaît les articles, vous les montre (quantités modifiables, produit corrigeable), puis les ajoute au panier. Rien n'est enregistré avant l'encaissement habituel.
+- Micro : reconnaissance vocale du navigateur (gratuite, meilleure sur Chrome/Android, nécessite internet). Sans micro : tapez la phrase ou utilisez le micro du clavier du téléphone.
+- Les caissiers peuvent l'utiliser. Quota séparé : 60 dictées/jour/boutique (`AI_DAILY_SALE`), et compte dans le total plateforme.
+- Si l'IA est indisponible ou hors quota, une analyse simple (chiffres + nom d'article) prend le relais.
+- Fichiers : functions/_lib/{ai,util}.ts, src/services/voiceSale.ts, src/components/pos/{POSView,VoiceSaleModal}.tsx

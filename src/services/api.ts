@@ -72,7 +72,30 @@ export interface RegisterInput {
   shopName: string; businessCategory: string; city: string; country: string;
 }
 
+export interface AdsPublic { enabled: boolean; client?: string; slots?: { dashboard: string; assistant: string; debts: string } }
+export interface AdsAdmin { enabled: boolean; client: string; slots: { dashboard: string; assistant: string; debts: string } }
+export interface Announcement { id: string; title: string; body: string; level: 'info' | 'important'; createdAt: string; read: boolean }
+export interface AdminAnnouncement { id: string; title: string; body: string; audience: string; level: string; createdAt: string; expiresAt: string; active: boolean; reads: number; audienceSize: number }
+export interface SiteStats {
+  totals: { merchants: number; suspended: number; teamMembers: number; sales: number; revenue: number; active7d: number; visits30d: number; signups30d: number };
+  series: { day: string; signups: number; activeShops: number; sales: number; revenue: number; visits: number }[];
+  categories: { k: string; n: number }[]; countries: { k: string; n: number }[];
+  ai: { day: string; count: number }[]; aiDailyGlobal: number;
+}
+
 export const api = {
+  hit: () => call<{ ok: true }>('POST', 'hit', {}, 5000),
+  announcements: () => call<{ items: Announcement[] }>('GET', 'announcements', undefined, 8000),
+  announcementRead: (id: string) => call<{ ok: true }>('POST', `announcements/${id}/read`, {}),
+  ads: () => call<AdsPublic>('GET', 'ads', undefined, 8000),
+  adminStats: () => call<SiteStats>('GET', 'admin/stats'),
+  adminAnnouncements: () => call<{ items: AdminAnnouncement[] }>('GET', 'admin/announcements'),
+  adminAnnouncementAdd: (b: { title: string; body: string; audience: string; level: string; days: number }) =>
+    call<{ ok: true }>('POST', 'admin/announcements', b),
+  adminAnnouncementDelete: (id: string) => call<{ ok: true }>('DELETE', `admin/announcements/${id}`),
+  adminAds: () => call<AdsAdmin>('GET', 'admin/ads'),
+  adminAdsSave: (b: AdsAdmin) => call<AdsAdmin>('PUT', 'admin/ads', b),
+
   me: () => call<MeResponse>('GET', 'auth/me?v=3', undefined, 8000),
   forgot: (identifier: string) =>
     call<{ ok: true; contact: string }>('POST', 'auth/forgot', { identifier }),

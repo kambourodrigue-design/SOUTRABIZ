@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { Product, SaleItem, Sale, PaymentMethod, Customer, ShopSettings } from '../../types';
 import { formatCurrency, getPaymentMethodDetails } from '../../services/financials';
 import { ReceiptModal } from './ReceiptModal';
+import { VoiceSaleModal } from './VoiceSaleModal';
 import { 
   Search, 
   Plus, 
@@ -16,7 +17,8 @@ import {
   Check, 
   Package, 
   UserPlus,
-  Coins
+  Coins,
+  Mic
 } from 'lucide-react';
 
 interface POSViewProps {
@@ -33,6 +35,7 @@ export const POSView: React.FC<POSViewProps> = ({
   onRecordSale,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [voiceOpen, setVoiceOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [cart, setCart] = useState<SaleItem[]>([]);
   
@@ -98,6 +101,21 @@ export const POSView: React.FC<POSViewProps> = ({
         }];
       }
     });
+  };
+
+  // Ajout depuis la dictée vocale
+  const applyVoice = (lines: { product: Product; qty: number }[], payment: string | null, customerId: string | null) => {
+    setCart(prev => {
+      let next = [...prev];
+      for (const { product, qty } of lines) {
+        const ex = next.find(i => i.productId === product.id);
+        if (ex) next = next.map(i => i.productId === product.id ? { ...i, quantity: i.quantity + qty, totalPrice: (i.quantity + qty) * i.unitPrice } : i);
+        else next.push({ productId: product.id, productName: product.name, quantity: qty, unitPrice: product.sellingPrice, totalPrice: qty * product.sellingPrice, costPrice: product.purchasePrice });
+      }
+      return next;
+    });
+    if (payment === 'credit' || payment === 'cash') setPaymentMethod(payment);
+    if (customerId) setSelectedCustomerId(customerId);
   };
 
   // Modify quantity
@@ -230,7 +248,8 @@ export const POSView: React.FC<POSViewProps> = ({
         
         {/* Search & Category Filter */}
         <div className="bg-white rounded-2xl p-3 sm:p-4 border border-stone-200 shadow-xs space-y-3">
-          <div className="relative">
+          <div className="flex gap-2 items-center">
+          <div className="relative flex-1 min-w-0">
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
             <input
               type="text"
@@ -239,6 +258,11 @@ export const POSView: React.FC<POSViewProps> = ({
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-hidden focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700"
             />
+          </div>
+          <button onClick={() => setVoiceOpen(true)} data-testid="voice-open"
+            className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold">
+            <Mic className="w-4 h-4" /><span>Dicter</span>
+          </button>
           </div>
 
           {/* Category Chips Horizontal Scroll */}
@@ -647,6 +671,7 @@ export const POSView: React.FC<POSViewProps> = ({
         />
       )}
 
+      {voiceOpen && <VoiceSaleModal products={products} customers={customers} onClose={() => setVoiceOpen(false)} onApply={applyVoice} />}
     </div>
   );
 };

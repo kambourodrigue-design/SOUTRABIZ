@@ -9,7 +9,7 @@ import { Product, Sale, Expense, Customer, Supplier, ShopSettings, UserAccount }
 import { storage } from './services/storage';
 import { calculateCreditScore } from './services/creditScore';
 import { authCache, DEMO_USER } from './services/auth';
-import { api, ApiError } from './services/api';
+import { api, ApiError, AdsPublic } from './services/api';
 import { SyncEngine, fetchAllChanges, buildSnapshot, type Snapshot, type SyncInfo } from './services/syncEngine';
 import { initialShopSettings } from './data/initialData';
 import { getSectorProducts } from './data/sectorCatalogSeeds';
@@ -17,6 +17,8 @@ import { getSectorProducts } from './data/sectorCatalogSeeds';
 // Components
 import { Navbar } from './components/common/Navbar';
 import { BottomNav } from './components/common/BottomNav';
+import { AnnouncementsBar } from './components/common/AnnouncementsBar';
+import { AdSlot } from './components/ads/AdSlot';
 import { AssistantView } from './components/assistant/AssistantView';
 import { OfflineIndicator } from './components/common/OfflineIndicator';
 import { SettingsModal } from './components/settings/SettingsModal';
@@ -69,6 +71,19 @@ export default function App() {
   const shopRole: ShopRole = isDemo ? 'owner' : (currentUser.shopRole || 'owner');
   const isPlatformAdmin = currentUser.role === 'admin';
   const syncEnabled = session === 'in' && !isDemo && !viewingAs;
+
+  // Visite anonyme comptée une fois par session de navigation (aucun cookie)
+  useEffect(() => {
+    try { if (sessionStorage.getItem('sb_hit')) return; sessionStorage.setItem('sb_hit', '1'); } catch { /* ignore */ }
+    api.hit().catch(() => { /* ignore */ });
+  }, []);
+
+  // Publicité (désactivée par défaut) : jamais pour l'admin, ni en consultation/démo
+  const [ads, setAds] = useState<AdsPublic | null>(null);
+  useEffect(() => {
+    if (!syncEnabled || isPlatformAdmin) { setAds(null); return; }
+    api.ads().then(setAds).catch(() => setAds(null));
+  }, [syncEnabled, isPlatformAdmin]);
 
   const latest = useRef<Snapshot>({ products, sales, expenses, customers, suppliers, settings });
   latest.current = { products, sales, expenses, customers, suppliers, settings };
@@ -365,6 +380,8 @@ export default function App() {
         </div>
       )}
 
+      {syncEnabled && !isPlatformAdmin && <AnnouncementsBar userId={currentUser.id} />}
+
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 lg:p-6 pb-24 xl:pb-8">
         {activeTab === 'dashboard' && (
@@ -426,12 +443,16 @@ export default function App() {
           />
         )}
 
+        {activeTab === 'dashboard' && <AdSlot ads={ads} slot="dashboard" />}
+        {activeTab === 'debts' && <AdSlot ads={ads} slot="debts" />}
+
         {activeTab === 'assistant' && (
           <AssistantView
             sales={sales} expenses={expenses} customers={customers}
             suppliers={suppliers} products={products} settings={settings}
           />
         )}
+        {activeTab === 'assistant' && <AdSlot ads={ads} slot="assistant" />}
 
         {activeTab === 'finances' && (
           <FinancesView

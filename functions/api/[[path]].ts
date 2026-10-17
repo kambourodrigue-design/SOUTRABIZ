@@ -9,6 +9,7 @@ import { register, login, logout, forgot, me, changePassword } from '../_lib/aut
 import { handlePull, handlePush } from '../_lib/sync';
 import { handleTeam } from '../_lib/team';
 import { handleAi } from '../_lib/ai';
+import { hit, adminStats, adminAnnouncements, myAnnouncements, readAnnouncement, publicAds, adminAds } from '../_lib/site';
 import { adminList, adminExport, adminUser } from '../_lib/admin';
 
 export const onRequest: PagesFunction<Env> = async ({ request, env, params }) => {
@@ -28,6 +29,8 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
     if (route === 'auth/logout' && m === 'POST') return await logout(request, env);
     if (route === 'auth/forgot' && m === 'POST') return await forgot(request, env);
 
+    if (route === 'hit' && m === 'POST') return await hit(env);
+
     const user = await currentUser(request, env);
     if (!user) return fail('Non connecté.', 401);
 
@@ -44,11 +47,18 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
 
     if (route === 'ai' && m === 'POST') return await handleAi(request, env, user);
 
+    if (route === 'announcements' && m === 'GET') return await myAnnouncements(env, user);
+    if (parts[0] === 'announcements' && parts[2] === 'read' && m === 'POST') return await readAnnouncement(env, user, parts[1]);
+    if (route === 'ads' && m === 'GET') return await publicAds(env);
+
     if (parts[0] === 'team') return await handleTeam(request, env, user, parts);
 
     if (parts[0] === 'admin') {
       if (user.role !== 'admin') return fail('Accès réservé aux administrateurs.', 403);
       if (route === 'admin/users' && m === 'GET') return await adminList(request, env);
+      if (route === 'admin/stats' && m === 'GET') return await adminStats(env);
+      if (parts[1] === 'announcements') return await adminAnnouncements(request, env, parts[2]);
+      if (route === 'admin/ads') return await adminAds(request, env);
       if (route === 'admin/export' && m === 'GET') return await adminExport(env);
       if (parts[1] === 'users' && parts[2]) return await adminUser(request, env, user, parts[2], parts[3]);
     }

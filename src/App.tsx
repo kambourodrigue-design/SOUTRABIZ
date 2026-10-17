@@ -17,6 +17,7 @@ import { getSectorProducts } from './data/sectorCatalogSeeds';
 // Components
 import { Navbar } from './components/common/Navbar';
 import { BottomNav } from './components/common/BottomNav';
+import { AssistantView } from './components/assistant/AssistantView';
 import { OfflineIndicator } from './components/common/OfflineIndicator';
 import { SettingsModal } from './components/settings/SettingsModal';
 import { AuthModal } from './components/auth/AuthModal';
@@ -33,7 +34,7 @@ import { AdminDashboard } from './components/admin/AdminDashboard';
 
 type SessionState = 'loading' | 'out' | 'in';
 type ShopRole = 'owner' | 'manager' | 'cashier';
-const ALL_TABS = ['dashboard', 'pos', 'finances', 'stock', 'expenses', 'debts', 'credit', 'formalization'];
+const ALL_TABS = ['dashboard', 'pos', 'finances', 'stock', 'expenses', 'debts', 'assistant', 'credit', 'formalization'];
 const tabsFor = (role: ShopRole): string[] =>
   role === 'cashier' ? ['pos', 'debts'] : ALL_TABS;
 const ROLE_LABEL: Record<ShopRole, string> = { owner: 'PRO', manager: 'GÉRANT', cashier: 'CAISSIER' };
@@ -422,6 +423,13 @@ export default function App() {
             onUpdateSuppliers={handleUpdateSuppliers}
             allowSuppliers={shopRole !== 'cashier'}
             onAddExpense={shopRole !== 'cashier' ? handleAddExpense : undefined}
+          />
+        )}
+
+        {activeTab === 'assistant' && (
+          <AssistantView
+            sales={sales} expenses={expenses} customers={customers}
+            suppliers={suppliers} products={products} settings={settings}
           />
         )}
 

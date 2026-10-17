@@ -9,6 +9,7 @@ import {
   TrendingUp,
   MoreHorizontal,
   Wallet,
+  Sparkles,
   ShieldCheck,
   X
 } from 'lucide-react';
@@ -33,6 +34,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   const [moreOpen, setMoreOpen] = useState(false);
   const ok = (id: string) => !allowedTabs || allowedTabs.includes(id);
   const moreTabs = [
+    { id: 'assistant', label: 'Assistant IA', icon: Sparkles },
     { id: 'expenses', label: 'Dépenses', icon: Wallet },
     { id: 'credit', label: 'Score Crédit', icon: Landmark },
     { id: 'formalization', label: 'Formalisation', icon: ShieldCheck },

@@ -4,6 +4,7 @@ import { Customer, DebtPayment, Supplier, SupplierPayment, PaymentMethod, ShopSe
 import { PurchaseModal } from '../common/PurchaseModal';
 import { formatCurrency, getPaymentMethodDetails } from '../../services/financials';
 import { generateDebtReminderWhatsAppUrl, cleanPhoneNumber } from '../../services/whatsapp';
+import { api } from '../../services/api';
 import { 
   BookUser, 
   Truck, 
@@ -19,7 +20,8 @@ import {
   AlertCircle,
   Calendar,
   Building,
-  Scale
+  Scale,
+  Sparkles
 } from 'lucide-react';
 
 interface DebtsViewProps {
@@ -42,6 +44,28 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
   onAddExpense,
 }) => {
   const [isPurchaseOpen, setIsPurchaseOpen] = useState(false);
+  const [aiBusyId, setAiBusyId] = useState<string | null>(null);
+  const [aiMsg, setAiMsg] = useState('');
+  const aiReminder = async (customer: Customer) => {
+    if (aiBusyId) return;
+    setAiBusyId(customer.id); setAiMsg('');
+    // Ouvrir la fenêtre tout de suite (anti-blocage des popups), puis la rediriger.
+    const win = window.open('about:blank', '_blank');
+    let url = generateDebtReminderWhatsAppUrl(customer, settings);
+    try {
+      const r = await api.ai({
+        mode: 'reminder', tone: 'amical',
+        firstName: (customer.name || '').trim().split(/\s+/)[0],
+        amount: formatCurrency(customer.totalDebt, settings.currency),
+        shopName: settings.shopName, ownerName: settings.ownerName, payPhone: settings.phone,
+      });
+      url = `https://wa.me/${cleanPhoneNumber(customer.phone)}?text=${encodeURIComponent(r.text)}`;
+    } catch {
+      setAiMsg("L'IA n'est pas disponible : message standard utilisé.");
+    }
+    if (win) win.location.href = url; else window.location.href = url;
+    setAiBusyId(null);
+  };
   const [activeTabRaw, setActiveTab] = useState<'customers' | 'suppliers'>('customers');
   const activeTab = allowSuppliers ? activeTabRaw : 'customers';
   const [searchQuery, setSearchQuery] = useState('');
@@ -457,6 +481,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
         </button>
       </div>
 
+      {aiMsg && <div className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">{aiMsg}</div>}
       {/* ==================== TAB 1: CUSTOMERS ==================== */}
       {activeTab === 'customers' && (
         <div className="space-y-3">
@@ -525,6 +550,17 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
                         <MessageCircle className="w-3.5 h-3.5" />
                         <span>Rappel WhatsApp</span>
                       </a>
+                    ) : null}
+                    {hasDebt && allowSuppliers ? (
+                      <button
+                        onClick={() => aiReminder(customer)}
+                        disabled={aiBusyId === customer.id}
+                        data-testid={`ai-reminder-${customer.id}`}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-xs transition active:scale-95 disabled:opacity-60"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>{aiBusyId === customer.id ? 'Rédaction…' : 'Relance IA'}</span>
+                      </button>
                     ) : (
                       <div className="text-xs text-emerald-700 font-semibold flex items-center gap-1">
                         <CheckCircle className="w-3.5 h-3.5" /> Compte soldé

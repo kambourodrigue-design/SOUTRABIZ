@@ -6,6 +6,11 @@ export interface Env {
   DB: D1Database;
   ADMIN_EMAIL?: string;
   SUPPORT_WHATSAPP?: string;
+  /** Liaison Workers AI (Cloudflare Pages → Paramètres → Liaisons → Workers AI, nom : AI) */
+  AI?: { run(model: string, input: unknown): Promise<any> };
+  AI_MODEL?: string;
+  AI_DAILY_SHOP?: string;     // questions par boutique et par jour (défaut 15)
+  AI_DAILY_GLOBAL?: string;   // questions par jour pour toute la plateforme (défaut 400)
 }
 
 export const SESSION_DAYS = 30;

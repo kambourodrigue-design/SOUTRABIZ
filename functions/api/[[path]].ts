@@ -8,6 +8,7 @@ import {
 import { register, login, logout, forgot, me, changePassword } from '../_lib/auth';
 import { handlePull, handlePush } from '../_lib/sync';
 import { handleTeam } from '../_lib/team';
+import { handleAi } from '../_lib/ai';
 import { adminList, adminExport, adminUser } from '../_lib/admin';
 
 export const onRequest: PagesFunction<Env> = async ({ request, env, params }) => {
@@ -40,6 +41,8 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
     if (route === 'data' && m === 'PUT') {
       return fail("Mise à jour requise : fermez complètement l'application puis rouvrez-la.", 410);
     }
+
+    if (route === 'ai' && m === 'POST') return await handleAi(request, env, user);
 
     if (parts[0] === 'team') return await handleTeam(request, env, user, parts);
 

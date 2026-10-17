@@ -98,6 +98,9 @@ export const api = {
     call<{ ok: true }>('POST', `team/${id}/reset-password`, { newPassword }),
   teamRemove: (id: string) => call<{ ok: true }>('DELETE', `team/${id}`),
 
+  ai: (body: Record<string, unknown>) =>
+    call<{ text: string; remaining: number }>('POST', 'ai', body, 45000),
+
   adminList: (qy: AdminQuery = {}) => {
     const p = new URLSearchParams();
     if (qy.page && qy.page > 1) p.set('page', String(qy.page));

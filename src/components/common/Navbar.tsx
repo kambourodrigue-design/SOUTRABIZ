@@ -79,6 +79,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             { id: 'stock', label: 'Stocks', short: 'Stocks' },
             { id: 'expenses', label: 'Dépenses', short: 'Dépenses' },
             { id: 'debts', label: 'Dettes', short: 'Dettes' },
+            { id: 'assistant', label: 'Assistant ✨', short: 'Assistant' },
             { id: 'credit', label: 'Score Crédit', short: 'Crédit' },
             { id: 'formalization', label: 'Formalisation', short: 'Formaliser' },
           ].filter((tab) => !allowedTabs || allowedTabs.includes(tab.id)).map((tab) => (

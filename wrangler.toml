@@ -13,3 +13,5 @@ database_id = "7b85e126-4b5a-4aeb-a995-24c3eaa49890"
 # Email qui devient automatiquement ADMINISTRATEUR à l'inscription.
 ADMIN_EMAIL = "kambourodrigue@gmail.com"
 SUPPORT_WHATSAPP = "22678834029"
+[ai]
+binding = "AI"

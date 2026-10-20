@@ -11,7 +11,7 @@ export default defineConfig(() => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.png', 'apple-touch-icon.png', 'icon.svg'],
+        includeAssets: ['favicon.png', 'apple-touch-icon.png', 'icon.svg', 'og-image.png', 'brand/*.png'],
         manifest: {
           id: '/',
           name: 'Nafora - Gestion Commerçant',

@@ -11,6 +11,7 @@ import { handleTeam } from '../_lib/team';
 import { handleAi } from '../_lib/ai';
 import { logError, health, clientLog, adminMonitor, adminMonitorAction } from '../_lib/monitor';
 import { myBilling, submitPayment, adminBilling, publicPlans, mfStart, mfCheck, mfWebhook } from '../_lib/billing';
+import { myCatalog, saveCatalog } from '../_lib/catalog';
 import { hit, adminStats, adminAnnouncements, myAnnouncements, readAnnouncement } from '../_lib/site';
 import { adminList, adminExport, adminUser } from '../_lib/admin';
 
@@ -55,6 +56,9 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
 
     if (route === 'announcements' && m === 'GET') return await myAnnouncements(env, user);
     if (parts[0] === 'announcements' && parts[2] === 'read' && m === 'POST') return await readAnnouncement(env, user, parts[1]);
+
+    if (route === 'catalog' && m === 'GET') return await myCatalog(env, user);
+    if (route === 'catalog' && m === 'PUT') return await saveCatalog(request, env, user);
 
     if (route === 'billing' && m === 'GET') return await myBilling(env, user);
     if (route === 'billing/pay' && m === 'POST') return await submitPayment(request, env, user);

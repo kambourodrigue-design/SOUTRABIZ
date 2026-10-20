@@ -1,6 +1,7 @@
 import { newId } from '../../../shared/syncCore';
 import React, { useState, useMemo } from 'react';
 import { Customer, DebtPayment, Supplier, SupplierPayment, PaymentMethod, ShopSettings, Expense } from '../../types';
+import { RemindersPanel } from './RemindersPanel';
 import { PurchaseModal } from '../common/PurchaseModal';
 import { formatCurrency, getPaymentMethodDetails } from '../../services/financials';
 import { generateDebtReminderWhatsAppUrl, cleanPhoneNumber } from '../../services/whatsapp';
@@ -64,6 +65,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
       setAiMsg("L'IA n'est pas disponible : message standard utilisé.");
     }
     if (win) win.location.href = url; else window.location.href = url;
+    onUpdateCustomers(customers.map((x) => (x.id === customer.id ? { ...x, lastReminderSentDate: new Date().toISOString() } : x)));
     setAiBusyId(null);
   };
   const [activeTabRaw, setActiveTab] = useState<'customers' | 'suppliers'>('customers');
@@ -485,6 +487,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
       {/* ==================== TAB 1: CUSTOMERS ==================== */}
       {activeTab === 'customers' && (
         <div className="space-y-3">
+          <RemindersPanel customers={customers} settings={settings} onUpdateCustomers={onUpdateCustomers} allowAi={allowSuppliers} />
           {filteredCustomers.length === 0 ? (
             <div className="bg-white rounded-3xl p-8 text-center text-stone-400 border border-stone-200 text-sm">
               Aucun compte client trouvé pour ce filtre.
@@ -543,6 +546,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
                     {hasDebt ? (
                       <a
                         href={whatsappUrl}
+                        onClick={() => onUpdateCustomers(customers.map((x) => (x.id === customer.id ? { ...x, lastReminderSentDate: new Date().toISOString() } : x)))}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition active:scale-95"

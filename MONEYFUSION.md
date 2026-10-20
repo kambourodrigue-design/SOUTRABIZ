@@ -25,3 +25,9 @@ Aucune migration SQL : les paiements en ligne utilisent la table `payments` (mé
 ## À vérifier au 1er test
 Les champs de la requête/réponse suivent la documentation Money Fusion (totalPrice, article, personal_Info, numeroSend, nomclient,
 return_url, webhook_url → statut, token, url). Faites un paiement test de bout en bout avant d'ouvrir au public.
+
+---
+# Nouveautés : relances, résumé du soir, catalogue
+- **Relances** : Dettes → Clients, encart « clients à relancer » (jamais relancés ou depuis 7 jours). Un appui ouvre WhatsApp avec le message prêt et note la relance.
+- **Résumé du soir** : carte sur le tableau de bord (mise en avant dès 17 h) → « Envoyer sur mon WhatsApp ».
+- **Catalogue public** : Paramètres → Catalogue en ligne → lien `/boutique/<adresse>`. Aucune migration SQL (réglages dans `app_settings`).

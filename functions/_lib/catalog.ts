@@ -113,7 +113,7 @@ ${canOrder ? '<div class="qty"><button class="m" aria-label="Retirer">−</butto
 <main><input class="search" id="q" type="search" placeholder="Rechercher un produit…" aria-label="Rechercher">
 ${items.length ? list : '<div class="empty">Aucun produit disponible pour le moment.</div>'}</main>
 ${canOrder ? '<div id="bar"><a id="go" href="#" rel="noopener"></a></div>' : ''}
-<footer>Catalogue propulsé par <a href="/">Nafora</a></footer>
+<footer>Catalogue propulsé par <a href="/"><img src="/brand/logo-horizontal-light.png" alt="Nafora" style="height:22px;width:auto;vertical-align:middle;margin-left:4px"></a></footer>
 <script>(function(){var D=${dataJson},C={},SHOP=${JSON.stringify(shopName).replace(/</g, '\\u003c')},PH=${JSON.stringify(phone)},CUR=${JSON.stringify(cur)};
 function f(n){var s=String(Math.round(n)).replace(/\\B(?=(\\d{3})+(?!\\d))/g,' ');return CUR==='EUR'?s+' €':CUR==='USD'?'$'+s:CUR==='GNF'?s+' GNF':s+' F CFA'}
 var q=document.getElementById('q');q.addEventListener('input',function(){var v=q.value.toLowerCase().trim();document.querySelectorAll('.item').forEach(function(e){e.style.display=e.getAttribute('data-name').indexOf(v)>-1?'':'none'})});

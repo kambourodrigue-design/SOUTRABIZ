@@ -1,3 +1,4 @@
+import { Logo } from '../brand/Logo';
 import React, { useState } from 'react';
 import { UserAccount, ShopSettings, BusinessCategoryType } from '../../types';
 import { api, ApiError } from '../../services/api';
@@ -134,9 +135,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         {/* Top Header */}
         <div className="flex items-center justify-between pb-3 border-b border-stone-100">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-900 text-amber-400 font-black text-xl flex items-center justify-center shadow-xs">
-              S
-            </div>
+            <Logo variant="mark" on="auto" className="h-11 shrink-0" />
             <div>
               <h3 className="font-black text-lg text-stone-900">Espace Utilisateur Nafora</h3>
               <p className="text-xs text-stone-500">Connexion et Inscription multi-activités</p>

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { api, PlanSettings } from '../../services/api';
+import { Logo } from '../brand/Logo';
 import { ThemeToggle } from '../common/ThemeToggle';
 
 interface Props { onLogin: () => void; onRegister: () => void }
@@ -34,7 +35,7 @@ export const LandingPage: React.FC<Props> = ({ onLogin, onRegister }) => {
     <div className="min-h-screen bg-stone-50 text-stone-900" data-testid="landing">
       <header className="bg-emerald-950 text-white">
         <div className="max-w-6xl mx-auto px-3 sm:px-4 py-3 flex items-center justify-between gap-2 sm:gap-3">
-          <div className="flex items-center gap-1.5 sm:gap-2 font-black text-base sm:text-lg whitespace-nowrap"><img src="/icon.svg" alt="" className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg" /> Nafora</div>
+          <div className="flex items-center gap-1.5 sm:gap-2 font-black text-base sm:text-lg whitespace-nowrap"><Logo variant="horizontal" on="dark" className="h-9 sm:h-10" /></div>
           <nav className="flex items-center gap-1 sm:gap-2 shrink-0">
             <ThemeToggle className="!p-1.5 sm:!p-2" />
             <button onClick={onLogin} className="px-2 sm:px-3 py-2 rounded-xl text-[13px] sm:text-sm font-bold text-emerald-100 hover:bg-emerald-900 whitespace-nowrap" data-testid="landing-login"><span className="sm:hidden">Connexion</span><span className="hidden sm:inline">Se connecter</span></button>
@@ -45,6 +46,7 @@ export const LandingPage: React.FC<Props> = ({ onLogin, onRegister }) => {
 
       <section className="bg-gradient-to-b from-emerald-950 to-emerald-800 text-white">
         <div className="max-w-6xl mx-auto px-4 py-12 sm:py-20 text-center">
+          <Logo variant="stacked" on="dark" className="mx-auto mb-4 h-32 sm:h-40" alt="" />
           <h1 className="text-3xl sm:text-5xl font-black leading-tight">Gérez votre commerce depuis votre téléphone, <span className="text-amber-300">même sans internet</span></h1>
           <p className="mt-4 text-emerald-100 max-w-2xl mx-auto text-base sm:text-lg">Ventes, stocks, dettes de vos clients, dépenses et trésorerie au même endroit. Pensé pour les commerçants et PME d'Afrique de l'Ouest.</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">

@@ -24,6 +24,7 @@ import { SettingsModal } from './components/settings/SettingsModal';
 import { AuthModal } from './components/auth/AuthModal';
 import { LandingPage } from './components/landing/LandingPage';
 
+import { Logo } from './components/brand/Logo';
 import { DailyDashboard } from './components/dashboard/DailyDashboard';
 import { POSView } from './components/pos/POSView';
 import { StockView } from './components/stock/StockView';
@@ -340,8 +341,9 @@ export default function App() {
 
   if (session === 'loading') {
     return (
-      <div className="min-h-screen bg-emerald-950 flex items-center justify-center text-emerald-100 font-bold">
-        Chargement de Nafora…
+      <div className="min-h-screen bg-emerald-950 flex flex-col items-center justify-center gap-4 text-emerald-100 font-bold" role="status" aria-label="Chargement de Nafora">
+        <Logo variant="stacked" on="dark" className="h-36 sm:h-44 animate-pulse" />
+        <span className="text-xs font-semibold text-emerald-200/80">Chargement…</span>
       </div>
     );
   }

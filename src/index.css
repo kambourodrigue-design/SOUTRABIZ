@@ -142,3 +142,8 @@
 html.theme-anim, html.theme-anim *, html.theme-anim *::before, html.theme-anim *::after {
   transition: background-color .25s ease, border-color .25s ease, color .2s ease !important;
 }
+
+/* Logo : variante fond clair en thème clair, variante fond sombre en thème nuit */
+.logo-on-dark { display: none; }
+.dark .logo-on-light { display: none; }
+.dark .logo-on-dark { display: inline-block; }

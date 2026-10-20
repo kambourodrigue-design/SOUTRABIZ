@@ -10,7 +10,7 @@ import { handlePull, handlePush } from '../_lib/sync';
 import { handleTeam } from '../_lib/team';
 import { handleAi } from '../_lib/ai';
 import { logError, health, clientLog, adminMonitor, adminMonitorAction } from '../_lib/monitor';
-import { myBilling, submitPayment, adminBilling, publicPlans } from '../_lib/billing';
+import { myBilling, submitPayment, adminBilling, publicPlans, mfStart, mfCheck, mfWebhook } from '../_lib/billing';
 import { hit, adminStats, adminAnnouncements, myAnnouncements, readAnnouncement } from '../_lib/site';
 import { adminList, adminExport, adminUser } from '../_lib/admin';
 
@@ -32,6 +32,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
     if (route === 'auth/forgot' && m === 'POST') return await forgot(request, env);
 
     if (route === 'hit' && m === 'POST') return await hit(env);
+    if (route === 'billing/moneyfusion/webhook' && m === 'POST') return await mfWebhook(request, env);
     if (route === 'plans' && m === 'GET') return await publicPlans(env);
     if (route === 'health' && (m === 'GET' || m === 'HEAD')) return await health(env);
 
@@ -57,6 +58,8 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
 
     if (route === 'billing' && m === 'GET') return await myBilling(env, user);
     if (route === 'billing/pay' && m === 'POST') return await submitPayment(request, env, user);
+    if (route === 'billing/moneyfusion/start' && m === 'POST') return await mfStart(request, env, user);
+    if (route === 'billing/moneyfusion/check' && m === 'POST') return await mfCheck(env, user);
 
     if (parts[0] === 'team') return await handleTeam(request, env, user, parts);
 

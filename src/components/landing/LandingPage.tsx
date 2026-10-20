@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { api, PlanSettings } from '../../services/api';
 import { ThemeToggle } from '../common/ThemeToggle';
 
-interface Props { onLogin: () => void; onRegister: () => void; onDemo?: () => void }
+interface Props { onLogin: () => void; onRegister: () => void }
 
 const FEATURES: [string, string, string][] = [
   ['🛒', 'Caisse rapide', 'Encaissez en quelques touches, imprimez ou envoyez le reçu par WhatsApp. Vous pouvez même dicter la vente à la voix.'],
@@ -23,7 +23,7 @@ const FAQ: [string, string][] = [
 ];
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR').format(n);
 
-export const LandingPage: React.FC<Props> = ({ onLogin, onRegister, onDemo }) => {
+export const LandingPage: React.FC<Props> = ({ onLogin, onRegister }) => {
   const [plans, setPlans] = useState<(PlanSettings & { whatsapp: string }) | null>(null);
   useEffect(() => { api.plans().then(setPlans).catch(() => {}); }, []);
   const wa = plans?.whatsapp ? `https://wa.me/${plans.whatsapp}?text=${encodeURIComponent('Bonjour, je souhaite en savoir plus sur Nafora.')}` : '';
@@ -49,7 +49,6 @@ export const LandingPage: React.FC<Props> = ({ onLogin, onRegister, onDemo }) =>
           <p className="mt-4 text-emerald-100 max-w-2xl mx-auto text-base sm:text-lg">Ventes, stocks, dettes de vos clients, dépenses et trésorerie au même endroit. Pensé pour les commerçants et PME d'Afrique de l'Ouest.</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <button onClick={onRegister} className={`${btn} bg-amber-400 text-stone-950 hover:bg-amber-300`} data-testid="landing-register">Créer mon compte gratuitement</button>
-            {onDemo && <button onClick={onDemo} className={`${btn} bg-emerald-700 text-white hover:bg-emerald-600`}>Essayer la démo</button>}
           </div>
           <p className="mt-3 text-xs text-emerald-200">Sans carte bancaire • installation depuis le navigateur • en français</p>
         </div>
@@ -81,9 +80,9 @@ export const LandingPage: React.FC<Props> = ({ onLogin, onRegister, onDemo }) =>
           <div className="mt-8 grid sm:grid-cols-2 gap-4">
             <div className="bg-white rounded-2xl border border-stone-200 p-6"><h3 className="font-extrabold text-lg">Gratuit</h3><div className="text-3xl font-black mt-1">0 <span className="text-base font-bold">{plans.currency}</span></div>
               <ul className="mt-3 text-sm text-stone-600 space-y-1 list-disc pl-5"><li>Caisse, stocks, dettes, trésorerie</li><li>Fonctionne sans internet</li><li>{plans.freeTeamMax} employé(s)</li><li>{plans.freeAiPerDay} questions à l'assistant par jour</li></ul></div>
-            <div className="bg-emerald-900 text-white rounded-2xl p-6"><h3 className="font-extrabold text-lg">Pro</h3><div className="text-3xl font-black mt-1">{fmt(plans.price1)} <span className="text-base font-bold">{plans.currency} / mois</span></div>
-              <p className="text-xs text-emerald-200">{fmt(plans.price3)} {plans.currency} les 3 mois • {fmt(plans.price12)} {plans.currency} l'année</p>
-              <ul className="mt-3 text-sm text-emerald-100 space-y-1 list-disc pl-5"><li>Tout le plan gratuit</li><li>Employés illimités</li><li>Assistant IA étendu</li><li>Paiement par Mobile Money</li></ul>
+            <div className="bg-emerald-900 text-white rounded-2xl p-6"><h3 className="font-extrabold text-lg">Pro</h3><div className="text-3xl font-black mt-1">{fmt(plans.price12)} <span className="text-base font-bold">{plans.currency} / an</span></div>
+              <p className="text-xs text-emerald-200">Abonnement annuel unique</p>
+              <ul className="mt-3 text-sm text-emerald-100 space-y-1 list-disc pl-5"><li>Tout le plan gratuit</li><li>Employés illimités</li><li>Assistant IA étendu</li><li>Paiement par Mobile Money ou en ligne (international)</li></ul>
               <p className="mt-3 text-xs text-amber-200">{plans.trialDays} jours d'essai Pro offerts à l'inscription.</p></div>
           </div>
         ) : (

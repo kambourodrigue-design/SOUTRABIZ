@@ -83,6 +83,18 @@ export default function App() {
     try { return window.matchMedia('(display-mode: standalone)').matches ? 'login' : null; } catch { return null; }
   });
   const [plan, setPlan] = useState<PlanStatus | null>(null);
+  // Retour de la page de paiement Money Fusion : on confirme le paiement côté serveur puis on rafraîchit le plan
+  useEffect(() => {
+    if (!syncEnabled || isPlatformAdmin) return;
+    let back = false;
+    try { back = new URLSearchParams(location.search).get('mf') === 'return'; } catch { /* ignore */ }
+    if (!back) return;
+    try { history.replaceState(null, '', location.pathname); } catch { /* ignore */ }
+    api.mfCheck().then(async (r) => {
+      if (r.approved > 0) { alert('✅ Paiement confirmé ! Votre abonnement annuel Nafora Pro est actif.'); api.billing().then(x => setPlan(x.status)).catch(() => {}); }
+      else if (r.pending > 0) alert("⏳ Paiement en cours de confirmation. Ouvrez Paramètres → Abonnement et touchez « Vérifier mon paiement » dans un instant.");
+    }).catch(() => { /* hors-ligne : le panneau Abonnement permettra de revérifier */ });
+  }, [syncEnabled, isPlatformAdmin]);
   useEffect(() => {
     if (!syncEnabled || isPlatformAdmin) { setPlan(null); return; }
     const load = () => api.billing().then(r => setPlan(r.status)).catch(() => { /* hors-ligne : on garde l'état connu */ });
@@ -292,21 +304,6 @@ export default function App() {
     }
   };
 
-  const handleStartDemo = () => {
-    engine.destroy();
-    storage.wipeLocal();
-    setProducts(storage.getProducts());
-    setSales(storage.getSales());
-    setExpenses(storage.getExpenses());
-    setCustomers(storage.getCustomers());
-    setSuppliers(storage.getSuppliers());
-    setSettings({ ...initialShopSettings });
-    setCurrentUser(DEMO_USER);
-    setIsDemo(true);
-    setSession('in');
-    setActiveTab('dashboard');
-  };
-
   const handleLogout = async () => {
     if (!isDemo && syncEnabled) {
       try { await engine.syncNow(); } catch { /* dernière sauvegarde au mieux */ }
@@ -351,7 +348,7 @@ export default function App() {
 
   if (session === 'out') {
     if (!authMode) {
-      return <LandingPage onLogin={() => setAuthMode('login')} onRegister={() => setAuthMode('register')} onDemo={handleStartDemo} />;
+      return <LandingPage onLogin={() => setAuthMode('login')} onRegister={() => setAuthMode('register')} />;
     }
     return (
       <div className="min-h-screen bg-emerald-950">
@@ -361,7 +358,6 @@ export default function App() {
           canClose={true}
           onClose={() => setAuthMode(null)}
           onAuthSuccess={handleAuthSuccess}
-          onDemo={handleStartDemo}
         />
       </div>
     );

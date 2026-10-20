@@ -21,7 +21,6 @@ interface AuthModalProps {
   onAuthSuccess: (user: UserAccount, shop: ShopSettings | null, isNew: boolean) => void;
   initialMode?: 'login' | 'register';
   canClose?: boolean;
-  onDemo?: () => void;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
@@ -29,7 +28,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onAuthSuccess,
   initialMode = 'login',
   canClose = true,
-  onDemo,
 }) => {
   const [activeTab, setActiveTab] = useState<'login' | 'register'>(initialMode);
   
@@ -279,17 +277,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               Mot de passe oublié ?
             </button>
 
-            {onDemo && (
-              <div className="pt-3 border-t border-stone-100">
-                <button
-                  type="button"
-                  onClick={onDemo}
-                  className="w-full py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs transition"
-                >
-                  👀 Essayer la démo (sans compte, données non enregistrées en ligne)
-                </button>
-              </div>
-            )}
 
           </div>
         )}

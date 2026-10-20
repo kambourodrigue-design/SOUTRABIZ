@@ -84,7 +84,7 @@ export interface SiteStats {
   ai: { day: string; count: number }[]; aiDailyGlobal: number;
 }
 
-export interface PlanSettings { enabled: boolean; trialDays: number; price1: number; price3: number; price12: number; currency: string; payInfo: string; freeAiPerDay: number; freeTeamMax: number; readOnlyAfterTrial: boolean }
+export interface PlanSettings { enabled: boolean; trialDays: number; price1: number; price3: number; price12: number; currency: string; payInfo: string; freeAiPerDay: number; freeTeamMax: number; readOnlyAfterTrial: boolean; moneyFusion?: boolean; mfLink?: string }
 export interface PlanStatus { enforced: boolean; readOnly: boolean; state: 'off' | 'paid' | 'trial' | 'free'; pro: boolean; paidUntil: string | null; trialEndsAt: string | null; daysLeft: number }
 export interface PaymentRow { id: string; shopId: string; shopName?: string; userName: string; phone: string; amount: number; months: number; method: string; reference: string; status: 'pending' | 'approved' | 'rejected'; createdAt: string; decidedAt: string | null; note: string | null }
 export interface BillingAdminSettings extends PlanSettings { launchedAt: string; currency: string }
@@ -100,6 +100,8 @@ export const api = {
   plans: () => call<PlanSettings & { whatsapp: string }>('GET', 'plans', undefined, 8000),
   billing: () => call<{ status: PlanStatus; settings: PlanSettings; payments: PaymentRow[] }>('GET', 'billing', undefined, 8000),
   billingPay: (b: { months: number; method: string; reference: string; phone?: string }) => call<{ ok: true }>('POST', 'billing/pay', b),
+  mfStart: (b: { phone?: string }) => call<{ ok: true; url: string }>('POST', 'billing/moneyfusion/start', b, 20000),
+  mfCheck: () => call<{ approved: number; pending: number }>('POST', 'billing/moneyfusion/check', {}, 20000),
   adminBilling: () => call<{ settings: BillingAdminSettings; pending: PaymentRow[]; recent: PaymentRow[]; revenue30d: number; approved30d: number; activeSubs: number }>('GET', 'admin/billing'),
   adminBillingSave: (b: Partial<BillingAdminSettings>) => call<{ settings: BillingAdminSettings }>('PUT', 'admin/billing', b),
   adminPayDecide: (id: string, action: 'approve' | 'reject', note?: string) => call<{ ok: true }>('POST', `admin/billing/payments/${id}/${action}`, { note }),

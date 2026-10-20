@@ -14,6 +14,10 @@ export interface Env {
   AI_DAILY_SALE?: string;     // dictées de vente par boutique et par jour (défaut 60)
   TELEGRAM_BOT_TOKEN?: string; // alertes d'erreurs (optionnel)
   TELEGRAM_CHAT_ID?: string;
+  /** Money Fusion : URL d'API de paiement fournie dans votre tableau de bord (secret Cloudflare) */
+  MONEYFUSION_API_URL?: string;
+  /** Optionnel : URL de vérification (défaut https://www.pay.moneyfusion.net/paiementNotif) */
+  MONEYFUSION_STATUS_URL?: string;
 }
 
 export const SESSION_DAYS = 30;

@@ -71,16 +71,18 @@ export const AdminBillingPanel: React.FC = () => {
         <div className={card}><div className="text-xs text-stone-500">À valider</div><div className="text-xl font-black">{d.pending.length}</div></div>
       </div>
       <div className={card}><h4 className="font-bold text-stone-800 text-sm mb-1">Paiements en attente de validation</h4>
-        <p className="text-[11px] text-stone-400 mb-1">Vérifiez la référence sur votre application Mobile Money avant de valider.</p>
+        <p className="text-[11px] text-stone-400 mb-1">Vérifiez la référence sur votre application Mobile Money avant de valider. (Les paiements Money Fusion sont validés automatiquement.)</p>
         {d.pending.length === 0 && <p className="text-xs text-stone-400">Aucun.</p>}{d.pending.map(p => row(p, true))}</div>
       <div className={card + ' space-y-3'}>
         <h4 className="font-bold text-stone-800 text-sm">Réglages de l'abonnement Pro</h4>
         <label className="flex items-center gap-2 text-sm font-bold"><input type="checkbox" checked={f.enabled} onChange={e => setF({ ...f, enabled: e.target.checked })} data-testid="billing-enabled" /> Facturation activée (désactivée = tout le monde garde toutes les fonctions)</label>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-semibold text-stone-600">
-          <label>Prix 1 mois{num('price1')}</label><label>Prix 3 mois{num('price3')}</label><label>Prix 12 mois{num('price12')}</label><label>Essai gratuit (jours){num('trialDays')}</label>
+          <label>Prix annuel{num('price12')}</label><label>Essai gratuit (jours){num('trialDays')}</label>
           <label>Questions IA/jour (gratuit){num('freeAiPerDay')}</label><label>Employés (gratuit){num('freeTeamMax')}</label>
           <label>Devise<input className={inp} value={f.currency} onChange={e => setF({ ...f, currency: e.target.value })} /></label></div>
         <label className="flex items-start gap-2 text-sm font-bold"><input type="checkbox" className="mt-1" checked={!!f.readOnlyAfterTrial} onChange={e => setF({ ...f, readOnlyAfterTrial: e.target.checked })} data-testid="billing-readonly" /><span>Lecture seule après l'essai<span className="block text-[11px] font-normal text-stone-500">Sans abonnement payé, la boutique peut consulter ses données mais ne peut plus enregistrer (ventes, stock, dépenses, dettes).</span></span></label>
+        <label className="block text-xs font-semibold text-stone-600">Lien de paiement Money Fusion (clients internationaux, tarif annuel)
+          <input className={inp} placeholder="https://www.pay.moneyfusion.net/..." maxLength={400} value={f.mfLink || ''} onChange={e => setF({ ...f, mfLink: e.target.value })} data-testid="billing-mflink" /></label>
         <label className="block text-xs font-semibold text-stone-600">Instructions de paiement affichées aux commerçants
           <textarea className={inp} rows={3} maxLength={600} placeholder="Orange Money : 07 00 00 00 (Nom du bénéficiaire)&#10;Wave : …" value={f.payInfo} onChange={e => setF({ ...f, payInfo: e.target.value })} data-testid="billing-payinfo" /></label>
         {err && <p className="text-xs text-red-700">{err}</p>}{msg && <p className="text-xs text-emerald-700">{msg}</p>}

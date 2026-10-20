@@ -72,8 +72,6 @@ export interface RegisterInput {
   shopName: string; businessCategory: string; city: string; country: string;
 }
 
-export interface AdsPublic { enabled: boolean; client?: string; slots?: { dashboard: string; assistant: string; debts: string } }
-export interface AdsAdmin { enabled: boolean; client: string; slots: { dashboard: string; assistant: string; debts: string } }
 export interface Announcement { id: string; title: string; body: string; level: 'info' | 'important'; createdAt: string; read: boolean }
 export interface AdminAnnouncement { id: string; title: string; body: string; audience: string; level: string; createdAt: string; expiresAt: string; active: boolean; reads: number; audienceSize: number }
 export interface SiteStats {
@@ -83,18 +81,38 @@ export interface SiteStats {
   ai: { day: string; count: number }[]; aiDailyGlobal: number;
 }
 
+export interface PlanSettings { enabled: boolean; trialDays: number; price1: number; price3: number; price12: number; currency: string; payInfo: string; freeAiPerDay: number; freeTeamMax: number }
+export interface PlanStatus { enforced: boolean; state: 'off' | 'paid' | 'trial' | 'free'; pro: boolean; paidUntil: string | null; trialEndsAt: string | null; daysLeft: number }
+export interface PaymentRow { id: string; shopId: string; shopName?: string; userName: string; phone: string; amount: number; months: number; method: string; reference: string; status: 'pending' | 'approved' | 'rejected'; createdAt: string; decidedAt: string | null; note: string | null }
+export interface BillingAdminSettings extends PlanSettings { launchedAt: string; currency: string }
+export interface MonitorData {
+  level: 'green' | 'orange' | 'red'; dbMs: number; errors24h: number; server24h: number; client24h: number; lastHour: number;
+  top: { sig: string; message: string; route: string; source: string; n: number; last: string }[];
+  recent: { ts: string; source: string; route: string; status: number | null; message: string; shop_id: string | null }[];
+  series: { h: string; n: number }[]; telegram: boolean; ai: boolean; whatsapp: boolean;
+}
+
 export const api = {
+  logClient: (where: string, message: string) => call<{ ok: true }>('POST', 'log', { where, message }, 5000),
+  plans: () => call<PlanSettings & { whatsapp: string }>('GET', 'plans', undefined, 8000),
+  billing: () => call<{ status: PlanStatus; settings: PlanSettings; payments: PaymentRow[] }>('GET', 'billing', undefined, 8000),
+  billingPay: (b: { months: number; method: string; reference: string; phone?: string }) => call<{ ok: true }>('POST', 'billing/pay', b),
+  adminBilling: () => call<{ settings: BillingAdminSettings; pending: PaymentRow[]; recent: PaymentRow[]; revenue30d: number; approved30d: number; activeSubs: number }>('GET', 'admin/billing'),
+  adminBillingSave: (b: Partial<BillingAdminSettings>) => call<{ settings: BillingAdminSettings }>('PUT', 'admin/billing', b),
+  adminPayDecide: (id: string, action: 'approve' | 'reject', note?: string) => call<{ ok: true }>('POST', `admin/billing/payments/${id}/${action}`, { note }),
+  adminGrant: (shopId: string, months: number) => call<{ ok: true; paidUntil: string }>('POST', 'admin/billing/grant', { shopId, months }),
+  adminMonitor: () => call<MonitorData>('GET', 'admin/monitor'),
+  adminMonitorTest: () => call<{ ok: true }>('POST', 'admin/monitor/test-alert', {}),
+  adminMonitorClear: () => call<{ ok: true }>('DELETE', 'admin/monitor/clear'),
+
   hit: () => call<{ ok: true }>('POST', 'hit', {}, 5000),
   announcements: () => call<{ items: Announcement[] }>('GET', 'announcements', undefined, 8000),
   announcementRead: (id: string) => call<{ ok: true }>('POST', `announcements/${id}/read`, {}),
-  ads: () => call<AdsPublic>('GET', 'ads', undefined, 8000),
   adminStats: () => call<SiteStats>('GET', 'admin/stats'),
   adminAnnouncements: () => call<{ items: AdminAnnouncement[] }>('GET', 'admin/announcements'),
   adminAnnouncementAdd: (b: { title: string; body: string; audience: string; level: string; days: number }) =>
     call<{ ok: true }>('POST', 'admin/announcements', b),
   adminAnnouncementDelete: (id: string) => call<{ ok: true }>('DELETE', `admin/announcements/${id}`),
-  adminAds: () => call<AdsAdmin>('GET', 'admin/ads'),
-  adminAdsSave: (b: AdsAdmin) => call<AdsAdmin>('PUT', 'admin/ads', b),
 
   me: () => call<MeResponse>('GET', 'auth/me?v=3', undefined, 8000),
   forgot: (identifier: string) =>

@@ -47,7 +47,7 @@ export default defineConfig(() => {
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
           // Ne jamais servir l'API depuis le cache / la navigation de la PWA
-          navigateFallbackDenylist: [/^\/api\//],
+          navigateFallbackDenylist: [/^\/api\//, /^\/(a-propos|contact|confidentialite|conditions)\.html$/, /^\/(robots\.txt|sitemap\.xml)$/],
           runtimeCaching: [
             {
               urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

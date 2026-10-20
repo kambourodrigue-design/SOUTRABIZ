@@ -47,3 +47,10 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(156, 163, 175, 0.7);
 }
+
+/* Bandeaux d'état (hors ligne / synchronisation) : apparition douce */
+@keyframes sb-pop { from { opacity: 0; transform: translateY(-6px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes sb-pop-up { from { opacity: 0; transform: translateY(6px) scale(.97); } to { opacity: 1; transform: none; } }
+.sb-pop { animation: sb-pop .25s ease-out both; }
+.sb-pop-up { animation: sb-pop-up .25s ease-out both; }
+@media (prefers-reduced-motion: reduce) { .sb-pop, .sb-pop-up { animation: none; } }

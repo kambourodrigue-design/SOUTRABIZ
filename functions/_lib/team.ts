@@ -1,6 +1,7 @@
 // Équipe d'une boutique : le propriétaire crée les comptes de ses employés.
 // Chaque employé a son propre identifiant et mot de passe, et peut se connecter en même temps que les autres.
 
+import { planStatus, loadBilling } from './billing';
 import {
   json, fail, str, normEmail, normPhone, isEmail, randomHex, hashPassword, readBody, shopRoleOf,
   type Env, type UserRow,
@@ -86,6 +87,9 @@ async function addMember(req: Request, env: Env, owner: UserRow) {
 
   const count = await env.DB.prepare('SELECT COUNT(*) AS n FROM users WHERE shop_id = ?').bind(owner.shop_id).first<{ n: number }>();
   if ((count?.n ?? 0) >= MAX_TEAM + 1) return fail(`Limite de ${MAX_TEAM} employés atteinte.`, 400);
+  const cfg = await loadBilling(env), st = await planStatus(env, owner.shop_id, cfg);
+  if (st.enforced && !st.pro && (count?.n ?? 0) - 1 >= cfg.freeTeamMax)
+    return fail(`Le plan gratuit permet ${cfg.freeTeamMax} employé(s). Passez au plan Pro pour en ajouter (Paramètres → Abonnement).`, 402);
 
   const dup = await env.DB.prepare('SELECT id FROM users WHERE phone = ? OR (email IS NOT NULL AND email = ?)')
     .bind(phone, email || '\u0000').first();

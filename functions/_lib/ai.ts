@@ -2,6 +2,7 @@
 // Principe : l'application calcule les chiffres (résumé compact) ; l'IA se contente de les expliquer.
 // Protection du quota gratuit : limite par boutique et par jour + limite globale par jour.
 
+import { planStatus, loadBilling } from './billing';
 import { json, fail, readBody, shopRoleOf, type Env, type UserRow } from './util';
 
 const DEFAULT_MODEL = '@cf/meta/llama-3.1-8b-instruct-fp8-fast';
@@ -95,9 +96,14 @@ export async function handleAi(req: Request, env: Env, user: UserRow) {
   try { built = buildMessages(body); } catch (e: any) { return fail(e.message || 'Demande invalide.'); }
 
   const d = day();
-  const shopLimit = isSale
+  let shopLimit = isSale
     ? Math.max(1, parseInt(env.AI_DAILY_SALE || '60', 10) || 60)
     : Math.max(1, parseInt(env.AI_DAILY_SHOP || '15', 10) || 15);
+  if (!isSale) {   // plan gratuit (facturation activée, essai terminé, pas d'abonnement) : moins de questions par jour
+    const cfg = await loadBilling(env);
+    const st = await planStatus(env, user.shop_id, cfg);
+    if (st.enforced && !st.pro) shopLimit = Math.max(0, Math.min(shopLimit, cfg.freeAiPerDay));
+  }
   const globalLimit = Math.max(1, parseInt(env.AI_DAILY_GLOBAL || '400', 10) || 400);
   const gKey = `ai:g:${d}`;
   const sKey = `ai:s:${user.shop_id}:${isSale ? 'v:' : ''}${d}`;
@@ -110,7 +116,7 @@ export async function handleAi(req: Request, env: Env, user: UserRow) {
   const s = await bump(env, sKey);
   if (s > shopLimit) {
     await bump(env, sKey, -1); await bump(env, gKey, -1);
-    return fail(`Vous avez utilisé vos ${shopLimit} questions gratuites du jour. Revenez demain.`, 429);
+    return fail(`Vous avez utilisé vos ${shopLimit} questions gratuites du jour. Revenez demain${shopLimit < 15 && !isSale ? ' ou passez au plan Pro (Paramètres → Abonnement).' : '.'}`, 429);
   }
 
   try {

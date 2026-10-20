@@ -1,4 +1,4 @@
--- SoutraBiz v4 : statistiques du site, messages aux utilisateurs, réglages (publicité).
+-- SoutraBiz v4 : statistiques du site, messages aux utilisateurs, réglages.
 -- À exécuter UNE fois sur une base existante (Cloudflare → D1 → Console), instruction par instruction si besoin.
 
 CREATE TABLE IF NOT EXISTS site_daily (

@@ -12,6 +12,8 @@ export interface Env {
   AI_DAILY_SHOP?: string;     // questions par boutique et par jour (défaut 15)
   AI_DAILY_GLOBAL?: string;   // total plateforme par jour (défaut 400)
   AI_DAILY_SALE?: string;     // dictées de vente par boutique et par jour (défaut 60)
+  TELEGRAM_BOT_TOKEN?: string; // alertes d'erreurs (optionnel)
+  TELEGRAM_CHAT_ID?: string;
 }
 
 export const SESSION_DAYS = 30;

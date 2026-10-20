@@ -1,4 +1,4 @@
-// v4 : statistiques du site (admin), messages aux utilisateurs, publicité (AdSense).
+// v4 : statistiques du site (admin), messages aux utilisateurs.
 
 import { json, fail, readBody, randomHex, shopRoleOf, type Env, type UserRow } from './util';
 
@@ -128,46 +128,4 @@ export async function myAnnouncements(env: Env, user: UserRow) {
 export async function readAnnouncement(env: Env, user: UserRow, id: string) {
   await env.DB.prepare('INSERT OR IGNORE INTO announcement_reads (announcement_id, user_id) VALUES (?, ?)').bind(id, user.id).run();
   return json({ ok: true });
-}
-
-/* ---------- Publicité (Google AdSense) ---------- */
-export interface AdsConfig { enabled: boolean; client: string; slots: { dashboard: string; assistant: string; debts: string } }
-const CLIENT = /^ca-pub-\d{10,20}$/, SLOT = /^\d{5,20}$/;
-
-export async function loadAds(env: Env): Promise<AdsConfig> {
-  const empty: AdsConfig = { enabled: false, client: '', slots: { dashboard: '', assistant: '', debts: '' } };
-  try {
-    const r: any = await env.DB.prepare("SELECT value FROM app_settings WHERE key = 'ads'").first();
-    if (!r) return empty;
-    const c = JSON.parse(r.value);
-    return { enabled: !!c.enabled, client: String(c.client || ''), slots: { ...empty.slots, ...(c.slots || {}) } };
-  } catch { return empty; }
-}
-
-/** Configuration visible des utilisateurs : seulement si activée et valide. */
-export async function publicAds(env: Env) {
-  const c = await loadAds(env);
-  if (!c.enabled || !CLIENT.test(c.client)) return json({ enabled: false });
-  return json({ enabled: true, client: c.client, slots: c.slots });
-}
-
-export async function adminAds(req: Request, env: Env) {
-  if (req.method === 'GET') return json(await loadAds(env));
-  if (req.method === 'PUT') {
-    const b = await readBody(req, 2_000);
-    const client = clean(b.client, 40);
-    if (client && !CLIENT.test(client)) return fail("Identifiant éditeur invalide (format : ca-pub-1234567890123456).");
-    const slots: any = {};
-    for (const k of ['dashboard', 'assistant', 'debts']) {
-      const v = clean(b.slots?.[k], 30);
-      if (v && !SLOT.test(v)) return fail(`Identifiant de bloc « ${k} » invalide (chiffres uniquement).`);
-      slots[k] = v;
-    }
-    const enabled = !!b.enabled && !!client;
-    await env.DB.prepare(
-      "INSERT INTO app_settings (key, value) VALUES ('ads', ?1) ON CONFLICT(key) DO UPDATE SET value = ?1")
-      .bind(JSON.stringify({ enabled, client, slots })).run();
-    return json({ enabled, client, slots });
-  }
-  return fail('Route inconnue.', 404);
 }

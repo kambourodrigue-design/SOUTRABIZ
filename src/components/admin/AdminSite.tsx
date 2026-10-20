@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { api, SiteStats, AdminAnnouncement, AdsAdmin } from '../../services/api';
+import { api, SiteStats, AdminAnnouncement } from '../../services/api';
 import { formatCurrency } from '../../services/financials';
 
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR').format(Math.round(n));
@@ -97,30 +97,6 @@ export const AdminMessagesPanel: React.FC = () => {
             <p className="text-[11px] text-stone-500 mt-1">{AUD_LABEL(a.audience)} • lu par {a.reads}/{a.audienceSize} • {new Date(a.createdAt).toLocaleDateString('fr-FR')} → {new Date(a.expiresAt).toLocaleDateString('fr-FR')} {a.active ? '' : '(expiré)'}</p>
           </div>))}
       </div>
-    </div>
-  );
-};
-
-export const AdminAdsPanel: React.FC = () => {
-  const [c, setC] = useState<AdsAdmin | null>(null); const [msg, setMsg] = useState(''); const [err, setErr] = useState('');
-  useEffect(() => { api.adminAds().then(setC).catch(e => setErr(e.message)); }, []);
-  if (!c) return <p className="text-sm text-stone-500">{err || 'Chargement…'}</p>;
-  const save = async () => { setErr(''); setMsg(''); try { setC(await api.adminAdsSave(c)); setMsg('Enregistré.'); } catch (e) { setErr((e as Error).message); } };
-  const inp = 'w-full px-3 py-2 rounded-xl border border-stone-300 text-sm font-mono';
-  const slot = (k: 'dashboard' | 'assistant' | 'debts', l: string) => <label className="block text-xs font-semibold text-stone-600">{l}<input className={inp} placeholder="ex : 1234567890" value={c.slots[k]} onChange={e => setC({ ...c, slots: { ...c.slots, [k]: e.target.value.trim() } })} /></label>;
-  return (
-    <div className={card + ' space-y-3 max-w-2xl'} data-testid="admin-ads">
-      <h4 className="font-bold text-stone-800">Publicité Google AdSense</h4>
-      <label className="block text-xs font-semibold text-stone-600">Identifiant éditeur<input className={inp} placeholder="ca-pub-1234567890123456" value={c.client} onChange={e => setC({ ...c, client: e.target.value.trim() })} data-testid="ads-client" /></label>
-      <div className="grid sm:grid-cols-3 gap-2">{slot('dashboard', 'Bloc Tableau de bord')}{slot('assistant', 'Bloc Assistant')}{slot('debts', 'Bloc Dettes')}</div>
-      <label className="flex items-center gap-2 text-sm font-bold"><input type="checkbox" checked={c.enabled} onChange={e => setC({ ...c, enabled: e.target.checked })} data-testid="ads-enabled" /> Afficher les publicités aux utilisateurs</label>
-      {err && <p className="text-xs text-red-700">{err}</p>}{msg && <p className="text-xs text-emerald-700">{msg}</p>}
-      <button onClick={save} className="px-4 py-2 rounded-xl bg-emerald-700 text-white font-bold text-sm" data-testid="ads-save">Enregistrer</button>
-      <ul className="text-[11px] text-stone-500 list-disc pl-4 space-y-0.5">
-        <li>Désactivé par défaut. Les pubs n'apparaissent jamais dans la Caisse, ni pour le superviseur, ni hors connexion.</li>
-        <li>Le fichier <code>/ads.txt</code> demandé par Google est généré automatiquement à partir de l'identifiant éditeur.</li>
-        <li>AdSense doit d'abord valider votre site (domaine à vous, contenu public suffisant, politique de confidentialité). Une application protégée par connexion est parfois refusée : prévoyez une page d'accueil publique.</li>
-      </ul>
     </div>
   );
 };

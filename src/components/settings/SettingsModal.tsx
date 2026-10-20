@@ -3,6 +3,7 @@ import { ShopSettings, CurrencyCode } from '../../types';
 import { storage } from '../../services/storage';
 import { api } from '../../services/api';
 import { TeamPanel } from './TeamPanel';
+import { BillingPanel } from './BillingPanel';
 import { 
   Settings as SettingsIcon, 
   X, 
@@ -385,6 +386,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
           )}
 
+          {!isDemo && isOwner && <BillingPanel />}
           {!isDemo && isOwner && <TeamPanel />}
 
           {/* Gestion des données */}

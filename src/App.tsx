@@ -9,7 +9,7 @@ import { Product, Sale, Expense, Customer, Supplier, ShopSettings, UserAccount }
 import { storage } from './services/storage';
 import { calculateCreditScore } from './services/creditScore';
 import { authCache, DEMO_USER } from './services/auth';
-import { api, ApiError, AdsPublic } from './services/api';
+import { api, ApiError, PlanStatus } from './services/api';
 import { SyncEngine, fetchAllChanges, buildSnapshot, type Snapshot, type SyncInfo } from './services/syncEngine';
 import { initialShopSettings } from './data/initialData';
 import { getSectorProducts } from './data/sectorCatalogSeeds';
@@ -18,11 +18,11 @@ import { getSectorProducts } from './data/sectorCatalogSeeds';
 import { Navbar } from './components/common/Navbar';
 import { BottomNav } from './components/common/BottomNav';
 import { AnnouncementsBar } from './components/common/AnnouncementsBar';
-import { AdSlot } from './components/ads/AdSlot';
 import { AssistantView } from './components/assistant/AssistantView';
 import { OfflineIndicator } from './components/common/OfflineIndicator';
 import { SettingsModal } from './components/settings/SettingsModal';
 import { AuthModal } from './components/auth/AuthModal';
+import { LandingPage } from './components/landing/LandingPage';
 
 import { DailyDashboard } from './components/dashboard/DailyDashboard';
 import { POSView } from './components/pos/POSView';
@@ -78,12 +78,15 @@ export default function App() {
     api.hit().catch(() => { /* ignore */ });
   }, []);
 
-  // Publicité (désactivée par défaut) : jamais pour l'admin, ni en consultation/démo
-  const [ads, setAds] = useState<AdsPublic | null>(null);
+  // Visiteur non connecté : page d'accueil publique (l'application installée ouvre directement la connexion)
+  const [authMode, setAuthMode] = useState<'login' | 'register' | null>(() => {
+    try { return window.matchMedia('(display-mode: standalone)').matches ? 'login' : null; } catch { return null; }
+  });
+  const [plan, setPlan] = useState<PlanStatus | null>(null);
   useEffect(() => {
-    if (!syncEnabled || isPlatformAdmin) { setAds(null); return; }
-    api.ads().then(setAds).catch(() => setAds(null));
-  }, [syncEnabled, isPlatformAdmin]);
+    if (!syncEnabled || isPlatformAdmin || shopRole !== 'owner') { setPlan(null); return; }
+    api.billing().then(r => setPlan(r.status)).catch(() => setPlan(null));
+  }, [syncEnabled, isPlatformAdmin, shopRole]);
 
   const latest = useRef<Snapshot>({ products, sales, expenses, customers, suppliers, settings });
   latest.current = { products, sales, expenses, customers, suppliers, settings };
@@ -332,12 +335,16 @@ export default function App() {
   }
 
   if (session === 'out') {
+    if (!authMode) {
+      return <LandingPage onLogin={() => setAuthMode('login')} onRegister={() => setAuthMode('register')} onDemo={handleStartDemo} />;
+    }
     return (
       <div className="min-h-screen bg-emerald-950">
         <AuthModal
-          initialMode="login"
-          canClose={false}
-          onClose={() => {}}
+          key={authMode}
+          initialMode={authMode}
+          canClose={true}
+          onClose={() => setAuthMode(null)}
           onAuthSuccess={handleAuthSuccess}
           onDemo={handleStartDemo}
         />
@@ -381,6 +388,13 @@ export default function App() {
       )}
 
       {syncEnabled && !isPlatformAdmin && <AnnouncementsBar userId={currentUser.id} />}
+      {plan?.enforced && ((plan.state === 'trial' && plan.daysLeft <= 7) || plan.state === 'free') && (
+        <div className="px-3 pt-2 max-w-7xl mx-auto w-full">
+          <button onClick={() => setIsSettingsOpen(true)} className="w-full text-left rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-950" data-testid="plan-banner">
+            {plan.state === 'trial' ? `Votre essai Pro se termine dans ${plan.daysLeft} jour(s).` : 'Vous êtes sur le plan gratuit.'} <b>Voir l'abonnement →</b>
+          </button>
+        </div>
+      )}
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 lg:p-6 pb-24 xl:pb-8">
@@ -443,8 +457,6 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'dashboard' && <AdSlot ads={ads} slot="dashboard" />}
-        {activeTab === 'debts' && <AdSlot ads={ads} slot="debts" />}
 
         {activeTab === 'assistant' && (
           <AssistantView
@@ -452,7 +464,6 @@ export default function App() {
             suppliers={suppliers} products={products} settings={settings}
           />
         )}
-        {activeTab === 'assistant' && <AdSlot ads={ads} slot="assistant" />}
 
         {activeTab === 'finances' && (
           <FinancesView
@@ -517,17 +528,19 @@ export default function App() {
         />
       )}
 
-      {/* Indicateur de synchronisation */}
-      {syncEnabled && syncInfo.status !== 'idle' && (
-        <div className={`fixed left-3 bottom-20 xl:bottom-4 z-40 px-3 py-1.5 rounded-full text-[11px] font-bold shadow-md border ${
-          syncInfo.status === 'error' ? 'bg-rose-100 text-rose-800 border-rose-200'
-          : syncInfo.status === 'offline' ? 'bg-amber-100 text-amber-900 border-amber-200'
-          : 'bg-white text-stone-700 border-stone-200'
-        }`}>
-          {syncInfo.status === 'syncing' && '☁️ Synchronisation…'}
-          {syncInfo.status === 'pending' && `☁️ ${syncInfo.pending} modification(s) en attente…`}
-          {syncInfo.status === 'offline' && `📴 Hors-ligne — ${syncInfo.pending} modification(s) seront envoyées au retour du réseau`}
-          {syncInfo.status === 'error' && '⚠️ Échec de synchronisation — nouvelle tentative…'}
+      {/* Indicateur de synchronisation : pastille centrée au-dessus de la barre du bas */}
+      {syncEnabled && (syncInfo.status === 'syncing' || syncInfo.status === 'error' || (syncInfo.status === 'pending' && syncInfo.pending > 0) || (syncInfo.status === 'offline' && syncInfo.pending > 0)) && (
+        <div className="fixed inset-x-0 bottom-[84px] xl:bottom-5 z-40 flex justify-center px-4 pointer-events-none" role="status" aria-live="polite">
+          <div className={`sb-pop-up inline-flex max-w-full whitespace-nowrap items-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold leading-none shadow-lg ring-1 backdrop-blur ${
+            syncInfo.status === 'error' ? 'bg-rose-50/95 text-rose-900 ring-rose-300'
+            : syncInfo.status === 'offline' ? 'bg-amber-50/95 text-amber-950 ring-amber-300'
+            : 'bg-white/95 text-stone-700 ring-stone-300'
+          }`}>
+            {syncInfo.status === 'syncing' && (<><span className="w-3.5 h-3.5 rounded-full border-2 border-emerald-600 border-t-transparent animate-spin" /> Synchronisation…</>)}
+            {syncInfo.status === 'pending' && `☁️ ${syncInfo.pending} modification${syncInfo.pending > 1 ? 's' : ''} à envoyer`}
+            {syncInfo.status === 'offline' && `📴 ${syncInfo.pending} modification${syncInfo.pending > 1 ? 's' : ''} en attente de réseau`}
+            {syncInfo.status === 'error' && '⚠️ Échec de l\'envoi, nouvelle tentative…'}
+          </div>
         </div>
       )}
 

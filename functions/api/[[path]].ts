@@ -9,7 +9,9 @@ import { register, login, logout, forgot, me, changePassword } from '../_lib/aut
 import { handlePull, handlePush } from '../_lib/sync';
 import { handleTeam } from '../_lib/team';
 import { handleAi } from '../_lib/ai';
-import { hit, adminStats, adminAnnouncements, myAnnouncements, readAnnouncement, publicAds, adminAds } from '../_lib/site';
+import { logError, health, clientLog, adminMonitor, adminMonitorAction } from '../_lib/monitor';
+import { myBilling, submitPayment, adminBilling, publicPlans } from '../_lib/billing';
+import { hit, adminStats, adminAnnouncements, myAnnouncements, readAnnouncement } from '../_lib/site';
 import { adminList, adminExport, adminUser } from '../_lib/admin';
 
 export const onRequest: PagesFunction<Env> = async ({ request, env, params }) => {
@@ -30,8 +32,11 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
     if (route === 'auth/forgot' && m === 'POST') return await forgot(request, env);
 
     if (route === 'hit' && m === 'POST') return await hit(env);
+    if (route === 'plans' && m === 'GET') return await publicPlans(env);
+    if (route === 'health' && (m === 'GET' || m === 'HEAD')) return await health(env);
 
     const user = await currentUser(request, env);
+    if (route === 'log' && m === 'POST') return await clientLog(request, env, user);
     if (!user) return fail('Non connecté.', 401);
 
     if (route === 'auth/me' && m === 'GET') return await me(request, env, user);
@@ -49,22 +54,29 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
 
     if (route === 'announcements' && m === 'GET') return await myAnnouncements(env, user);
     if (parts[0] === 'announcements' && parts[2] === 'read' && m === 'POST') return await readAnnouncement(env, user, parts[1]);
-    if (route === 'ads' && m === 'GET') return await publicAds(env);
+
+    if (route === 'billing' && m === 'GET') return await myBilling(env, user);
+    if (route === 'billing/pay' && m === 'POST') return await submitPayment(request, env, user);
 
     if (parts[0] === 'team') return await handleTeam(request, env, user, parts);
 
     if (parts[0] === 'admin') {
       if (user.role !== 'admin') return fail('Accès réservé aux administrateurs.', 403);
       if (route === 'admin/users' && m === 'GET') return await adminList(request, env);
+      if (parts[1] === 'monitor') return parts[2] || m !== 'GET' ? await adminMonitorAction(request, env, parts[2]) : await adminMonitor(env);
+      if (parts[1] === 'billing') return await adminBilling(request, env, parts);
       if (route === 'admin/stats' && m === 'GET') return await adminStats(env);
       if (parts[1] === 'announcements') return await adminAnnouncements(request, env, parts[2]);
-      if (route === 'admin/ads') return await adminAds(request, env);
       if (route === 'admin/export' && m === 'GET') return await adminExport(env);
       if (parts[1] === 'users' && parts[2]) return await adminUser(request, env, user, parts[2], parts[3]);
     }
     return fail('Route introuvable.', 404);
   } catch (e: any) {
-    if (e instanceof HttpError) return fail(e.message, e.status);
-    return fail(e?.message || 'Erreur serveur', 500);
+    if (e instanceof HttpError) {
+      if (e.status >= 500) await logError(env, { source: 'server', route: new URL(request.url).pathname, status: e.status, message: e.message });
+      return fail(e.message, e.status);
+    }
+    await logError(env, { source: 'server', route: new URL(request.url).pathname, status: 500, message: e?.message || 'Erreur serveur' });
+    return fail('Erreur serveur. Réessayez dans un instant.', 500);
   }
 };

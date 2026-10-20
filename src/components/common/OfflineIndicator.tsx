@@ -1,16 +1,37 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
-import { WifiOff } from 'lucide-react';
+import { WifiOff, Wifi } from 'lucide-react';
 
+/** Pastille centrée sous l'en-tête : « Hors ligne » en permanence, « De nouveau en ligne » 3 secondes au retour du réseau. */
 export const OfflineIndicator: React.FC = () => {
   const isOnline = useOnlineStatus();
+  const wasOffline = useRef(false);
+  const [backOnline, setBackOnline] = useState(false);
 
-  if (isOnline) return null;
+  useEffect(() => {
+    if (!isOnline) { wasOffline.current = true; setBackOnline(false); return; }
+    if (wasOffline.current) {
+      wasOffline.current = false;
+      setBackOnline(true);
+      const t = setTimeout(() => setBackOnline(false), 3000);
+      return () => clearTimeout(t);
+    }
+  }, [isOnline]);
+
+  if (isOnline && !backOnline) return null;
+  const offline = !isOnline;
 
   return (
-    <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-full bg-amber-600 px-4 py-1.5 text-xs font-bold text-white shadow-xl animate-bounce border border-amber-400">
-      <WifiOff className="w-4 h-4 text-white" />
-      <span>Mode Hors-Ligne — Vos ventes sont enregistrées localement !</span>
+    <div className="fixed inset-x-0 top-[74px] z-50 flex justify-center px-4 pointer-events-none" role="status" aria-live="polite">
+      <div
+        key={offline ? 'off' : 'on'}
+        className={`sb-pop inline-flex max-w-full items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-[13px] font-semibold leading-none shadow-lg ring-1 backdrop-blur ${
+          offline ? 'bg-amber-50/95 text-amber-950 ring-amber-300' : 'bg-emerald-50/95 text-emerald-900 ring-emerald-300'
+        }`}
+      >
+        {offline ? <WifiOff className="w-4 h-4 shrink-0 text-amber-600" /> : <Wifi className="w-4 h-4 shrink-0 text-emerald-600" />}
+        <span>{offline ? 'Hors ligne · ventes enregistrées' : 'De nouveau en ligne'}</span>
+      </div>
     </div>
   );
 };

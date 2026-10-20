@@ -29,6 +29,7 @@ export interface SyncHost {
   flush(): void;
   onInfo(info: SyncInfo): void;
   onUnauthorized(): void;
+  onReadOnly?(): void;
 }
 
 interface Inflight { batch: string; changes: SyncChange[] }
@@ -271,6 +272,7 @@ export class SyncEngine {
         } catch (e) {
           this.persistNow();
           if (e instanceof ApiError && (e.status === 401 || e.status === 403)) { this.stop(); this.host.onUnauthorized(); return; }
+          if (e instanceof ApiError && e.status === 402) { this.setStatus('idle'); this.host.onReadOnly?.(); break; }
           this.setStatus(e instanceof ApiError && e.status === 0 ? 'offline' : 'error');
           break;
         }

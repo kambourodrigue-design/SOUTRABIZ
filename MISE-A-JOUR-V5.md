@@ -28,3 +28,9 @@ Désactivée par défaut : **tant que vous ne cochez pas « Facturation activée
 ## 5. Fichiers
 Nouveaux : `migration-v5.sql`, `functions/_lib/{billing,monitor}.ts`, `functions/{robots.txt,sitemap.xml}.ts`, `public/*.html`, `src/components/landing/LandingPage.tsx`, `src/components/admin/AdminOps.tsx`, `src/components/settings/BillingPanel.tsx`.
 Modifiés : `schema.sql`, `index.html`, `vite.config.ts`, `src/main.tsx`, `src/App.tsx`, `src/services/api.ts`, `functions/api/[[path]].ts`, `functions/_lib/{ai,site,team,util}.ts`, composants admin.
+
+## Option « Lecture seule après l'essai » (v5.3)
+Admin → Abonnements → cocher « Lecture seule après l'essai » → Enregistrer. Aucune migration.
+Boutique sans abonnement payé et essai terminé : consultation possible (tableau de bord, stocks, dettes, ratios), mais le serveur refuse toute nouvelle écriture (402) et la caisse est verrouillée.
+Pour rouvrir : le commerçant déclare son paiement, tu le valides (ou « offrir des mois »). Effet sous 10 minutes au maximum, ou à la prochaine ouverture de l'application.
+Décoché (par défaut) : le plan gratuit ne bloque rien.

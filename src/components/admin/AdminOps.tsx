@@ -80,11 +80,12 @@ export const AdminBillingPanel: React.FC = () => {
           <label>Prix 1 mois{num('price1')}</label><label>Prix 3 mois{num('price3')}</label><label>Prix 12 mois{num('price12')}</label><label>Essai gratuit (jours){num('trialDays')}</label>
           <label>Questions IA/jour (gratuit){num('freeAiPerDay')}</label><label>Employés (gratuit){num('freeTeamMax')}</label>
           <label>Devise<input className={inp} value={f.currency} onChange={e => setF({ ...f, currency: e.target.value })} /></label></div>
+        <label className="flex items-start gap-2 text-sm font-bold"><input type="checkbox" className="mt-1" checked={!!f.readOnlyAfterTrial} onChange={e => setF({ ...f, readOnlyAfterTrial: e.target.checked })} data-testid="billing-readonly" /><span>Lecture seule après l'essai<span className="block text-[11px] font-normal text-stone-500">Sans abonnement payé, la boutique peut consulter ses données mais ne peut plus enregistrer (ventes, stock, dépenses, dettes).</span></span></label>
         <label className="block text-xs font-semibold text-stone-600">Instructions de paiement affichées aux commerçants
           <textarea className={inp} rows={3} maxLength={600} placeholder="Orange Money : 07 00 00 00 (Nom du bénéficiaire)&#10;Wave : …" value={f.payInfo} onChange={e => setF({ ...f, payInfo: e.target.value })} data-testid="billing-payinfo" /></label>
         {err && <p className="text-xs text-red-700">{err}</p>}{msg && <p className="text-xs text-emerald-700">{msg}</p>}
         <button onClick={save} className="px-4 py-2 rounded-xl bg-emerald-700 text-white font-bold text-sm" data-testid="billing-save">Enregistrer</button>
-        <p className="text-[11px] text-stone-400">À l'activation, chaque boutique reçoit {f.trialDays} jours d'essai Pro. Le plan gratuit ne bloque jamais la caisse ni les données : il limite seulement l'assistant IA et le nombre d'employés.</p>
+        <p className="text-[11px] text-stone-400">À l'activation, chaque boutique reçoit {f.trialDays} jours d'essai Pro. Sans l'option « lecture seule », le plan gratuit ne bloque jamais la caisse ni les données : il limite seulement l'assistant IA et le nombre d'employés.</p>
       </div>
       <div className={card}><h4 className="font-bold text-stone-800 text-sm mb-1">Derniers paiements traités</h4>
         {d.recent.length === 0 && <p className="text-xs text-stone-400">Aucun.</p>}{d.recent.map(p => row(p, false))}</div>

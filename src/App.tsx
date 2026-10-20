@@ -84,9 +84,15 @@ export default function App() {
   });
   const [plan, setPlan] = useState<PlanStatus | null>(null);
   useEffect(() => {
-    if (!syncEnabled || isPlatformAdmin || shopRole !== 'owner') { setPlan(null); return; }
-    api.billing().then(r => setPlan(r.status)).catch(() => setPlan(null));
+    if (!syncEnabled || isPlatformAdmin) { setPlan(null); return; }
+    const load = () => api.billing().then(r => setPlan(r.status)).catch(() => { /* hors-ligne : on garde l'état connu */ });
+    load();
+    const id = setInterval(load, 10 * 60_000);   // un abonnement validé ou expiré est pris en compte sans reconnexion
+    return () => clearInterval(id);
   }, [syncEnabled, isPlatformAdmin, shopRole]);
+  const readOnly = !!plan?.readOnly;
+  const [roToast, setRoToast] = useState(false);
+  const blocked = () => { setRoToast(true); setTimeout(() => setRoToast(false), 3500); };
 
   const latest = useRef<Snapshot>({ products, sales, expenses, customers, suppliers, settings });
   latest.current = { products, sales, expenses, customers, suppliers, settings };
@@ -109,6 +115,7 @@ export default function App() {
       },
       onInfo: setSyncInfo,
       onUnauthorized: () => unauthorizedRef.current(),
+      onReadOnly: () => api.billing().then(r => setPlan(r.status)).catch(() => { /* ignore */ }),
     });
   }
   const engine = engineRef.current;
@@ -207,32 +214,39 @@ export default function App() {
 
   // Handlers
   const handleRecordSale = (newSale: Sale, updatedProducts: Product[], updatedCustomers: Customer[]) => {
+    if (readOnly) { blocked(); return; }
     setSales(prev => [newSale, ...prev]);
     setProducts(updatedProducts);
     setCustomers(updatedCustomers);
   };
 
   const handleAddExpense = (newExpense: Expense) => {
+    if (readOnly) { blocked(); return; }
     setExpenses(prev => [newExpense, ...prev]);
   };
 
   const handleDeleteExpense = (expenseId: string) => {
+    if (readOnly) { blocked(); return; }
     setExpenses(prev => prev.filter(e => e.id !== expenseId));
   };
 
   const handleUpdateProducts = (updated: Product[]) => {
+    if (readOnly) { blocked(); return; }
     setProducts(updated);
   };
 
   const handleUpdateCustomers = (updated: Customer[]) => {
+    if (readOnly) { blocked(); return; }
     setCustomers(updated);
   };
 
   const handleUpdateSuppliers = (updated: Supplier[]) => {
+    if (readOnly) { blocked(); return; }
     setSuppliers(updated);
   };
 
   const handleSaveSettings = (updated: ShopSettings) => {
+    if (readOnly) { blocked(); return; }
     if (!isDemo && shopRole === 'cashier') return;
     setSettings(updated);
     // If business category changed, offer to adapt products
@@ -242,6 +256,7 @@ export default function App() {
   };
 
   const handleClearData = (kind: 'sales' | 'expenses' | 'customers' | 'suppliers' | 'products' | 'all' | 'sample') => {
+    if (readOnly) { blocked(); return; }
     if (!isDemo && shopRole !== 'owner') return;
     if (kind === 'sales' || kind === 'all') setSales([]);
     if (kind === 'expenses' || kind === 'all') setExpenses([]);
@@ -388,7 +403,20 @@ export default function App() {
       )}
 
       {syncEnabled && !isPlatformAdmin && <AnnouncementsBar userId={currentUser.id} />}
-      {plan?.enforced && ((plan.state === 'trial' && plan.daysLeft <= 7) || plan.state === 'free') && (
+      {roToast && (
+        <div className="fixed inset-x-0 top-[74px] z-[60] flex justify-center px-4 pointer-events-none">
+          <div className="sb-pop inline-flex max-w-full items-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold shadow-lg ring-1 ring-red-300 bg-red-50 text-red-950">🔒 Lecture seule : modification non enregistrée</div>
+        </div>
+      )}
+      {readOnly && (
+        <div className="px-3 pt-2 max-w-7xl mx-auto w-full">
+          <button onClick={() => shopRole === 'owner' && setIsSettingsOpen(true)} className="w-full text-left rounded-xl border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-950" data-testid="readonly-banner">
+            🔒 <b>Lecture seule</b> — votre période d'essai est terminée. Vous pouvez consulter vos données, mais plus rien ne s'enregistre.{' '}
+            {shopRole === 'owner' ? <b>Activer l'abonnement Pro →</b> : <b>Demandez au propriétaire d'activer l'abonnement.</b>}
+          </button>
+        </div>
+      )}
+      {plan?.enforced && !readOnly && ((plan.state === 'trial' && plan.daysLeft <= 7) || plan.state === 'free') && (
         <div className="px-3 pt-2 max-w-7xl mx-auto w-full">
           <button onClick={() => setIsSettingsOpen(true)} className="w-full text-left rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-950" data-testid="plan-banner">
             {plan.state === 'trial' ? `Votre essai Pro se termine dans ${plan.daysLeft} jour(s).` : 'Vous êtes sur le plan gratuit.'} <b>Voir l'abonnement →</b>
@@ -414,7 +442,15 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'pos' && (
+        {activeTab === 'pos' && readOnly && (
+          <div className="max-w-md mx-auto mt-10 text-center bg-white rounded-3xl border border-stone-200 shadow-sm p-8" data-testid="pos-locked">
+            <div className="text-4xl mb-3">🔒</div>
+            <h3 className="text-lg font-black text-stone-800">Caisse en lecture seule</h3>
+            <p className="text-sm text-stone-600 mt-2">Votre période d'essai est terminée. Activez l'abonnement Pro pour enregistrer de nouvelles ventes. Vos ventes et vos données restent consultables.</p>
+            {shopRole === 'owner' && <button onClick={() => setIsSettingsOpen(true)} className="mt-5 px-5 py-3 rounded-2xl bg-emerald-700 text-white font-bold">Activer l'abonnement</button>}
+          </div>
+        )}
+        {activeTab === 'pos' && !readOnly && (
           <POSView
             products={products}
             customers={customers}

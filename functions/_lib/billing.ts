@@ -15,10 +15,11 @@ export interface BillingSettings {
   payInfo: string;             // instructions de paiement (numéros Mobile Money, nom du bénéficiaire...)
   freeAiPerDay: number;        // questions IA par jour en plan gratuit
   freeTeamMax: number;         // employés (hors propriétaire) en plan gratuit
+  readOnlyAfterTrial: boolean; // true = après l'essai sans abonnement, la boutique passe en lecture seule
 }
 const DEFAULTS: BillingSettings = {
   enabled: false, launchedAt: '', trialDays: 30, price1: 2500, price3: 6500, price12: 25000, currency: 'F CFA',
-  payInfo: '', freeAiPerDay: 5, freeTeamMax: 1,
+  payInfo: '', freeAiPerDay: 5, freeTeamMax: 1, readOnlyAfterTrial: false,
 };
 const clean = (v: unknown, n: number) => String(v ?? '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]+/g, ' ').trim().slice(0, n);
 const int = (v: unknown, min: number, max: number, d: number) => {
@@ -39,13 +40,14 @@ async function saveBilling(env: Env, b: BillingSettings) {
 export interface PlanStatus {
   enforced: boolean;
   state: 'off' | 'paid' | 'trial' | 'free';
+  readOnly: boolean;           // true = écritures refusées (essai terminé, option activée)
   pro: boolean;                // true = fonctions Pro (payé, essai, ou facturation désactivée)
   paidUntil: string | null; trialEndsAt: string | null; daysLeft: number;
 }
 
 export async function planStatus(env: Env, shopId: string, cfg?: BillingSettings): Promise<PlanStatus> {
   const b = cfg || await loadBilling(env);
-  if (!b.enabled) return { enforced: false, state: 'off', pro: true, paidUntil: null, trialEndsAt: null, daysLeft: 0 };
+  if (!b.enabled) return { enforced: false, state: 'off', readOnly: false, pro: true, paidUntil: null, trialEndsAt: null, daysLeft: 0 };
   const now = Date.now();
   let paidUntil: string | null = null, created = now;
   try {
@@ -55,20 +57,21 @@ export async function planStatus(env: Env, shopId: string, cfg?: BillingSettings
     ]);
     paidUntil = sub?.paid_until ?? null;
     if (owner?.c) created = new Date(owner.c).getTime();
-  } catch { /* tables absentes : on ne pénalise personne */ return { enforced: false, state: 'off', pro: true, paidUntil: null, trialEndsAt: null, daysLeft: 0 }; }
+  } catch { /* tables absentes : on ne pénalise personne */ return { enforced: false, state: 'off', readOnly: false, pro: true, paidUntil: null, trialEndsAt: null, daysLeft: 0 }; }
   const trialStart = Math.max(created, b.launchedAt ? new Date(b.launchedAt).getTime() : 0);
   const trialEnd = trialStart + b.trialDays * 86400000;
   const day = (t: number) => Math.max(0, Math.ceil((t - now) / 86400000));
   if (paidUntil && new Date(paidUntil).getTime() > now)
-    return { enforced: true, state: 'paid', pro: true, paidUntil, trialEndsAt: null, daysLeft: day(new Date(paidUntil).getTime()) };
+    return { enforced: true, state: 'paid', readOnly: false, pro: true, paidUntil, trialEndsAt: null, daysLeft: day(new Date(paidUntil).getTime()) };
   if (now < trialEnd)
-    return { enforced: true, state: 'trial', pro: true, paidUntil, trialEndsAt: new Date(trialEnd).toISOString(), daysLeft: day(trialEnd) };
-  return { enforced: true, state: 'free', pro: false, paidUntil, trialEndsAt: new Date(trialEnd).toISOString(), daysLeft: 0 };
+    return { enforced: true, state: 'trial', readOnly: false, pro: true, paidUntil, trialEndsAt: new Date(trialEnd).toISOString(), daysLeft: day(trialEnd) };
+  return { enforced: true, state: 'free', readOnly: !!b.readOnlyAfterTrial, pro: false, paidUntil, trialEndsAt: new Date(trialEnd).toISOString(), daysLeft: 0 };
 }
 
 const publicSettings = (b: BillingSettings) => ({
   enabled: b.enabled, trialDays: b.trialDays, price1: b.price1, price3: b.price3, price12: b.price12,
   currency: b.currency, payInfo: b.payInfo, freeAiPerDay: b.freeAiPerDay, freeTeamMax: b.freeTeamMax,
+  readOnlyAfterTrial: b.readOnlyAfterTrial,
 });
 export const publicPlans = async (env: Env) => {
   const b = await loadBilling(env);
@@ -150,6 +153,7 @@ export async function adminBilling(req: Request, env: Env, parts: string[]) {
       price1: int(x.price1, 0, 10_000_000, cur.price1), price3: int(x.price3, 0, 10_000_000, cur.price3), price12: int(x.price12, 0, 10_000_000, cur.price12),
       currency: clean(x.currency, 10) || 'F CFA', payInfo: clean(x.payInfo, 600),
       freeAiPerDay: int(x.freeAiPerDay, 0, 100, cur.freeAiPerDay), freeTeamMax: int(x.freeTeamMax, 0, 15, cur.freeTeamMax),
+      readOnlyAfterTrial: x.readOnlyAfterTrial === undefined ? cur.readOnlyAfterTrial : !!x.readOnlyAfterTrial,
     };
     if (next.enabled && !next.payInfo) return fail("Indiquez d'abord les instructions de paiement (numéro Mobile Money…).");
     if (next.enabled && !cur.enabled) next.launchedAt = new Date().toISOString();   // l'essai démarre à l'activation
@@ -191,4 +195,11 @@ export async function adminBilling(req: Request, env: Env, parts: string[]) {
     return json({ ok: true, paidUntil: until });
   }
   return fail('Route inconnue.', 404);
+}
+
+/** Boutique en lecture seule ? (essai terminé, sans abonnement, option activée par l'administrateur) */
+export async function isReadOnly(env: Env, shopId: string): Promise<boolean> {
+  const b = await loadBilling(env);
+  if (!b.enabled || !b.readOnlyAfterTrial) return false;
+  return (await planStatus(env, shopId, b)).readOnly;
 }

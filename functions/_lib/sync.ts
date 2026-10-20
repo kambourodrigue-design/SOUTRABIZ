@@ -9,6 +9,7 @@
 //    la lecture et l'écriture, la transaction est annulée et on recommence (fusion refaite) ;
 //  - chaque lot a un identifiant : un envoi répété (réponse perdue) n'est jamais appliqué deux fois.
 
+import { isReadOnly } from './billing';
 import {
   MAX_CHANGES, SETTINGS_ID, isKind, type Kind,
 } from '../../shared/syncCore';
@@ -93,6 +94,7 @@ export async function handlePush(req: Request, env: Env, user: UserRow) {
 
   const shopId = user.shop_id;
   const role = shopRoleOf(user);
+  if (await isReadOnly(env, shopId)) return fail("Période d'essai terminée : la boutique est en lecture seule. Le propriétaire doit activer l'abonnement Pro.", 402);
 
   // Lot déjà appliqué (réponse perdue lors d'un envoi précédent) → on renvoie le même résultat.
   const replay = await readLog(env, batchId, shopId);

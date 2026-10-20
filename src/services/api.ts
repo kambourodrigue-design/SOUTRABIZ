@@ -81,8 +81,8 @@ export interface SiteStats {
   ai: { day: string; count: number }[]; aiDailyGlobal: number;
 }
 
-export interface PlanSettings { enabled: boolean; trialDays: number; price1: number; price3: number; price12: number; currency: string; payInfo: string; freeAiPerDay: number; freeTeamMax: number }
-export interface PlanStatus { enforced: boolean; state: 'off' | 'paid' | 'trial' | 'free'; pro: boolean; paidUntil: string | null; trialEndsAt: string | null; daysLeft: number }
+export interface PlanSettings { enabled: boolean; trialDays: number; price1: number; price3: number; price12: number; currency: string; payInfo: string; freeAiPerDay: number; freeTeamMax: number; readOnlyAfterTrial: boolean }
+export interface PlanStatus { enforced: boolean; readOnly: boolean; state: 'off' | 'paid' | 'trial' | 'free'; pro: boolean; paidUntil: string | null; trialEndsAt: string | null; daysLeft: number }
 export interface PaymentRow { id: string; shopId: string; shopName?: string; userName: string; phone: string; amount: number; months: number; method: string; reference: string; status: 'pending' | 'approved' | 'rejected'; createdAt: string; decidedAt: string | null; note: string | null }
 export interface BillingAdminSettings extends PlanSettings { launchedAt: string; currency: string }
 export interface MonitorData {

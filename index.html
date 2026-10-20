@@ -28,6 +28,7 @@
       <div style="font-size:44px">🛒</div>
       <div style="font-weight:800;font-size:20px">SoutraBiz</div>
       <div id="boot-msg" style="font-size:14px;color:#57534e">Chargement…</div>
+      <div id="boot-detail" style="font-size:11px;color:#a8a29e;max-width:320px;word-break:break-word"></div>
       <button id="boot-fix" style="display:none;padding:12px 22px;border:0;border-radius:14px;background:#047857;color:#fff;font-weight:700;font-size:15px">Réparer et recharger</button>
       <div style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap"><main style="max-width:720px;margin:0 auto;padding:32px 20px;font-family:system-ui,sans-serif;color:#1c1917">
       <h1 style="font-size:28px;font-weight:800">SoutraBiz : gérez votre commerce, même sans internet</h1>
@@ -38,13 +39,28 @@
     </main></div>
     </div>
     <script>
+      var __errs = [];
+      var __note = function (m) {
+        m = String(m || '').slice(0, 220); if (!m || __errs.indexOf(m) >= 0) return; __errs.push(m);
+        try {
+          var d = document.getElementById('boot-detail'); if (d) d.textContent = __errs.slice(0, 3).join(' | ');
+          var body = JSON.stringify({ where: 'boot', message: m, url: location.pathname });
+          if (navigator.sendBeacon) navigator.sendBeacon('/api/log', new Blob([body], { type: 'application/json' }));
+        } catch (e) {}
+      };
+      window.addEventListener('error', function (e) {
+        var t = e.target;
+        if (t && t !== window && (t.src || t.href)) __note('Fichier non chargé : ' + (t.src || t.href));
+        else __note(e.message + (e.filename ? ' @' + e.filename.split('/').pop() + ':' + e.lineno : ''));
+      }, true);
+      window.addEventListener('unhandledrejection', function (e) { __note('Promesse refusée : ' + (e.reason && e.reason.message || e.reason)); });
       setTimeout(function () {
         var m = document.getElementById('boot-msg'), b = document.getElementById('boot-fix');
         if (!m || !b) return;
         m.textContent = 'Le chargement est long. Vérifiez votre connexion puis touchez le bouton.';
         b.style.display = 'block';
         b.onclick = function () {
-          var done = function () { location.reload(); };
+          var done = function () { location.replace('/?r=' + Date.now()); };
           try {
             Promise.all([
               navigator.serviceWorker ? navigator.serviceWorker.getRegistrations().then(function (r) { return Promise.all(r.map(function (x) { return x.unregister(); })); }) : 0,

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { api, PlanSettings } from '../../services/api';
+import { ThemeToggle } from '../common/ThemeToggle';
 
 interface Props { onLogin: () => void; onRegister: () => void; onDemo?: () => void }
 
@@ -16,7 +17,7 @@ const FEATURES: [string, string, string][] = [
 const FAQ: [string, string][] = [
   ['Faut-il toujours avoir internet ?', 'Non. Vous pouvez vendre et enregistrer vos opérations sans connexion. Les données sont envoyées automatiquement dès que le réseau revient.'],
   ['Mes données sont-elles en sécurité ?', 'Votre compte est protégé par un mot de passe, et vos données sont stockées sur l\'infrastructure Cloudflare. Seuls vous et les personnes à qui vous donnez un accès y ont accès.'],
-  ['Puis-je l\'utiliser sur téléphone ?', 'Oui. SoutraBiz s\'installe comme une application depuis votre navigateur (Chrome), sans passer par un magasin d\'applications, et fonctionne aussi sur ordinateur.'],
+  ['Puis-je l\'utiliser sur téléphone ?', 'Oui. Nafora s\'installe comme une application depuis votre navigateur (Chrome), sans passer par un magasin d\'applications, et fonctionne aussi sur ordinateur.'],
   ['Combien ça coûte ?', 'La création du compte est gratuite, avec un essai des fonctions Pro. Les tarifs sont indiqués ci-dessus et se paient par Mobile Money.'],
   ['Pour quels commerces ?', 'Boutiques, alimentation, quincaillerie, mode, restauration, pharmacie, services… tout petit commerce ou PME qui vend et suit des stocks ou des crédits.'],
 ];
@@ -25,18 +26,19 @@ const fmt = (n: number) => new Intl.NumberFormat('fr-FR').format(n);
 export const LandingPage: React.FC<Props> = ({ onLogin, onRegister, onDemo }) => {
   const [plans, setPlans] = useState<(PlanSettings & { whatsapp: string }) | null>(null);
   useEffect(() => { api.plans().then(setPlans).catch(() => {}); }, []);
-  const wa = plans?.whatsapp ? `https://wa.me/${plans.whatsapp}?text=${encodeURIComponent('Bonjour, je souhaite en savoir plus sur SoutraBiz.')}` : '';
-  const share = `https://wa.me/?text=${encodeURIComponent(`Découvre SoutraBiz, l'application pour gérer ta boutique (ventes, stocks, crédits) même sans internet : ${typeof location !== 'undefined' ? location.origin : ''}`)}`;
+  const wa = plans?.whatsapp ? `https://wa.me/${plans.whatsapp}?text=${encodeURIComponent('Bonjour, je souhaite en savoir plus sur Nafora.')}` : '';
+  const share = `https://wa.me/?text=${encodeURIComponent(`Découvre Nafora, l'application pour gérer ta boutique (ventes, stocks, crédits) même sans internet : ${typeof location !== 'undefined' ? location.origin : ''}`)}`;
   const btn = 'px-5 py-3 rounded-2xl font-bold text-sm transition active:scale-95';
 
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900" data-testid="landing">
       <header className="bg-emerald-950 text-white">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 font-black text-lg"><img src="/icon.svg" alt="" className="w-8 h-8 rounded-lg" /> SoutraBiz</div>
-          <nav className="flex items-center gap-2">
-            <button onClick={onLogin} className="px-3 py-2 rounded-xl text-sm font-bold text-emerald-100 hover:bg-emerald-900" data-testid="landing-login">Se connecter</button>
-            <button onClick={onRegister} className="px-4 py-2 rounded-xl text-sm font-bold bg-amber-400 text-stone-950 hover:bg-amber-300" data-testid="landing-register-top">Créer mon compte</button>
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-3 flex items-center justify-between gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-2 font-black text-base sm:text-lg whitespace-nowrap"><img src="/icon.svg" alt="" className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg" /> Nafora</div>
+          <nav className="flex items-center gap-1 sm:gap-2 shrink-0">
+            <ThemeToggle className="!p-1.5 sm:!p-2" />
+            <button onClick={onLogin} className="px-2 sm:px-3 py-2 rounded-xl text-[13px] sm:text-sm font-bold text-emerald-100 hover:bg-emerald-900 whitespace-nowrap" data-testid="landing-login"><span className="sm:hidden">Connexion</span><span className="hidden sm:inline">Se connecter</span></button>
+            <button onClick={onRegister} className="px-2.5 sm:px-4 py-2 rounded-xl text-[13px] sm:text-sm font-bold bg-amber-400 text-stone-950 hover:bg-amber-300 whitespace-nowrap" data-testid="landing-register-top"><span className="sm:hidden">S'inscrire</span><span className="hidden sm:inline">Créer mon compte</span></button>
           </nav>
         </div>
       </header>
@@ -85,7 +87,7 @@ export const LandingPage: React.FC<Props> = ({ onLogin, onRegister, onDemo }) =>
               <p className="mt-3 text-xs text-amber-200">{plans.trialDays} jours d'essai Pro offerts à l'inscription.</p></div>
           </div>
         ) : (
-          <p className="mt-6 text-center text-stone-600">SoutraBiz est <b>gratuit pendant la phase de lancement</b>. Créez votre compte et profitez de toutes les fonctions.</p>)}
+          <p className="mt-6 text-center text-stone-600">Nafora est <b>gratuit pendant la phase de lancement</b>. Créez votre compte et profitez de toutes les fonctions.</p>)}
       </section>
 
       <section className="bg-white border-y border-stone-200" aria-labelledby="faq">
@@ -106,7 +108,7 @@ export const LandingPage: React.FC<Props> = ({ onLogin, onRegister, onDemo }) =>
 
       <footer className="bg-emerald-950 text-emerald-200 text-sm">
         <div className="max-w-6xl mx-auto px-4 py-6 flex flex-wrap items-center justify-between gap-3">
-          <span>© {new Date().getFullYear()} SoutraBiz</span>
+          <span>© {new Date().getFullYear()} Nafora</span>
           <nav className="flex flex-wrap gap-4"><a href="/a-propos.html" className="hover:text-white">À propos</a><a href="/contact.html" className="hover:text-white">Contact</a><a href="/confidentialite.html" className="hover:text-white">Confidentialité</a><a href="/conditions.html" className="hover:text-white">Conditions d'utilisation</a></nav>
         </div>
       </footer>

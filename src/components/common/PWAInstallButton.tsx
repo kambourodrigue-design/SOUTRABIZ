@@ -50,7 +50,7 @@ export const PWAInstallButton: React.FC = () => {
                   <div className="w-8 h-8 rounded-lg bg-emerald-800 flex items-center justify-center text-white font-bold">
                     S
                   </div>
-                  <h3 className="font-bold text-stone-900">Installer SoutraBiz sur iPhone</h3>
+                  <h3 className="font-bold text-stone-900">Installer Nafora sur iPhone</h3>
                 </div>
                 <button 
                   onClick={() => setShowIOSGuide(false)}

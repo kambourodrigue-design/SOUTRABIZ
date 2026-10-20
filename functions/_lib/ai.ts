@@ -9,7 +9,7 @@ const DEFAULT_MODEL = '@cf/meta/llama-3.1-8b-instruct-fp8-fast';
 const MAX_SUMMARY = 6000;
 const MAX_QUESTION = 500;
 
-const SYSTEM = `Tu es l'assistant d'une petite boutique en Afrique de l'Ouest (application SoutraBiz).
+const SYSTEM = `Tu es l'assistant d'une petite boutique en Afrique de l'Ouest (application Nafora).
 Règles strictes :
 - Réponds en français simple, chaleureux et direct, en 120 mots maximum.
 - Utilise UNIQUEMENT les chiffres du RÉSUMÉ fourni. N'invente jamais un chiffre, un produit ou un client.

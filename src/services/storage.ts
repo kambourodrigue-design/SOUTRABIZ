@@ -129,7 +129,7 @@ export const storage = {
   exportBackupJson(): string {
     const backup = {
       exportDate: new Date().toISOString(),
-      app: 'SoutraBiz',
+      app: 'Nafora',
       version: '1.0',
       settings: this.getSettings(),
       products: this.getProducts(),

@@ -140,7 +140,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               S
             </div>
             <div>
-              <h3 className="font-black text-lg text-stone-900">Espace Utilisateur SoutraBiz</h3>
+              <h3 className="font-black text-lg text-stone-900">Espace Utilisateur Nafora</h3>
               <p className="text-xs text-stone-500">Connexion et Inscription multi-activités</p>
             </div>
           </div>
@@ -183,7 +183,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </div>
                 {forgotDone.contact && (
                   <a
-                    href={`https://wa.me/${forgotDone.contact}?text=${encodeURIComponent(`Bonjour, j'ai oublié mon mot de passe SoutraBiz. Mon identifiant : ${forgotId}`)}`}
+                    href={`https://wa.me/${forgotDone.contact}?text=${encodeURIComponent(`Bonjour, j'ai oublié mon mot de passe Nafora. Mon identifiant : ${forgotId}`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="block w-full text-center py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm"

@@ -2,6 +2,7 @@ import React from 'react';
 import { ShopSettings, UserAccount } from '../../types';
 import { BUSINESS_PRESETS } from '../../services/businessPresets';
 import { PWAInstallButton } from './PWAInstallButton';
+import { ThemeToggle } from './ThemeToggle';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import { 
   Store, 
@@ -149,6 +150,8 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* PWA In-App Install Prompt */}
           <PWAInstallButton />
+
+          <ThemeToggle />
 
           {/* Settings button */}
           <button

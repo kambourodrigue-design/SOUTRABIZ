@@ -1,4 +1,4 @@
--- SoutraBiz — schéma D1 v5 (NOUVELLE installation uniquement).
+-- Nafora — schéma D1 v5 (NOUVELLE installation uniquement).
 -- Si votre base existe déjà (version précédente), exécutez plutôt migration-v3.sql, migration-v4.sql puis migration-v5.sql.
 
 CREATE TABLE IF NOT EXISTS users (

@@ -440,36 +440,36 @@ export const FinancesView: React.FC<FinancesViewProps> = ({
                 <defs>
                   {/* Revenue Emerald Gradient */}
                   <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#047857" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#047857" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="var(--c-blue)" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="var(--c-blue)" stopOpacity={0.0} />
                   </linearGradient>
 
                   {/* Profit Amber Gradient */}
                   <linearGradient id="profitGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#d97706" stopOpacity={0.35} />
-                    <stop offset="95%" stopColor="#d97706" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="var(--c-gold)" stopOpacity={0.35} />
+                    <stop offset="95%" stopColor="var(--c-gold)" stopOpacity={0.0} />
                   </linearGradient>
 
                   {/* Expenses Rose Gradient */}
                   <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#e11d48" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#e11d48" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="var(--c-rose)" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="var(--c-rose)" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
 
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--c-grid)" />
                 
                 <XAxis 
                   dataKey="monthLabel" 
-                  stroke="#94a3b8" 
+                  stroke="var(--c-axis)" 
                   fontSize={12} 
                   tickLine={false} 
-                  axisLine={{ stroke: '#e2e8f0' }}
+                  axisLine={{ stroke: 'var(--c-axis-line)' }}
                   dy={6}
                 />
                 
                 <YAxis 
-                  stroke="#94a3b8" 
+                  stroke="var(--c-axis)" 
                   fontSize={11} 
                   tickLine={false} 
                   axisLine={false}
@@ -496,11 +496,11 @@ export const FinancesView: React.FC<FinancesViewProps> = ({
                   type="monotone" 
                   dataKey="revenue" 
                   name="revenue"
-                  stroke="#047857" 
+                  stroke="var(--c-blue)" 
                   strokeWidth={3} 
                   fillOpacity={1} 
                   fill="url(#revenueGradient)" 
-                  activeDot={{ r: 6, stroke: '#064e3b', strokeWidth: 2 }}
+                  activeDot={{ r: 6, stroke: 'var(--c-blue-deep)', strokeWidth: 2 }}
                 />
 
                 {chartMetric === 'sales_profit' ? (
@@ -508,38 +508,38 @@ export const FinancesView: React.FC<FinancesViewProps> = ({
                     type="monotone" 
                     dataKey="netProfit" 
                     name="netProfit"
-                    stroke="#d97706" 
+                    stroke="var(--c-gold)" 
                     strokeWidth={2.5} 
                     fillOpacity={1} 
                     fill="url(#profitGradient)" 
-                    activeDot={{ r: 5, stroke: '#b45309', strokeWidth: 2 }}
+                    activeDot={{ r: 5, stroke: 'var(--c-gold-deep)', strokeWidth: 2 }}
                   />
                 ) : (
                   <Area 
                     type="monotone" 
                     dataKey="expenses" 
                     name="expenses"
-                    stroke="#e11d48" 
+                    stroke="var(--c-rose)" 
                     strokeWidth={2.5} 
                     fillOpacity={1} 
                     fill="url(#expenseGradient)" 
-                    activeDot={{ r: 5, stroke: '#be123c', strokeWidth: 2 }}
+                    activeDot={{ r: 5, stroke: 'var(--c-rose-deep)', strokeWidth: 2 }}
                   />
                 )}
               </AreaChart>
             ) : (
               <BarChart data={monthlyData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--c-grid)" />
                 <XAxis 
                   dataKey="monthLabel" 
-                  stroke="#94a3b8" 
+                  stroke="var(--c-axis)" 
                   fontSize={12} 
                   tickLine={false} 
-                  axisLine={{ stroke: '#e2e8f0' }}
+                  axisLine={{ stroke: 'var(--c-axis-line)' }}
                   dy={6}
                 />
                 <YAxis 
-                  stroke="#94a3b8" 
+                  stroke="var(--c-axis)" 
                   fontSize={11} 
                   tickLine={false} 
                   axisLine={false}
@@ -562,7 +562,7 @@ export const FinancesView: React.FC<FinancesViewProps> = ({
                 <Bar 
                   dataKey="revenue" 
                   name="revenue"
-                  fill="#047857" 
+                  fill="var(--c-blue)" 
                   radius={[6, 6, 0, 0]} 
                   maxBarSize={40}
                 />
@@ -570,7 +570,7 @@ export const FinancesView: React.FC<FinancesViewProps> = ({
                   <Bar 
                     dataKey="netProfit" 
                     name="netProfit"
-                    fill="#d97706" 
+                    fill="var(--c-gold)" 
                     radius={[6, 6, 0, 0]} 
                     maxBarSize={40}
                   />
@@ -578,7 +578,7 @@ export const FinancesView: React.FC<FinancesViewProps> = ({
                   <Bar 
                     dataKey="expenses" 
                     name="expenses"
-                    fill="#e11d48" 
+                    fill="var(--c-rose)" 
                     radius={[6, 6, 0, 0]} 
                     maxBarSize={40}
                   />

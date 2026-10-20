@@ -114,7 +114,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onI
     try {
       await api.adminResetPassword(u.id, pw);
       const phone = u.phone.replace(/\D/g, '');
-      const msg = `Bonjour ${u.name}, voici votre mot de passe temporaire SoutraBiz : ${pw}\nConnectez-vous puis changez-le dans Paramètres > Mon mot de passe.`;
+      const msg = `Bonjour ${u.name}, voici votre mot de passe temporaire Nafora : ${pw}\nConnectez-vous puis changez-le dans Paramètres > Mon mot de passe.`;
       window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
       load();
     } catch (e) { alert((e as Error).message); }
@@ -147,7 +147,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onI
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `soutrabiz_commercants_${new Date().toISOString().split('T')[0]}.csv`;
+      link.download = `nafora_commercants_${new Date().toISOString().split('T')[0]}.csv`;
       link.click();
       URL.revokeObjectURL(url);
     } catch (e) { alert((e as Error).message); }

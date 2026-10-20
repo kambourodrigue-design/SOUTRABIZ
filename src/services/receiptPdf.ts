@@ -11,7 +11,7 @@ export async function buildReceiptPdf(sale: Sale, settings: ShopSettings): Promi
   const W = doc.internal.pageSize.getWidth();
   const M = 12;
   const money = (n: number) => clean(formatCurrency(n, settings.currency));
-  const green: [number, number, number] = [6, 78, 59];
+  const green: [number, number, number] = [11, 31, 102]; // marine Nafora
   let y = 14;
 
   // --- En-tête : logo + identité boutique
@@ -125,7 +125,7 @@ export async function buildReceiptPdf(sale: Sale, settings: ShopSettings): Promi
     row('Montant reçu', money(sale.amountPaid));
     if (sale.changeGiven > 0) row('Monnaie rendue', money(sale.changeGiven));
     y += 1;
-    doc.setTextColor(4, 120, 87);
+    doc.setTextColor(26, 75, 209);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
     doc.text('PAYÉ', W - M, y, { align: 'right' });

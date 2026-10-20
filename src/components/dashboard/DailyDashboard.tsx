@@ -451,28 +451,28 @@ export const DailyDashboard: React.FC<DailyDashboardProps> = ({
             <AreaChart data={monthlySalesTrend} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
               <defs>
                 <linearGradient id="dashRevenueGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#047857" stopOpacity={0.4} />
-                  <stop offset="95%" stopColor="#047857" stopOpacity={0.0} />
+                  <stop offset="5%" stopColor="var(--c-blue)" stopOpacity={0.4} />
+                  <stop offset="95%" stopColor="var(--c-blue)" stopOpacity={0.0} />
                 </linearGradient>
                 <linearGradient id="dashProfitGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#d97706" stopOpacity={0.35} />
-                  <stop offset="95%" stopColor="#d97706" stopOpacity={0.0} />
+                  <stop offset="5%" stopColor="var(--c-gold)" stopOpacity={0.35} />
+                  <stop offset="95%" stopColor="var(--c-gold)" stopOpacity={0.0} />
                 </linearGradient>
               </defs>
 
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--c-grid)" />
               
               <XAxis 
                 dataKey="monthLabel" 
-                stroke="#94a3b8" 
+                stroke="var(--c-axis)" 
                 fontSize={12} 
                 tickLine={false} 
-                axisLine={{ stroke: '#e2e8f0' }}
+                axisLine={{ stroke: 'var(--c-axis-line)' }}
                 dy={6}
               />
               
               <YAxis 
-                stroke="#94a3b8" 
+                stroke="var(--c-axis)" 
                 fontSize={11} 
                 tickLine={false} 
                 axisLine={false}
@@ -511,22 +511,22 @@ export const DailyDashboard: React.FC<DailyDashboardProps> = ({
                 type="monotone" 
                 dataKey="revenue" 
                 name="Chiffre d'Affaires"
-                stroke="#047857" 
+                stroke="var(--c-blue)" 
                 strokeWidth={3} 
                 fillOpacity={1} 
                 fill="url(#dashRevenueGradient)" 
-                activeDot={{ r: 6, stroke: '#064e3b', strokeWidth: 2 }}
+                activeDot={{ r: 6, stroke: 'var(--c-blue-deep)', strokeWidth: 2 }}
               />
 
               <Area 
                 type="monotone" 
                 dataKey="grossProfit" 
                 name="Marge Brute"
-                stroke="#d97706" 
+                stroke="var(--c-gold)" 
                 strokeWidth={2} 
                 fillOpacity={1} 
                 fill="url(#dashProfitGradient)" 
-                activeDot={{ r: 4, stroke: '#b45309', strokeWidth: 2 }}
+                activeDot={{ r: 4, stroke: 'var(--c-gold-deep)', strokeWidth: 2 }}
               />
             </AreaChart>
           </ResponsiveContainer>

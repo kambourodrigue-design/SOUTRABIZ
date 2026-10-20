@@ -44,7 +44,7 @@ export async function logError(env: Env, e: { source: 'server' | 'client'; route
     if (Math.random() < 0.02) {
       await env.DB.prepare('DELETE FROM error_log WHERE ts < ?').bind(new Date(Date.now() - 14 * 86400000).toISOString()).run();
     }
-    await alertOnce(env, sig, `⚠️ SoutraBiz — erreur ${e.source}${e.status ? ' ' + e.status : ''}\n${route}\n${message}`);
+    await alertOnce(env, sig, `⚠️ Nafora — erreur ${e.source}${e.status ? ' ' + e.status : ''}\n${route}\n${message}`);
   } catch { /* ignore */ }
 }
 
@@ -106,7 +106,7 @@ export async function adminMonitor(env: Env) {
 export async function adminMonitorAction(req: Request, env: Env, sub: string | undefined) {
   if (sub === 'test-alert' && req.method === 'POST') {
     if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) return fail("Telegram n'est pas configuré (variables TELEGRAM_BOT_TOKEN et TELEGRAM_CHAT_ID).", 400);
-    const ok = await sendTelegram(env, '✅ SoutraBiz : test d\'alerte réussi.');
+    const ok = await sendTelegram(env, '✅ Nafora : test d\'alerte réussi.');
     return ok ? json({ ok: true }) : fail("Envoi impossible : vérifiez le jeton et l'identifiant du chat Telegram.", 502);
   }
   if (sub === 'clear' && req.method === 'DELETE') {

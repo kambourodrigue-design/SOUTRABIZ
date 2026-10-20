@@ -1,4 +1,4 @@
--- SoutraBiz — MIGRATION v2 → v3 (à exécuter UNE SEULE FOIS dans la Console D1,
+-- Nafora — MIGRATION v2 → v3 (à exécuter UNE SEULE FOIS dans la Console D1,
 -- AVANT de mettre en ligne la nouvelle version du site).
 -- Vos comptes et toutes vos données actuelles sont conservés.
 -- Si une ligne affiche « duplicate column name », cette partie est déjà faite : passez à la suite.

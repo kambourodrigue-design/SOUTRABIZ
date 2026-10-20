@@ -221,7 +221,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
           <AlertCircle className="w-4 h-4 text-purple-700 shrink-0 mt-0.5" />
           <div>
             <span className="font-bold">Astuce Trésorerie : </span>
-            Vous avez prélevé {formatCurrency(personalDrawsTotal, settings.currency)} pour convenance personnelle. SoutraBiz sépare ces montants de vos charges professionnelles afin de ne pas fausser votre marge d'exploitation devant le banquier.
+            Vous avez prélevé {formatCurrency(personalDrawsTotal, settings.currency)} pour convenance personnelle. Nafora sépare ces montants de vos charges professionnelles afin de ne pas fausser votre marge d'exploitation devant le banquier.
           </div>
         </div>
       )}

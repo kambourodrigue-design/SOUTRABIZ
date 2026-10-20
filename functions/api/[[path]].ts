@@ -1,4 +1,4 @@
-// API SoutraBiz — Cloudflare Pages Functions + D1
+// API Nafora — Cloudflare Pages Functions + D1
 // Routes : /api/auth/*, /api/sync, /api/team/*, /api/admin/*
 // La logique est répartie dans functions/_lib/ (auth, sync, merge, team, admin).
 

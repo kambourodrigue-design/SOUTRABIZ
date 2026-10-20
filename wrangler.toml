@@ -1,3 +1,4 @@
+# Nom TECHNIQUE du projet Cloudflare : ne pas renommer (sinon un nouveau projet serait créé). Le nom affiché est « Nafora ».
 name = "soutrabiz"
 compatibility_date = "2025-01-01"
 pages_build_output_dir = "dist"

@@ -59,7 +59,7 @@ export function generateReceiptWhatsAppUrl(
 
   lines.push(`--------------------------------`);
   lines.push(`🙏 *Merci pour votre confiance et à très bientôt !*`);
-  lines.push(`_Généré via SoutraBiz Commerce_`);
+  lines.push(`_Généré via Nafora_`);
 
   const text = encodeURIComponent(lines.filter(l => l.length > 0).join('\n'));
   const phoneParam = customerPhone ? cleanPhoneNumber(customerPhone) : '';

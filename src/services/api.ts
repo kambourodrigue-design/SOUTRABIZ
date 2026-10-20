@@ -73,6 +73,9 @@ export interface RegisterInput {
 }
 
 export interface Announcement { id: string; title: string; body: string; level: 'info' | 'important'; createdAt: string; read: boolean }
+/** Réglages publicitaires (AdSense). Composant AdSlot prêt, pas encore branché : voir note de livraison. */
+export interface AdsPublic { enabled: boolean; client: string; slots: { dashboard?: string; assistant?: string; debts?: string } }
+
 export interface AdminAnnouncement { id: string; title: string; body: string; audience: string; level: string; createdAt: string; expiresAt: string; active: boolean; reads: number; audienceSize: number }
 export interface SiteStats {
   totals: { merchants: number; suspended: number; teamMembers: number; sales: number; revenue: number; active7d: number; visits30d: number; signups30d: number };

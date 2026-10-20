@@ -1,6 +1,6 @@
 > **Mise en ligne avec comptes + espace admin : voir `DEPLOY.md`** (Cloudflare Pages + D1).
 
-# SoutraBiz (BizFlow Africa) 🚀
+# Nafora 🚀
 
 Application complète de gestion commerciale et score de crédit pour les commerçants et PME d'Afrique de l'Ouest.
 
@@ -34,7 +34,7 @@ Application complète de gestion commerciale et score de crédit pour les commer
 ### Méthode 1 : Glisser-Déposer direct (Sans Git, en 30 secondes)
 1. Allez sur le tableau de bord [Cloudflare](https://dash.cloudflare.com) > **Workers & Pages** > **Create application** > **Pages** > **Upload assets**.
 2. Nommez votre projet (ex. `soutrabiz`).
-3. Glissez-déposez simplement le contenu du dossier `dist/` (ou l'archive `bizflow-africa-dist.zip` décompressée).
+3. Glissez-déposez simplement le contenu du dossier `dist/` (ou l'archive `nafora-dist.zip` décompressée).
 4. Cliquez sur **Deploy site**. C'est terminé !
 
 ### Méthode 2 : Déploiement Git

@@ -115,7 +115,7 @@ export async function submitPayment(req: Request, env: Env, user: UserRow) {
     `INSERT INTO payments (id, shop_id, user_id, user_name, phone, amount, months, method, reference, status, created_at)
      VALUES (?,?,?,?,?,?,?,?,?, 'pending', ?)`)
     .bind(id, user.shop_id, user.id, user.name, phone || user.phone, price, months, method, reference, new Date().toISOString()).run();
-  await sendTelegram(env, `💰 SoutraBiz : paiement à valider\n${user.name} — ${price} ${b.currency} (${months} mois)\nRéf. ${reference}`);
+  await sendTelegram(env, `💰 Nafora : paiement à valider\n${user.name} — ${price} ${b.currency} (${months} mois)\nRéf. ${reference}`);
   return json({ ok: true, id }, 201);
 }
 

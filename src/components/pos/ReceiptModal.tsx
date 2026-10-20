@@ -164,7 +164,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
           <div className="text-center pt-4 text-xs text-stone-500">
             <p className="font-bold text-stone-800">Merci pour votre confiance !</p>
             <p className="text-[11px] mt-0.5">Les marchandises vendues ne sont ni reprises ni échangées.</p>
-            <p className="text-[10px] text-stone-400 mt-2">Certifié conforme par SoutraBiz</p>
+            <p className="text-[10px] text-stone-400 mt-2">Certifié conforme par Nafora</p>
           </div>
 
         </div>

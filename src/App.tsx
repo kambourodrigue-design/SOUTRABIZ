@@ -344,7 +344,7 @@ export default function App() {
   if (session === 'loading') {
     return (
       <div className="min-h-screen bg-emerald-950 flex items-center justify-center text-emerald-100 font-bold">
-        Chargement de SoutraBiz…
+        Chargement de Nafora…
       </div>
     );
   }

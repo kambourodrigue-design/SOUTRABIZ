@@ -1,4 +1,4 @@
-# Mise en ligne de SoutraBiz sur Cloudflare (Pages + base D1)
+# Mise en ligne de Nafora sur Cloudflare (Pages + base D1)
 
 Le site gère maintenant de vrais comptes (inscription / connexion par mot de passe) et un espace admin.
 Les données sont stockées dans une base **Cloudflare D1**. 

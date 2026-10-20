@@ -46,8 +46,8 @@ export const FormalizationGuide: React.FC<FormalizationGuideProps> = ({
     },
     {
       id: 'step-4',
-      title: "4. Tenue Quotidienne des Registres sur SoutraBiz",
-      desc: "En enregistrant chaque vente, chaque approvisionnement et chaque dette sur SoutraBiz, vous disposez d'un historique inattaquable.",
+      title: "4. Tenue Quotidienne des Registres sur Nafora",
+      desc: "En enregistrant chaque vente, chaque approvisionnement et chaque dette sur Nafora, vous disposez d'un historique inattaquable.",
       benefit: "Calcul automatique du score de crédit bancaire et génération du dossier de prêt en 1 clic.",
       completed: true,
     },

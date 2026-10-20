@@ -3,6 +3,9 @@ import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import { api } from './services/api';
+import { initTheme } from './services/theme';
+
+initTheme();
 
 // Surveillance : les erreurs inattendues sont signalées au serveur (au plus 5 par session, sans donnée personnelle).
 let reported = 0;
@@ -21,7 +24,7 @@ class Boundary extends React.Component<{ children: React.ReactNode }, { failed: 
   render() {
     if (!this.state.failed) return this.props.children;
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, background: '#064e3b', color: '#ecfdf5', textAlign: 'center', fontFamily: 'sans-serif' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, background: '#0b1f66', color: '#eef3ff', textAlign: 'center', fontFamily: 'sans-serif' }}>
         <div>
           <h1 style={{ fontSize: 20, fontWeight: 800 }}>Une erreur est survenue</h1>
           <p style={{ margin: '12px 0 20px' }}>Vos données sont conservées. Rechargez l'application pour continuer.</p>

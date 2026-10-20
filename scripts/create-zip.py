@@ -6,9 +6,9 @@ public_dir = os.path.join(root_dir, 'public')
 os.makedirs(public_dir, exist_ok=True)
 
 # 1. Complete Source Code ZIP for Vercel / Cloudflare Pages (Git deploy)
-source_zip_path = os.path.join(public_dir, 'bizflow-africa-source.zip')
+source_zip_path = os.path.join(public_dir, 'nafora-source.zip')
 exclude_dirs = {'.git', 'node_modules', '.cache', 'dev-dist'}
-exclude_files = {'bizflow-africa-source.zip', 'bizflow-africa-dist.zip'}
+exclude_files = {'nafora-source.zip', 'nafora-dist.zip'}
 
 with zipfile.ZipFile(source_zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
     for dirpath, dirnames, filenames in os.walk(root_dir):
@@ -26,7 +26,7 @@ print(f"Created source zip: {source_zip_path} ({os.path.getsize(source_zip_path)
 # 2. Pre-built Dist ZIP for Direct Drag & Drop on Cloudflare Pages / Netlify
 dist_dir = os.path.join(root_dir, 'dist')
 if os.path.exists(dist_dir):
-    dist_zip_path = os.path.join(public_dir, 'bizflow-africa-dist.zip')
+    dist_zip_path = os.path.join(public_dir, 'nafora-dist.zip')
     with zipfile.ZipFile(dist_zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
         for dirpath, dirnames, filenames in os.walk(dist_dir):
             for filename in filenames:

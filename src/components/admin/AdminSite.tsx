@@ -39,10 +39,10 @@ export const AdminStatsPanel: React.FC = () => {
     <div className="space-y-4" data-testid="admin-stats">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">{kp.map(([l, v]) => <div key={l} className={card}><div className="text-xs text-stone-500">{l}</div><div className="text-xl font-black text-stone-900">{v}</div></div>)}</div>
       <div className="grid md:grid-cols-2 gap-3">
-        <Bars label="Visites du site" color="#0f766e" data={d.series.map(s => ({ day: s.day, v: s.visits }))} />
-        <Bars label="Nouvelles inscriptions" color="#b45309" data={d.series.map(s => ({ day: s.day, v: s.signups }))} />
-        <Bars label="Boutiques actives par jour" color="#047857" data={d.series.map(s => ({ day: s.day, v: s.activeShops }))} />
-        <Bars label="Ventes enregistrées par jour" color="#1d4ed8" data={d.series.map(s => ({ day: s.day, v: s.sales }))} />
+        <Bars label="Visites du site" color="var(--c-cyan)" data={d.series.map(s => ({ day: s.day, v: s.visits }))} />
+        <Bars label="Nouvelles inscriptions" color="var(--c-gold-deep)" data={d.series.map(s => ({ day: s.day, v: s.signups }))} />
+        <Bars label="Boutiques actives par jour" color="var(--c-blue)" data={d.series.map(s => ({ day: s.day, v: s.activeShops }))} />
+        <Bars label="Ventes enregistrées par jour" color="var(--c-violet)" data={d.series.map(s => ({ day: s.day, v: s.sales }))} />
       </div>
       <div className="grid md:grid-cols-3 gap-3">
         <Rank title="Secteurs" rows={d.categories} /><Rank title="Pays" rows={d.countries} />

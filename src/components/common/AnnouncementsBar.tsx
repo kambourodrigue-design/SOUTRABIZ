@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Megaphone, X } from 'lucide-react';
 import { api, Announcement } from '../../services/api';
 
-/** Messages de l'équipe SoutraBiz : affichés en haut jusqu'à ce que l'utilisateur les ferme. */
+/** Messages de l'équipe Nafora : affichés en haut jusqu'à ce que l'utilisateur les ferme. */
 const KEY = 'sb_ann_closed';
 const closedIds = (): string[] => { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; } };
 const rememberClosed = (id: string) => { try { localStorage.setItem(KEY, JSON.stringify([...closedIds(), id].slice(-100))); } catch { /* ignore */ } };

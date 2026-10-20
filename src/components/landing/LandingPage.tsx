@@ -77,12 +77,10 @@ export const LandingPage: React.FC<Props> = ({ onLogin, onRegister }) => {
       <section className="max-w-4xl mx-auto px-4 py-12" aria-labelledby="tarifs">
         <h2 id="tarifs" className="text-2xl sm:text-3xl font-black text-center">Tarifs simples</h2>
         {plans?.enabled ? (
-          <div className="mt-8 grid sm:grid-cols-2 gap-4">
-            <div className="bg-white rounded-2xl border border-stone-200 p-6"><h3 className="font-extrabold text-lg">Gratuit</h3><div className="text-3xl font-black mt-1">0 <span className="text-base font-bold">{plans.currency}</span></div>
-              <ul className="mt-3 text-sm text-stone-600 space-y-1 list-disc pl-5"><li>Caisse, stocks, dettes, trésorerie</li><li>Fonctionne sans internet</li><li>{plans.freeTeamMax} employé(s)</li><li>{plans.freeAiPerDay} questions à l'assistant par jour</li></ul></div>
+          <div className="mt-8 grid gap-4 max-w-md mx-auto">
             <div className="bg-emerald-900 text-white rounded-2xl p-6"><h3 className="font-extrabold text-lg">Pro</h3><div className="text-3xl font-black mt-1">{fmt(plans.price12)} <span className="text-base font-bold">{plans.currency} / an</span></div>
               <p className="text-xs text-emerald-200">Abonnement annuel unique</p>
-              <ul className="mt-3 text-sm text-emerald-100 space-y-1 list-disc pl-5"><li>Tout le plan gratuit</li><li>Employés illimités</li><li>Assistant IA étendu</li><li>Paiement par Mobile Money ou en ligne (international)</li></ul>
+              <ul className="mt-3 text-sm text-emerald-100 space-y-1 list-disc pl-5"><li>Caisse, stocks, dettes, trésorerie</li><li>Fonctionne sans internet</li><li>Employés illimités</li><li>Assistant IA étendu</li><li>Paiement par Mobile Money ou en ligne (international)</li></ul>
               <p className="mt-3 text-xs text-amber-200">{plans.trialDays} jours d'essai Pro offerts à l'inscription.</p></div>
           </div>
         ) : (

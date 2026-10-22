@@ -163,6 +163,16 @@ export const POSView: React.FC<POSViewProps> = ({
   // Submit sale
   const handleFinalizeSale = () => {
     if (cart.length === 0) return;
+    // Une vente à crédit doit être rattachée à un client, sinon la dette serait perdue.
+    if (paymentMethod === 'credit' && !selectedCustomerId && !newCustomerName.trim()) {
+      alert('Vente à crédit : choisissez un client ou saisissez son nom pour enregistrer la dette.');
+      return;
+    }
+    // Espèces : le montant reçu doit couvrir la vente (sinon, passer en « À crédit »).
+    if (paymentMethod === 'cash' && amountPaid < cartSubtotal) {
+      alert('Le montant reçu est inférieur au total. Corrigez-le, ou choisissez « À crédit » pour noter le reste en dette.');
+      return;
+    }
 
     let customerName = '';
     let customerId = selectedCustomerId;
@@ -209,8 +219,9 @@ export const POSView: React.FC<POSViewProps> = ({
     });
 
     const isCredit = paymentMethod === 'credit';
-    const finalAmountPaid = isCredit ? 0 : amountPaid;
-    const changeGiven = isCredit ? 0 : Math.max(0, amountPaid - cartSubtotal);
+    // Mobile Money / banque : le client paie exactement le total ; seul le cash donne lieu à de la monnaie.
+    const finalAmountPaid = isCredit ? 0 : paymentMethod === 'cash' ? amountPaid : cartSubtotal;
+    const changeGiven = paymentMethod === 'cash' ? Math.max(0, amountPaid - cartSubtotal) : 0;
 
     const invoiceNumber = `FAC-${new Date().getFullYear()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
 

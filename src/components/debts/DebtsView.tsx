@@ -174,18 +174,21 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
   const handleSubmitRepayment = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedCustomer || repayAmount <= 0) return;
+    // On n'enregistre jamais plus que la dette restante (sinon la caisse compterait de l'argent en trop).
+    const repayNow = Math.min(Number(repayAmount), selectedCustomer.totalDebt);
+    if (repayNow <= 0) { alert("Ce client n'a plus de dette."); return; }
 
     const newPayment: DebtPayment = {
       id: newId('pay'),
       date: new Date().toISOString(),
-      amount: Number(repayAmount),
+      amount: repayNow,
       paymentMethod: repayMethod,
       note: repayNote || undefined,
     };
 
     const updated = customers.map(c => {
       if (c.id === selectedCustomer.id) {
-        const remaining = Math.max(0, c.totalDebt - Number(repayAmount));
+        const remaining = Math.max(0, c.totalDebt - repayNow);
         return {
           ...c,
           totalDebt: remaining,
@@ -250,18 +253,20 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
   const handleSubmitSupplierRepayment = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedSupplier || supRepayAmount <= 0) return;
+    const supRepayNow = Math.min(Number(supRepayAmount), selectedSupplier.totalDebt);
+    if (supRepayNow <= 0) { alert("Ce fournisseur n'a plus de dette."); return; }
 
     const newPayment: SupplierPayment = {
       id: newId('spay'),
       date: new Date().toISOString(),
-      amount: Number(supRepayAmount),
+      amount: supRepayNow,
       paymentMethod: supRepayMethod,
       note: supRepayNote || undefined,
     };
 
     const updated = suppliers.map(s => {
       if (s.id === selectedSupplier.id) {
-        const remaining = Math.max(0, s.totalDebt - Number(supRepayAmount));
+        const remaining = Math.max(0, s.totalDebt - supRepayNow);
         return {
           ...s,
           totalDebt: remaining,

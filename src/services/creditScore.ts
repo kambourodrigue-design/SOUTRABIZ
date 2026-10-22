@@ -1,5 +1,5 @@
 import { Sale, Expense, Customer, Supplier, Product, CreditScoreResult, CreditScoreFactor } from '../types';
-import { calculateSummaryForPeriod } from './financials';
+import { calculateSummaryForPeriod, localDay } from './financials';
 
 export function calculateCreditScore(
   sales: Sale[],
@@ -13,8 +13,9 @@ export function calculateCreditScore(
   
   // 1. Régularité des flux d'encaissement (250 pts max)
   // Analyse des jours de vente sur les 30 derniers jours
+  const cutoff30 = Date.now() - 30 * 86400000;
   const uniqueSalesDays = new Set(
-    sales.map(s => new Date(s.date).toISOString().split('T')[0])
+    sales.filter(s => s.status !== 'cancelled' && new Date(s.date).getTime() >= cutoff30).map(s => localDay(s.date))
   ).size;
   
   let fluxScore = 0;
@@ -194,7 +195,9 @@ export function calculateCreditScore(
   // Capacité de remboursement mensuel = 35% du bénéfice net mensuel
   const monthlyCapacity = Math.max(0, summary30d.netProfit * 0.35);
   // Montant prêt max conseillé sur 12 mois
-  const maxRecommendedLoan = Math.round(monthlyCapacity * 10 / 50000) * 50000;
+  const rawLoan = monthlyCapacity * 10;
+  const loanStep = rawLoan >= 200000 ? 50000 : 10000;   // arrondi adapté à la taille du prêt
+  const maxRecommendedLoan = Math.round(rawLoan / loanStep) * loanStep;
 
   return {
     totalScore,
@@ -202,7 +205,7 @@ export function calculateCreditScore(
     label,
     color,
     riskAssessment,
-    maxRecommendedLoan: Math.max(200000, maxRecommendedLoan),
+    maxRecommendedLoan,   // 0 si aucune capacité de remboursement
     maxMonthlyPayment: Math.round(monthlyCapacity),
     factors: [fluxFactor, marginFactor, debtFactor, stockFactor, disciplineFactor, digitalFactor],
     eligibilityVerdict,

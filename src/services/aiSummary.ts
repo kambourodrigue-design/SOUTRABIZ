@@ -17,7 +17,7 @@ export function buildAiSummary(
   const inRange = (d: string, from: number, to = Infinity) => { const t = new Date(d).getTime(); return t >= from && t < to; };
   const agg = (from: number, to = Infinity) => {
     const ss = valid.filter(s => inRange(s.date, from, to));
-    const ex = expenses.filter(e => !isStockPurchase(e) && inRange(e.date, from, to));
+    const ex = expenses.filter(e => !isStockPurchase(e) && e.category !== 'personal_draw' && inRange(e.date, from, to));
     const revenue = ss.reduce((a, s) => a + s.total, 0);
     const gross = ss.reduce((a, s) => a + s.profit, 0);
     const exp = ex.reduce((a, e) => a + e.amount, 0);

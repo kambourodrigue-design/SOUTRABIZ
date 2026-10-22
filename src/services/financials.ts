@@ -1,5 +1,11 @@
 import { CurrencyCode, PaymentMethod, ExpenseCategory, Sale, Expense } from '../types';
 
+/** Jour calendaire LOCAL (AAAA-MM-JJ) d'une date ISO : « aujourd'hui » doit suivre l'heure du commerçant, pas l'UTC. */
+export function localDay(d: Date | string): string {
+  const x = typeof d === 'string' ? new Date(d) : d;
+  return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+}
+
 export function formatCurrency(amount: number, currency: CurrencyCode = 'XOF'): string {
   const rounded = Math.round(amount);
   const formatted = new Intl.NumberFormat('fr-FR').format(rounded);
@@ -80,7 +86,7 @@ export interface FinancialSummary {
 export function calculateSummaryForPeriod(sales: Sale[], expenses: Expense[], daysLimit: number = 30): FinancialSummary {
   const cutoff = Date.now() - (daysLimit * 86400000);
   
-  const periodSales = sales.filter(s => new Date(s.date).getTime() >= cutoff);
+  const periodSales = sales.filter(s => s.status !== 'cancelled' && new Date(s.date).getTime() >= cutoff);
   const periodExpenses = expenses.filter(e => new Date(e.date).getTime() >= cutoff);
 
   const revenue = periodSales.reduce((acc, s) => acc + s.total, 0);

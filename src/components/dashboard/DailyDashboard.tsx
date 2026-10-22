@@ -2,7 +2,7 @@ import { TreasuryCard } from './TreasuryCard';
 import { EveningSummaryCard } from './EveningSummaryCard';
 import React, { useMemo } from 'react';
 import { Sale, Expense, Customer, Supplier, Product, ShopSettings, CreditScoreResult } from '../../types';
-import { formatCurrency } from '../../services/financials';
+import { formatCurrency, localDay } from '../../services/financials';
 import { 
   ResponsiveContainer, 
   AreaChart, 
@@ -60,9 +60,9 @@ export const DailyDashboard: React.FC<DailyDashboardProps> = ({
   onQuickDebt,
 }) => {
   // Compute today's data
-  const todayStr = new Date().toISOString().split('T')[0];
-  const todaySales = sales.filter(s => s.date.startsWith(todayStr));
-  const todayExpenses = expenses.filter(e => e.date.startsWith(todayStr));
+  const todayStr = localDay(new Date());
+  const todaySales = sales.filter(s => s.status !== 'cancelled' && localDay(s.date) === todayStr);
+  const todayExpenses = expenses.filter(e => localDay(e.date) === todayStr);
 
   const todayRevenue = todaySales.reduce((sum, s) => sum + s.total, 0);
   const todayCogs = todaySales.reduce((sum, s) => sum + s.totalCost, 0);
@@ -119,7 +119,7 @@ export const DailyDashboard: React.FC<DailyDashboardProps> = ({
       const monthLabel = rawMonthLabel.charAt(0).toUpperCase() + rawMonthLabel.slice(1).replace('.', '');
       const fullName = d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
 
-      const mSales = sales.filter(s => s.date.startsWith(monthKey));
+      const mSales = sales.filter(s => s.status !== 'cancelled' && localDay(s.date).startsWith(monthKey));
       const revenue = mSales.reduce((sum, s) => sum + s.total, 0);
       const grossProfit = mSales.reduce((sum, s) => sum + s.profit, 0);
 
@@ -413,7 +413,7 @@ export const DailyDashboard: React.FC<DailyDashboardProps> = ({
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
               <ArrowUpRight className="w-3.5 h-3.5 text-emerald-600" />
-              <span>+{growth6m}% de croissance</span>
+              <span>{growth6m > 0 ? '+' : ''}{growth6m}% de croissance</span>
             </span>
 
             <button

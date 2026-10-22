@@ -1,9 +1,8 @@
 import { Customer, Expense, Product, Sale, ShopSettings } from '../types';
-import { formatCurrency } from './financials';
+import { formatCurrency, localDay } from './financials';
 import { cleanPhoneNumber } from './whatsapp';
 import { dueReminders } from './reminders';
 
-const localDay = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
 export interface DailySummary {
   salesCount: number; revenue: number; profit: number; expensesTotal: number; net: number;
@@ -15,7 +14,7 @@ export function buildDailySummary(
   sales: Sale[], expenses: Expense[], products: Product[], customers: Customer[], s: ShopSettings, now = new Date(),
 ): DailySummary {
   const today = localDay(now);
-  const isToday = (iso: string) => localDay(new Date(iso)) === today;
+  const isToday = (iso: string) => localDay(iso) === today;
   const todaySales = sales.filter((x) => x.status !== 'cancelled' && isToday(x.date));
   const revenue = todaySales.reduce((a, x) => a + x.total, 0);
   const profit = todaySales.reduce((a, x) => a + x.profit, 0);

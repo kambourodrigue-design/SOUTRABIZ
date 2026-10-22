@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Sale, Expense, ShopSettings, Product, Customer, Supplier } from '../../types';
-import { formatCurrency, calculateSummaryForPeriod } from '../../services/financials';
+import { formatCurrency, calculateSummaryForPeriod, localDay } from '../../services/financials';
 import { 
   ResponsiveContainer, 
   AreaChart, 
@@ -63,11 +63,11 @@ export const FinancesView: React.FC<FinancesViewProps> = ({
 
   // Seuil de rentabilité (Point mort financier)
   const breakEvenRevenue = useMemo(() => {
-    if (summary30d.grossMarginPct <= 0) return 0;
+    if (summary30d.grossMarginPct <= 0) return 0;     // marge nulle ou négative : seuil inatteignable
     return (summary30d.operatingExpenses / (summary30d.grossMarginPct / 100));
   }, [summary30d]);
 
-  const breakEvenAchieved = summary30d.revenue >= breakEvenRevenue;
+  const breakEvenAchieved = breakEvenRevenue > 0 ? summary30d.revenue >= breakEvenRevenue : summary30d.operatingExpenses === 0 && summary30d.grossMarginPct > 0;
   const breakEvenPct = breakEvenRevenue > 0 ? (summary30d.revenue / breakEvenRevenue) * 100 : 100;
 
   // 6-Month Monthly Sales Trend Aggregation
@@ -99,15 +99,16 @@ export const FinancesView: React.FC<FinancesViewProps> = ({
       const fullName = d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
 
       // Filter sales belonging to this month
-      const mSales = sales.filter(s => s.date.startsWith(monthKey));
-      const mExpenses = expenses.filter(e => e.date.startsWith(monthKey));
+      const mSales = sales.filter(s => s.status !== 'cancelled' && localDay(s.date).startsWith(monthKey));
+      const mExpenses = expenses.filter(e => localDay(e.date).startsWith(monthKey));
 
       const revenue = mSales.reduce((sum, s) => sum + s.total, 0);
       const grossProfit = mSales.reduce((sum, s) => sum + s.profit, 0);
       const totalCost = mSales.reduce((sum, s) => sum + s.totalCost, 0);
-      const expAmount = mExpenses.filter(e => e.category !== 'supply').reduce((sum, e) => sum + e.amount, 0); // achats de marchandises exclus (déjà dans le coût des ventes)
+      // Charges d'exploitation : sans les achats de marchandises (déjà dans le coût des ventes) ni les prélèvements personnels
+      const expAmount = mExpenses.filter(e => e.category !== 'supply' && e.category !== 'personal_draw').reduce((sum, e) => sum + e.amount, 0);
 
-      const netProfit = Math.max(0, grossProfit - expAmount);
+      const netProfit = grossProfit - expAmount;     // peut être négatif : une perte doit se voir
 
       months.push({
         monthKey,
@@ -241,7 +242,7 @@ export const FinancesView: React.FC<FinancesViewProps> = ({
 
         <div className="inline-flex items-center gap-1.5 bg-emerald-100/80 text-emerald-900 px-3 py-1.5 rounded-full text-xs font-extrabold border border-emerald-300 self-start sm:self-auto">
           <TrendingUp className="w-3.5 h-3.5 text-emerald-700" />
-          <span>Croissance globale 6 mois : +{totalGrowthOverall}%</span>
+          <span>Croissance globale 6 mois : {totalGrowthOverall > 0 ? '+' : ''}{totalGrowthOverall}%</span>
         </div>
       </div>
 
@@ -397,7 +398,7 @@ export const FinancesView: React.FC<FinancesViewProps> = ({
               {formatCurrency(sixMonthsTotalRevenue, settings.currency)}
             </div>
             <div className="text-[10px] text-emerald-700 font-semibold mt-0.5 flex items-center gap-0.5">
-              <ArrowUpRight className="w-3 h-3" /> +{totalGrowthOverall}% sur la période
+              <ArrowUpRight className="w-3 h-3" /> {totalGrowthOverall > 0 ? '+' : ''}{totalGrowthOverall}% sur la période
             </div>
           </div>
 

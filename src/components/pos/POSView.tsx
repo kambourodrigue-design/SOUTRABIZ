@@ -1,5 +1,5 @@
 import { newId } from '../../../shared/syncCore';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Product, SaleItem, Sale, PaymentMethod, Customer, ShopSettings } from '../../types';
 import { formatCurrency, getPaymentMethodDetails } from '../../services/financials';
 import { ReceiptModal } from './ReceiptModal';
@@ -38,6 +38,29 @@ export const POSView: React.FC<POSViewProps> = ({
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [cart, setCart] = useState<SaleItem[]>([]);
+
+  // Message de stock (rupture / stock restant), affiché quelques secondes
+  const [stockNotice, setStockNotice] = useState<string>('');
+  useEffect(() => {
+    if (!stockNotice) return;
+    const t = setTimeout(() => setStockNotice(''), 4000);
+    return () => clearTimeout(t);
+  }, [stockNotice]);
+  const qtyInCart = (productId: string) => cart.find(i => i.productId === productId)?.quantity ?? 0;
+  const unitLabel = (p: Product, n: number) => {
+    const u = p.unit || 'pièce';
+    return `${n} ${n > 1 && ['pièce', 'carton', 'paquet', 'sac', 'litre', 'mètre', 'bouteille'].includes(u) ? u + 's' : u}`;
+  };
+  /** Peut-on ajouter `add` unités de ce produit au panier ? Sinon, explique pourquoi. */
+  const checkStock = (p: Product, add: number): boolean => {
+    if (p.stockQuantity <= 0) { setStockNotice(`⛔ « ${p.name} » est en rupture de stock.`); return false; }
+    if (qtyInCart(p.id) + add > p.stockQuantity) {
+      const left = p.stockQuantity;
+      setStockNotice(`⚠️ Stock insuffisant pour « ${p.name} » : il n'en reste que ${unitLabel(p, left)}${qtyInCart(p.id) > 0 ? ' (déjà tout dans le panier)' : ''}.`);
+      return false;
+    }
+    return true;
+  };
   
   // Checkout flow state
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -82,6 +105,7 @@ export const POSView: React.FC<POSViewProps> = ({
 
   // Add to cart
   const addToCart = (product: Product) => {
+    if (!checkStock(product, 1)) return;
     setCart(prev => {
       const existing = prev.find(item => item.productId === product.id);
       if (existing) {
@@ -104,7 +128,15 @@ export const POSView: React.FC<POSViewProps> = ({
   };
 
   // Ajout depuis la dictée vocale
-  const applyVoice = (lines: { product: Product; qty: number }[], payment: string | null, customerId: string | null) => {
+  const applyVoice = (rawLines: { product: Product; qty: number }[], payment: string | null, customerId: string | null) => {
+    // On ne dépasse jamais le stock disponible (stock − déjà dans le panier)
+    const notes: string[] = [];
+    const lines = rawLines.map(({ product, qty }) => {
+      const free = Math.max(0, product.stockQuantity - qtyInCart(product.id));
+      if (qty > free) notes.push(free <= 0 ? `« ${product.name} » : rupture` : `« ${product.name} » : seulement ${unitLabel(product, free)} disponible(s)`);
+      return { product, qty: Math.min(qty, free) };
+    }).filter(l => l.qty > 0);
+    if (notes.length) setStockNotice(`⚠️ Stock limité — ${notes.join(' ; ')}.`);
     setCart(prev => {
       let next = [...prev];
       for (const { product, qty } of lines) {
@@ -120,6 +152,10 @@ export const POSView: React.FC<POSViewProps> = ({
 
   // Modify quantity
   const updateQuantity = (productId: string, delta: number) => {
+    if (delta > 0) {
+      const prod = products.find(x => x.id === productId);
+      if (prod && !checkStock(prod, delta)) return;
+    }
     setCart(prev => {
       return prev.map(item => {
         if (item.productId === productId) {
@@ -163,6 +199,15 @@ export const POSView: React.FC<POSViewProps> = ({
   // Submit sale
   const handleFinalizeSale = () => {
     if (cart.length === 0) return;
+    for (const it of cart) {
+      const prod = products.find(x => x.id === it.productId);
+      if (prod && it.quantity > prod.stockQuantity) {
+        alert(prod.stockQuantity <= 0
+          ? `« ${prod.name} » est maintenant en rupture de stock. Retirez-le du panier.`
+          : `Stock insuffisant pour « ${prod.name} » : il n'en reste que ${unitLabel(prod, prod.stockQuantity)}. Réduisez la quantité.`);
+        return;
+      }
+    }
     // Une vente à crédit doit être rattachée à un client, sinon la dette serait perdue.
     if (paymentMethod === 'credit' && !selectedCustomerId && !newCustomerName.trim()) {
       alert('Vente à crédit : choisissez un client ou saisissez son nom pour enregistrer la dette.');
@@ -253,6 +298,12 @@ export const POSView: React.FC<POSViewProps> = ({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 pb-20">
+      {stockNotice && (
+        <div role="alert" onClick={() => setStockNotice('')} data-testid="stock-notice"
+          className="fixed top-20 left-3 right-3 z-[60] mx-auto max-w-md rounded-2xl bg-rose-700 text-white text-sm font-bold px-4 py-3 shadow-xl cursor-pointer">
+          {stockNotice}
+        </div>
+      )}
       
       {/* Left side: Product Catalog (8 cols on desktop) */}
       <div className="lg:col-span-7 xl:col-span-8 space-y-4">
@@ -304,7 +355,7 @@ export const POSView: React.FC<POSViewProps> = ({
             return (
               <div
                 key={product.id}
-                onClick={() => !isOutOfStock && addToCart(product)}
+                onClick={() => (isOutOfStock ? setStockNotice(`⛔ « ${product.name} » est en rupture de stock.`) : addToCart(product))}
                 className={`relative flex flex-col justify-between p-3 rounded-2xl border transition active:scale-97 select-none cursor-pointer ${
                   isOutOfStock 
                     ? 'bg-stone-100 border-stone-200 opacity-60 cursor-not-allowed'
@@ -325,7 +376,7 @@ export const POSView: React.FC<POSViewProps> = ({
                     )}
                     {isOutOfStock && (
                       <span className="text-[10px] font-bold text-rose-700 bg-rose-100 px-1.5 py-0.5 rounded-md">
-                        Épuisé
+                        Rupture
                       </span>
                     )}
                   </div>
@@ -420,7 +471,8 @@ export const POSView: React.FC<POSViewProps> = ({
                       </span>
                       <button
                         onClick={() => updateQuantity(item.productId, 1)}
-                        className="w-6 h-6 rounded-lg hover:bg-stone-100 text-stone-600 flex items-center justify-center font-bold transition"
+                        aria-label="Ajouter une unité"
+                        className={`w-6 h-6 rounded-lg hover:bg-stone-100 text-stone-600 flex items-center justify-center font-bold transition ${item.quantity >= (products.find(x => x.id === item.productId)?.stockQuantity ?? Infinity) ? 'opacity-30' : ''}`}
                       >
                         <Plus className="w-3 h-3" />
                       </button>

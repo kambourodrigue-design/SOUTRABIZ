@@ -10,6 +10,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Nafora" />
+    <link rel="preload" as="image" href="/brand/logo-stacked-dark.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     
@@ -36,14 +37,16 @@
       :root { --boot-bg:#f5f8ff; --boot-fg:#0b1f66; --boot-sub:#4a5780; --boot-dim:#8d9bbc; color-scheme: light; }
       :root.dark { --boot-bg:#050b24; --boot-fg:#eef3ff; --boot-sub:#93a3ce; --boot-dim:#7284b5; color-scheme: dark; }
       body { background: var(--boot-bg); }
+      /* écran de démarrage = même logo, même taille et même fond que l'écran de chargement de l'application */
+      .boot-logo { height: 176px; width: auto; max-width: 90vw; }
+      @media (min-width: 640px) { .boot-logo { height: 224px; } }
     </style>
   </head>
   <body class="bg-stone-50 text-stone-900 antialiased selection:bg-emerald-500 selection:text-white">
-    <div id="root"><div id="boot" style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-family:system-ui,sans-serif;color:var(--boot-fg);background:var(--boot-bg);text-align:center;padding:24px">
-      <div style="font-size:44px">🛒</div>
-      <div style="font-weight:800;font-size:20px">Nafora</div>
-      <div id="boot-msg" style="font-size:14px;color:var(--boot-sub)">Chargement…</div>
-      <div id="boot-detail" style="font-size:11px;color:var(--boot-dim);max-width:320px;word-break:break-word"></div>
+    <div id="root"><div id="boot" style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-family:system-ui,sans-serif;color:#eef3ff;background:#050b24;text-align:center;padding:24px">
+      <img class="boot-logo" src="/brand/logo-stacked-dark.png" alt="Nafora" width="251" height="176">
+      <div id="boot-msg" style="display:none;font-size:14px;color:#93a3ce"></div>
+      <div id="boot-detail" style="font-size:11px;color:#7284b5;max-width:320px;word-break:break-word"></div>
       <button id="boot-fix" style="display:none;padding:12px 22px;border:0;border-radius:14px;background:#1a4bd1;color:#fff;font-weight:700;font-size:15px">Réparer et recharger</button>
       <div style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap"><main style="max-width:720px;margin:0 auto;padding:32px 20px;font-family:system-ui,sans-serif;color:#1c1917">
       <h1 style="font-size:28px;font-weight:800">Nafora : gérez votre commerce, même sans internet</h1>
@@ -72,7 +75,7 @@
       setTimeout(function () {
         var m = document.getElementById('boot-msg'), b = document.getElementById('boot-fix');
         if (!m || !b) return;
-        m.textContent = 'Le chargement est long. Vérifiez votre connexion puis touchez le bouton.';
+        m.style.display = 'block'; m.textContent = 'Le chargement est long. Vérifiez votre connexion puis touchez le bouton.';
         b.style.display = 'block';
         b.onclick = function () {
           var done = function () { location.replace('/?r=' + Date.now()); };

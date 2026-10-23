@@ -171,6 +171,9 @@ export function contribution(kind: Kind, obj: any, deleted: boolean): { day: str
     if (obj.status && obj.status !== 'completed') return null;
     return { day, v: { c: 1, r: Number(obj.total) || 0, p: Number(obj.profit) || 0, e: 0 } };
   }
+  // Charges d'exploitation uniquement (même règle que l'application) : les achats de marchandises
+  // sont déjà dans le coût des ventes, et les prélèvements personnels ne sont pas des charges.
+  if (obj.category === 'supply' || obj.category === 'personal_draw') return null;
   return { day, v: { c: 0, r: 0, p: 0, e: Number(obj.amount) || 0 } };
 }
 

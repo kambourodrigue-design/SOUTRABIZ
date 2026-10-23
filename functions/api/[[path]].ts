@@ -12,6 +12,7 @@ import { handleAi } from '../_lib/ai';
 import { logError, health, clientLog, adminMonitor, adminMonitorAction } from '../_lib/monitor';
 import { myBilling, submitPayment, adminBilling, publicPlans, mfStart, mfCheck, mfWebhook } from '../_lib/billing';
 import { myCatalog, saveCatalog } from '../_lib/catalog';
+import { myFeedback, submitFeedback, publicTestimonials, adminFeedback } from '../_lib/feedback';
 import { hit, adminStats, adminAnnouncements, myAnnouncements, readAnnouncement } from '../_lib/site';
 import { adminList, adminExport, adminUser } from '../_lib/admin';
 
@@ -35,6 +36,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
     if (route === 'hit' && m === 'POST') return await hit(env);
     if (route === 'billing/moneyfusion/webhook' && m === 'POST') return await mfWebhook(request, env);
     if (route === 'plans' && m === 'GET') return await publicPlans(env);
+    if (route === 'testimonials' && m === 'GET') return await publicTestimonials(env);
     if (route === 'health' && (m === 'GET' || m === 'HEAD')) return await health(env);
 
     const user = await currentUser(request, env);
@@ -60,6 +62,9 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
     if (route === 'catalog' && m === 'GET') return await myCatalog(env, user);
     if (route === 'catalog' && m === 'PUT') return await saveCatalog(request, env, user);
 
+    if (route === 'feedback' && m === 'GET') return await myFeedback(env, user);
+    if (route === 'feedback' && m === 'POST') return await submitFeedback(request, env, user);
+
     if (route === 'billing' && m === 'GET') return await myBilling(env, user);
     if (route === 'billing/pay' && m === 'POST') return await submitPayment(request, env, user);
     if (route === 'billing/moneyfusion/start' && m === 'POST') return await mfStart(request, env, user);
@@ -74,6 +79,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
       if (parts[1] === 'billing') return await adminBilling(request, env, parts);
       if (route === 'admin/stats' && m === 'GET') return await adminStats(env);
       if (parts[1] === 'announcements') return await adminAnnouncements(request, env, parts[2]);
+      if (parts[1] === 'feedback') return await adminFeedback(request, env, parts[2]);
       if (route === 'admin/export' && m === 'GET') return await adminExport(env);
       if (parts[1] === 'users' && parts[2]) return await adminUser(request, env, user, parts[2], parts[3]);
     }

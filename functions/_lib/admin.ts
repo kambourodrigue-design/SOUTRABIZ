@@ -167,6 +167,7 @@ export async function adminUser(req: Request, env: Env, admin: UserRow, id: stri
         env.DB.prepare('DELETE FROM reset_requests WHERE user_id IN (SELECT id FROM users WHERE shop_id = ?)').bind(s),
         env.DB.prepare('DELETE FROM records WHERE shop_id = ?').bind(s),
         env.DB.prepare('DELETE FROM shop_daily WHERE shop_id = ?').bind(s),
+        env.DB.prepare('DELETE FROM feedback WHERE shop_id = ?').bind(s),
         env.DB.prepare('DELETE FROM shop_stats WHERE shop_id = ?').bind(s),
         env.DB.prepare('DELETE FROM push_log WHERE shop_id = ?').bind(s),
         env.DB.prepare('DELETE FROM shops WHERE shop_id = ?').bind(s),

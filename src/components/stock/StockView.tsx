@@ -165,6 +165,13 @@ export const StockView: React.FC<StockViewProps> = ({
     setIsRestockModalOpen(true);
   };
 
+  // Coût moyen pondéré (CMUP) après réapprovisionnement
+  const weightedCost = (oldQty: number, oldPrice: number, newQty: number, newPrice: number) => {
+    const q0 = Math.max(0, oldQty);
+    if (q0 + newQty <= 0) return newPrice;
+    return Math.round((q0 * oldPrice + newQty * newPrice) / (q0 + newQty));
+  };
+
   const handleSaveRestock = (e: React.FormEvent) => {
     e.preventDefault();
     if (!targetProduct || restockQty <= 0) return;
@@ -197,7 +204,8 @@ export const StockView: React.FC<StockViewProps> = ({
         return {
           ...p,
           stockQuantity: p.stockQuantity + Number(restockQty),
-          purchasePrice: restockNewPurchasePrice > 0 ? Number(restockNewPurchasePrice) : p.purchasePrice,
+          // Coût moyen pondéré : le prix d'achat reflète l'ancien stock ET le nouveau lot
+          purchasePrice: weightedCost(p.stockQuantity, p.purchasePrice, Number(restockQty), unitPrice),
           lastRestockedDate: new Date().toISOString(),
         };
       }
@@ -610,6 +618,11 @@ export const StockView: React.FC<StockViewProps> = ({
                   onChange={(e) => setRestockNewPurchasePrice(Number(e.target.value))}
                   className="w-full mt-1 px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl font-mono-num text-sm"
                 />
+                {restockNewPurchasePrice > 0 && restockQty > 0 && (
+                  <div className="text-[11px] text-stone-500 mt-1">
+                    Prix d'achat moyen après ce lot : {formatCurrency(weightedCost(targetProduct.stockQuantity, targetProduct.purchasePrice, Number(restockQty), Number(restockNewPurchasePrice)), settings.currency)} (ancien stock + nouveau lot)
+                  </div>
+                )}
               </div>
 
               <div className="p-3 bg-stone-100 rounded-xl text-xs text-stone-600 flex justify-between">

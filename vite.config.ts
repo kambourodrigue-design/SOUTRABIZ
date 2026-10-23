@@ -17,7 +17,7 @@ export default defineConfig(() => {
           name: 'Nafora - Gestion Commerçant',
           short_name: 'Nafora',
           description: 'Gestion des ventes, stocks, dépenses, carnet de crédit et score bancaire pour commerçants d\'Afrique de l\'Ouest.',
-          theme_color: '#0b1f66',
+          theme_color: '#050b24',
           background_color: '#050b24',
           display: 'standalone',
           start_url: '/',

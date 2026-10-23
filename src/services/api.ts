@@ -84,6 +84,9 @@ export interface SiteStats {
   ai: { day: string; count: number }[]; aiDailyGlobal: number;
 }
 
+export interface MyFeedback { rating: number; text: string; consent: number; name: string; shop_label: string; city: string; status: string }
+export interface PublicTestimonial { name: string; shop_label: string; city: string; rating: number; text: string }
+export interface AdminFeedbackItem extends PublicTestimonial { id: string; consent: number; status: 'new' | 'published' | 'hidden'; created_at: string }
 export interface PlanSettings { enabled: boolean; trialDays: number; price1: number; price3: number; price12: number; currency: string; payInfo: string; freeAiPerDay: number; freeTeamMax: number; readOnlyAfterTrial: boolean; moneyFusion?: boolean; mfLink?: string }
 export interface PlanStatus { enforced: boolean; readOnly: boolean; state: 'off' | 'paid' | 'trial' | 'free'; pro: boolean; paidUntil: string | null; trialEndsAt: string | null; daysLeft: number }
 export interface PaymentRow { id: string; shopId: string; shopName?: string; userName: string; phone: string; amount: number; months: number; method: string; reference: string; status: 'pending' | 'approved' | 'rejected'; createdAt: string; decidedAt: string | null; note: string | null }
@@ -103,6 +106,12 @@ export const api = {
   mfStart: (b: { phone?: string }) => call<{ ok: true; url: string }>('POST', 'billing/moneyfusion/start', b, 20000),
   mfCheck: () => call<{ approved: number; pending: number }>('POST', 'billing/moneyfusion/check', {}, 20000),
   catalog: () => call<{ slug: string; on: boolean; intro: string }>('GET', 'catalog', undefined, 8000),
+  feedback: () => call<{ feedback: MyFeedback | null }>('GET', 'feedback', undefined, 8000),
+  feedbackSend: (b: { rating: number; text: string; consent: boolean; name: string; shopLabel: string; city: string }) => call<{ ok: true }>('POST', 'feedback', b),
+  testimonials: () => call<{ items: PublicTestimonial[] }>('GET', 'testimonials', undefined, 8000),
+  adminFeedback: () => call<{ items: AdminFeedbackItem[] }>('GET', 'admin/feedback'),
+  adminFeedbackSet: (id: string, status: 'new' | 'published' | 'hidden') => call<{ ok: true }>('PUT', `admin/feedback/${id}`, { status }),
+  adminFeedbackDelete: (id: string) => call<{ ok: true }>('DELETE', `admin/feedback/${id}`),
   catalogSave: (b: { slug: string; on: boolean; intro: string }) => call<{ slug: string; on: boolean; intro: string }>('PUT', 'catalog', b),
   adminBilling: () => call<{ settings: BillingAdminSettings; pending: PaymentRow[]; recent: PaymentRow[]; revenue30d: number; approved30d: number; activeSubs: number }>('GET', 'admin/billing'),
   adminBillingSave: (b: Partial<BillingAdminSettings>) => call<{ settings: BillingAdminSettings }>('PUT', 'admin/billing', b),

@@ -11,7 +11,7 @@ export const PWAInstallButton: React.FC = () => {
     return (
       <div title="Application installée" className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 text-xs font-medium text-emerald-800 bg-emerald-100/80 rounded-full border border-emerald-300">
         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-        <span className="hidden sm:inline">Installé</span>
+        <span className="hidden sm:inline xl:hidden 2xl:inline">Installé</span>
       </div>
     );
   }
@@ -25,7 +25,7 @@ export const PWAInstallButton: React.FC = () => {
         title="Installer l'application sur votre téléphone"
       >
         <Download className="w-4 h-4 text-stone-950" />
-        <span className="hidden sm:inline">Installer l'App</span>
+        <span className="hidden sm:inline xl:hidden 2xl:inline">Installer l'App</span>
       </button>
     );
   }
@@ -98,7 +98,7 @@ export const PWAInstallButton: React.FC = () => {
       title="Application Web Progressive"
     >
       <Smartphone className="w-3.5 h-3.5 text-emerald-700" />
-      <span className="hidden sm:inline">PWA Mobile</span>
+      <span className="hidden sm:inline xl:hidden 2xl:inline">PWA Mobile</span>
     </button>
   );
 };

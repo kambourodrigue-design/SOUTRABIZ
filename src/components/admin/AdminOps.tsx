@@ -94,3 +94,41 @@ export const AdminBillingPanel: React.FC = () => {
     </div>
   );
 };
+
+
+/* ============ Avis des commerçants ============ */
+export const AdminFeedbackPanel: React.FC = () => {
+  const [items, setItems] = useState<Awaited<ReturnType<typeof api.adminFeedback>>['items']>([]);
+  const [err, setErr] = useState('');
+  const load = () => api.adminFeedback().then(r => setItems(r.items)).catch(e => setErr(e?.message || 'Erreur'));
+  useEffect(() => { load(); }, []);
+  const set = async (id: string, status: 'new' | 'published' | 'hidden') => {
+    setErr(''); try { await api.adminFeedbackSet(id, status); await load(); } catch (e: any) { setErr(e?.message || 'Erreur'); }
+  };
+  const del = async (id: string) => { if (!confirm('Supprimer cet avis ?')) return; try { await api.adminFeedbackDelete(id); await load(); } catch (e: any) { setErr(e?.message || 'Erreur'); } };
+  const label: Record<string, string> = { new: 'À examiner', published: 'Publié', hidden: 'Masqué' };
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-stone-500">Seuls les avis <b>validés ici</b> ET dont le commerçant a accepté la publication apparaissent sur la page d'accueil.</p>
+      {err && <p className="text-xs font-semibold text-rose-700">{err}</p>}
+      {items.length === 0 && <p className="text-sm text-stone-400">Aucun avis pour le moment.</p>}
+      {items.map(f => (
+        <div key={f.id} className="rounded-2xl border border-stone-200 bg-white p-4 space-y-2">
+          <div className="flex items-center justify-between gap-2 text-xs">
+            <span className="font-bold text-stone-900">{'★'.repeat(f.rating)}<span className="text-stone-300">{'★'.repeat(5 - f.rating)}</span> · {f.name || 'Anonyme'}{f.shop_label ? ` · ${f.shop_label}` : ''}{f.city ? `, ${f.city}` : ''}</span>
+            <span className="px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 font-semibold whitespace-nowrap">{label[f.status]}</span>
+          </div>
+          <p className="text-sm text-stone-700">« {f.text} »</p>
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className={f.consent ? 'text-emerald-700 font-semibold' : 'text-rose-700 font-semibold'}>{f.consent ? '✓ Publication autorisée' : '✗ Publication refusée par le commerçant'}</span>
+            <span className="flex-1" />
+            {f.consent === 1 && f.status !== 'published' && <button onClick={() => set(f.id, 'published')} className="px-3 py-1.5 rounded-lg bg-emerald-700 text-white font-bold">Publier</button>}
+            {f.status === 'published' && <button onClick={() => set(f.id, 'hidden')} className="px-3 py-1.5 rounded-lg border border-stone-300 font-bold">Retirer</button>}
+            {f.status === 'new' && <button onClick={() => set(f.id, 'hidden')} className="px-3 py-1.5 rounded-lg border border-stone-300 font-bold">Masquer</button>}
+            <button onClick={() => del(f.id)} className="px-3 py-1.5 rounded-lg text-rose-700 font-bold">Supprimer</button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};

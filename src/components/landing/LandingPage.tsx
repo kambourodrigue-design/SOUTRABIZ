@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { api, PlanSettings } from '../../services/api';
+import { api, PlanSettings, PublicTestimonial } from '../../services/api';
 import { Logo } from '../brand/Logo';
 import { ThemeToggle } from '../common/ThemeToggle';
 
@@ -20,13 +20,34 @@ const FAQ: [string, string][] = [
   ['Mes données sont-elles en sécurité ?', 'Votre compte est protégé par un mot de passe, et vos données sont stockées sur l\'infrastructure Cloudflare. Seuls vous et les personnes à qui vous donnez un accès y ont accès.'],
   ['Puis-je l\'utiliser sur téléphone ?', 'Oui. Nafora s\'installe comme une application depuis votre navigateur (Chrome), sans passer par un magasin d\'applications, et fonctionne aussi sur ordinateur.'],
   ['Combien ça coûte ?', 'La création du compte est gratuite, avec un essai des fonctions Pro. Les tarifs sont indiqués ci-dessus et se paient par Mobile Money.'],
+  ['Que se passe-t-il à la fin de l\'essai ?', 'Votre compte passe en lecture seule : vous gardez l\'accès à toutes vos données, mais rien de nouveau ne s\'enregistre tant que l\'abonnement Pro n\'est pas activé. Rien n\'est supprimé.'],
+  ['Je ne suis pas à l\'aise avec la technologie, est-ce difficile ?', 'Non. La caisse se prend en main en quelques minutes : on touche les produits, on encaisse, c\'est tout. Vous pouvez même dicter la vente à la voix.'],
   ['Pour quels commerces ?', 'Boutiques, alimentation, quincaillerie, mode, restauration, pharmacie, services… tout petit commerce ou PME qui vend et suit des stocks ou des crédits.'],
+];
+
+const PAINS: [string, string][] = [
+  ['Le cahier se perd, se mouille, se contredit', 'Nafora garde chaque vente, chaque dépense et chaque dette en sécurité, même si le téléphone change.'],
+  ['« Combien j\'ai vraiment gagné ce mois ? »', 'Bénéfice du jour, du mois dernier ou d\'une période choisie, calculé automatiquement.'],
+  ['Les clients qui oublient de payer', 'Le carnet de crédit note tout et prépare le rappel WhatsApp en un clic.'],
+  ['Le stock qui manque au mauvais moment', 'Alertes de rupture, et la caisse bloque la vente d\'un produit épuisé.'],
+];
+const REASSURE: [string, string][] = [
+  ['🎁', 'Essai Pro offert'], ['💳', 'Sans carte bancaire'], ['📶', 'Marche sans internet'], ['📱', 'Paiement Mobile Money'],
 ];
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR').format(n);
 
 export const LandingPage: React.FC<Props> = ({ onLogin, onRegister }) => {
   const [plans, setPlans] = useState<(PlanSettings & { whatsapp: string }) | null>(null);
   useEffect(() => { api.plans().then(setPlans).catch(() => {}); }, []);
+  const [testimonials, setTestimonials] = useState<PublicTestimonial[]>([]);
+  useEffect(() => { api.testimonials().then(r => setTestimonials(r.items)).catch(() => {}); }, []);
+  const [showSticky, setShowSticky] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setShowSticky(window.scrollY > 520);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
   const wa = plans?.whatsapp ? `https://wa.me/${plans.whatsapp}?text=${encodeURIComponent('Bonjour, je souhaite en savoir plus sur Nafora.')}` : '';
   const share = `https://wa.me/?text=${encodeURIComponent(`Découvre Nafora, l'application pour gérer ta boutique (ventes, stocks, crédits) même sans internet : ${typeof location !== 'undefined' ? location.origin : ''}`)}`;
   const btn = 'px-5 py-3 rounded-2xl font-bold text-sm transition active:scale-95';
@@ -53,6 +74,20 @@ export const LandingPage: React.FC<Props> = ({ onLogin, onRegister }) => {
             <button onClick={onRegister} className={`${btn} bg-amber-400 text-stone-950 hover:bg-amber-300`} data-testid="landing-register">Créer mon compte gratuitement</button>
           </div>
           <p className="mt-3 text-xs text-emerald-200">Sans carte bancaire • installation depuis le navigateur • en français</p>
+          <ul className="mt-8 flex flex-wrap justify-center gap-2 sm:gap-3 text-xs sm:text-sm font-semibold">
+            {REASSURE.map(([i, t]) => <li key={t} className="px-3 py-1.5 rounded-full bg-white/10 border border-white/15"><span aria-hidden>{i}</span> {t}</li>)}
+          </ul>
+        </div>
+      </section>
+
+      <section className="max-w-5xl mx-auto px-4 py-12" aria-labelledby="problemes">
+        <h2 id="problemes" className="text-2xl sm:text-3xl font-black text-center">Vous vous reconnaissez ?</h2>
+        <div className="mt-8 grid sm:grid-cols-2 gap-4">
+          {PAINS.map(([p, a]) => (
+            <div key={p} className="rounded-2xl border border-stone-200 bg-white p-5">
+              <p className="font-extrabold text-rose-700">✗ {p}</p>
+              <p className="mt-2 text-sm text-stone-700"><span className="font-bold text-emerald-700">✓ Avec Nafora : </span>{a}</p>
+            </div>))}
         </div>
       </section>
 
@@ -76,6 +111,20 @@ export const LandingPage: React.FC<Props> = ({ onLogin, onRegister }) => {
         </div>
       </section>
 
+      {testimonials.length > 0 && (
+        <section className="max-w-5xl mx-auto px-4 py-12" aria-labelledby="avis">
+          <h2 id="avis" className="text-2xl sm:text-3xl font-black text-center">Ils gèrent leur commerce avec Nafora</h2>
+          <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {testimonials.map((t, i) => (
+              <figure key={i} className="rounded-2xl border border-stone-200 bg-white p-5">
+                <div className="text-amber-400 text-sm" aria-label={`${t.rating} sur 5`}>{'★'.repeat(t.rating)}</div>
+                <blockquote className="mt-1 text-sm text-stone-700">« {t.text} »</blockquote>
+                <figcaption className="mt-3 text-xs text-stone-500"><b className="text-stone-900">{t.name}</b>{t.shop_label ? ` · ${t.shop_label}` : ''}{t.city ? `, ${t.city}` : ''}</figcaption>
+              </figure>))}
+          </div>
+        </section>
+      )}
+
       <section className="max-w-4xl mx-auto px-4 py-12" aria-labelledby="tarifs">
         <h2 id="tarifs" className="text-2xl sm:text-3xl font-black text-center">Tarifs simples</h2>
         {plans?.enabled ? (
@@ -98,6 +147,7 @@ export const LandingPage: React.FC<Props> = ({ onLogin, onRegister }) => {
 
       <section className="max-w-4xl mx-auto px-4 py-12 text-center">
         <h2 className="text-2xl sm:text-3xl font-black">Prêt à mieux gérer votre commerce ?</h2>
+        <p className="mt-2 text-sm text-stone-600">{plans?.enabled && plans.trialDays ? `${plans.trialDays} jours d'essai Pro offerts, sans carte bancaire.` : 'Création du compte en 2 minutes.'}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <button onClick={onRegister} className={`${btn} bg-emerald-700 text-white hover:bg-emerald-800`}>Créer mon compte</button>
           {wa && <a href={wa} target="_blank" rel="noopener noreferrer" className={`${btn} bg-green-600 text-white hover:bg-green-700`}>Nous écrire sur WhatsApp</a>}
@@ -105,7 +155,14 @@ export const LandingPage: React.FC<Props> = ({ onLogin, onRegister }) => {
         </div>
       </section>
 
-      <footer className="bg-emerald-950 text-emerald-200 text-sm">
+      {showSticky && (
+        <div className="fixed bottom-0 inset-x-0 z-40 sm:hidden bg-emerald-950/95 backdrop-blur border-t border-emerald-800 px-4 py-2.5 flex items-center justify-between gap-3">
+          <span className="text-xs font-semibold text-emerald-100">Essayez Nafora gratuitement</span>
+          <button onClick={onRegister} className="px-4 py-2 rounded-xl text-sm font-bold bg-amber-400 text-stone-950 active:scale-95">Créer mon compte</button>
+        </div>
+      )}
+
+      <footer className="bg-emerald-950 text-emerald-200 text-sm pb-14 sm:pb-0">
         <div className="max-w-6xl mx-auto px-4 py-6 flex flex-wrap items-center justify-between gap-3">
           <span>© {new Date().getFullYear()} Nafora</span>
           <nav className="flex flex-wrap gap-4"><a href="/a-propos.html" className="hover:text-white">À propos</a><a href="/contact.html" className="hover:text-white">Contact</a><a href="/confidentialite.html" className="hover:text-white">Confidentialité</a><a href="/conditions.html" className="hover:text-white">Conditions d'utilisation</a></nav>

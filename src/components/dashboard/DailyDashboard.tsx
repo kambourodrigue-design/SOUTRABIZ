@@ -1,5 +1,6 @@
 import { TreasuryCard } from './TreasuryCard';
 import { EveningSummaryCard } from './EveningSummaryCard';
+import { FeedbackCard } from './FeedbackCard';
 import React, { useMemo } from 'react';
 import { Sale, Expense, Customer, Supplier, Product, ShopSettings, CreditScoreResult } from '../../types';
 import { formatCurrency, localDay } from '../../services/financials';
@@ -188,6 +189,8 @@ export const DailyDashboard: React.FC<DailyDashboardProps> = ({
           </div>
         </div>
       </div>
+
+      <FeedbackCard settings={settings} sales={sales} />
 
       <EveningSummaryCard sales={sales} expenses={expenses} products={products} customers={customers} settings={settings} onNavigate={onNavigate} />
 

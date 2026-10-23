@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Sale, Expense, ShopSettings, Product, Customer, Supplier } from '../../types';
 import { formatCurrency, calculateSummaryForPeriod, localDay } from '../../services/financials';
+import { ProfitPeriodCard } from './ProfitPeriodCard';
 import { 
   ResponsiveContainer, 
   AreaChart, 
@@ -245,6 +246,8 @@ export const FinancesView: React.FC<FinancesViewProps> = ({
           <span>Croissance globale 6 mois : {totalGrowthOverall > 0 ? '+' : ''}{totalGrowthOverall}%</span>
         </div>
       </div>
+
+      <ProfitPeriodCard sales={sales} expenses={expenses} settings={settings} />
 
       {/* Ratios Grid (30 Days) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

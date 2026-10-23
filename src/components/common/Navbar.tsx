@@ -72,7 +72,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Desktop Quick Nav Tabs */}
-        <nav className="hidden xl:flex flex-1 min-w-0 justify-center items-center gap-0.5 2xl:gap-1 text-xs 2xl:text-sm font-medium overflow-x-auto [scrollbar-width:none]">
+        <nav className="hidden xl:flex flex-1 min-w-0 items-center gap-0.5 2xl:gap-1 text-xs 2xl:text-sm font-medium overflow-x-auto [scrollbar-width:none] [&>*:first-child]:ml-auto [&>*:last-child]:mr-auto">
           {[
             { id: 'dashboard', label: 'Tableau de bord', short: 'Accueil' },
             { id: 'pos', label: 'Caisse POS', short: 'Caisse' },
@@ -138,10 +138,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               <div className="w-5 h-5 rounded-full bg-emerald-700 flex items-center justify-center text-[10px] text-amber-300 font-black">
                 {currentUser.role === 'admin' ? 'A' : currentUser.name.charAt(0)}
               </div>
-              <span className="hidden md:inline truncate max-w-[90px]">
+              <span className="hidden md:inline xl:hidden 2xl:inline truncate max-w-[90px]">
                 {currentUser.name.split(' ')[0]}
               </span>
-              <span className={`hidden sm:inline text-[10px] px-1 rounded font-mono ${currentUser.role === 'admin' ? 'bg-amber-400 text-stone-950 font-bold' : 'bg-emerald-950/60 text-emerald-300'}`}>
+              <span className={`hidden sm:inline xl:hidden 2xl:inline text-[10px] px-1 rounded font-mono ${currentUser.role === 'admin' ? 'bg-amber-400 text-stone-950 font-bold' : 'bg-emerald-950/60 text-emerald-300'}`}>
                 {currentUser.role === 'admin' ? 'ADMIN' : (roleLabel || 'PRO')}
               </span>
               <LogOut className="w-3.5 h-3.5 text-emerald-300" />

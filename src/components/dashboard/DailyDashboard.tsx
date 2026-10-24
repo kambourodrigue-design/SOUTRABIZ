@@ -1,5 +1,4 @@
 import { TreasuryCard } from './TreasuryCard';
-import { EveningSummaryCard } from './EveningSummaryCard';
 import { FeedbackCard } from './FeedbackCard';
 import React, { useMemo } from 'react';
 import { Sale, Expense, Customer, Supplier, Product, ShopSettings, CreditScoreResult } from '../../types';
@@ -191,8 +190,6 @@ export const DailyDashboard: React.FC<DailyDashboardProps> = ({
       </div>
 
       <FeedbackCard settings={settings} sales={sales} />
-
-      <EveningSummaryCard sales={sales} expenses={expenses} products={products} customers={customers} settings={settings} onNavigate={onNavigate} />
 
       {/* Quick Action Touch Targets (Mobile-first, prominent) */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4">

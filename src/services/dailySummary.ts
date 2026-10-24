@@ -30,9 +30,8 @@ export function buildDailySummary(
   const lines = [
     `📊 *Résumé du ${date}*`, `🏪 ${s.shopName}`, '',
     `🛒 Ventes : *${todaySales.length}* pour *${m(revenue)}*`,
-    `💰 Bénéfice des ventes : *${m(profit)}*`,
     `💸 Dépenses : *${m(expensesTotal)}*`,
-    `${net >= 0 ? '✅' : '⚠️'} Résultat du jour : *${m(net)}*`,
+    `${net >= 0 ? '✅' : '⚠️'} Bénéfice du jour : *${m(net)}*`,
   ];
   if (lowStock.length) {
     lines.push('', `📦 *À racheter (${lowStock.length})* :`);

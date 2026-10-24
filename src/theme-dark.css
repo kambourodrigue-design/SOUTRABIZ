@@ -116,6 +116,7 @@
   .dark .bg-amber-400.text-stone-900, .dark .bg-amber-500.text-stone-900 { color:#0a1440; }
   /* Fonds sombres (bandeaux, info-bulles) : un peu plus clairs que la page pour rester visibles */
   .dark .bg-stone-900, .dark .bg-stone-800 { background-color:#16245f; }
+  html.dark { background-color:#050b24; }
   .dark body { background-color:#050b24; color:#eef3ff; }
   .dark ::selection { background:#2f6bff; color:#fff; }
   .dark ::-webkit-scrollbar-thumb { background: rgba(143,176,255,.35); }

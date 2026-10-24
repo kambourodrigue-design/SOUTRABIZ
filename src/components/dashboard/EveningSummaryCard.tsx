@@ -24,9 +24,20 @@ export const EveningSummaryCard: React.FC<Props> = ({ sales, expenses, products,
         <h3 className="font-black text-sm flex items-center gap-1.5"><Moon className="w-4 h-4 text-amber-400" /> {evening ? 'Bilan de votre journée' : "Résumé d'aujourd'hui"}</h3>
         <span className={`text-[11px] ${evening ? 'text-indigo-200' : 'text-stone-500'}`}>{sum.salesCount} vente{sum.salesCount > 1 ? 's' : ''}</span>
       </div>
-      <div className="grid grid-cols-3 gap-2 text-center">
-        {[['Ventes', m(sum.revenue)], ['Bénéfice', m(sum.profit)], ['Résultat', m(sum.net)]].map(([l, v]) => (
-          <div key={l} className={`rounded-xl p-2 ${evening ? 'bg-white/10' : 'bg-stone-50'}`}><div className={`text-[10px] ${evening ? 'text-indigo-200' : 'text-stone-500'}`}>{l}</div><div className="text-xs font-black font-mono-num break-words">{v}</div></div>))}
+      <div className="grid grid-cols-2 gap-2">
+        <div className={`rounded-xl p-3 ${evening ? 'bg-white/10' : 'bg-stone-50'}`}>
+          <div className={`text-[11px] font-semibold ${evening ? 'text-indigo-200' : 'text-stone-500'}`}>Ventes</div>
+          <div className="text-base sm:text-lg font-black font-mono-num break-words">{m(sum.revenue)}</div>
+        </div>
+        <div className={`rounded-xl p-3 ${evening ? 'bg-white/10' : 'bg-stone-50'}`}>
+          <div className={`text-[11px] font-semibold ${evening ? 'text-indigo-200' : 'text-stone-500'}`}>Dépenses</div>
+          <div className={`text-base sm:text-lg font-black font-mono-num break-words ${evening ? 'text-rose-300' : 'text-rose-600'}`}>{sum.expensesTotal > 0 ? '-' : ''}{m(sum.expensesTotal)}</div>
+        </div>
+        <div className={`col-span-2 rounded-xl p-3 border ${sum.net < 0 ? (evening ? 'border-rose-400/50 bg-rose-500/10' : 'border-rose-200 bg-rose-50') : (evening ? 'border-emerald-400/40 bg-emerald-500/10' : 'border-emerald-200 bg-emerald-50')}`}>
+          <div className={`text-[11px] font-semibold ${evening ? 'text-indigo-200' : 'text-stone-500'}`}>Bénéfice du jour</div>
+          <div className={`text-2xl font-black font-mono-num break-words ${sum.net < 0 ? (evening ? 'text-rose-300' : 'text-rose-600') : (evening ? 'text-emerald-300' : 'text-emerald-700')}`}>{m(sum.net)}</div>
+          <div className={`text-[10px] ${evening ? 'text-indigo-200' : 'text-stone-500'}`}>Gain sur les ventes {m(sum.profit)} − dépenses</div>
+        </div>
       </div>
       {(sum.lowStock.length > 0 || sum.toRemind.length > 0) && (
         <div className={`text-[11px] space-y-0.5 ${evening ? 'text-indigo-100' : 'text-stone-600'}`}>

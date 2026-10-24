@@ -52,7 +52,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   const cols = tabs.length + (moreTabs.length ? 1 : 0);
 
   return (
-    <div className="xl:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-stone-200 px-1 py-1.5 shadow-lg safe-bottom">
+    <div className="xl:hidden fixed -bottom-px left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-stone-200 px-1 py-1.5 pb-[calc(0.375rem+1px)] shadow-lg safe-bottom">
       <div className="grid gap-0.5 max-w-xl mx-auto" style={{ gridTemplateColumns: `repeat(${Math.max(cols, 2)}, minmax(0, 1fr))` }}>
         {tabs.map((tab) => {
           const Icon = tab.icon;

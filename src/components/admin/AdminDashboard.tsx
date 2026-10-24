@@ -23,7 +23,9 @@ import {
   RefreshCw,
   ChevronLeft,
   ChevronRight,
+  CreditCard,
 } from 'lucide-react';
+import { ShopPlanModal } from './ShopPlanModal';
 import { Select } from '../common/dialogs';
 import { uiAlert, uiConfirm, uiPrompt } from '../common/dialogs';
 
@@ -56,6 +58,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onI
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSector, setSelectedSector] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [planShop, setPlanShop] = useState<{ id: string; name: string } | null>(null);
   const [inspectUser, setInspectUser] = useState<{ user: UserAccount; shop: ShopSettings } | null>(null);
   const reqId = useRef(0);
   const [sub, setSub] = useState<'users' | 'stats' | 'messages' | 'billing' | 'feedback' | 'monitor'>('users');
@@ -460,6 +463,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onI
                         </button>
 
                         <button
+                          onClick={() => setPlanShop({ id: user.shopId, name: shop.shopName })}
+                          className="p-1.5 rounded-xl text-stone-500 hover:text-emerald-700 hover:bg-emerald-50"
+                          title="Abonnement (activer / bloquer)"
+                        >
+                          <CreditCard className="w-4 h-4" />
+                        </button>
+
+                        <button
                           onClick={() => handleResetPw(user)}
                           className="p-1.5 rounded-xl text-stone-400 hover:text-amber-700 hover:bg-amber-50"
                           title="Réinitialiser le mot de passe"
@@ -514,6 +525,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onI
       </div>
 
       {/* Inspect Merchant Audit Modal */}
+      {planShop && <ShopPlanModal shopId={planShop.id} shopName={planShop.name} onClose={() => setPlanShop(null)} />}
       {inspectUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto">
           <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-stone-200 p-5 sm:p-6 my-auto animate-in fade-in zoom-in-95 space-y-4">

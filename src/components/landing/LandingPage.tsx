@@ -22,6 +22,7 @@ const FAQ: [string, string][] = [
   ['Combien ça coûte ?', 'La création du compte est gratuite, avec un essai des fonctions Pro. Les tarifs sont indiqués ci-dessus et se paient par Mobile Money.'],
   ['Que se passe-t-il à la fin de l\'essai ?', 'Votre compte passe en lecture seule : vous gardez l\'accès à toutes vos données, mais rien de nouveau ne s\'enregistre tant que l\'abonnement Pro n\'est pas activé. Rien n\'est supprimé.'],
   ['Je ne suis pas à l\'aise avec la technologie, est-ce difficile ?', 'Non. La caisse se prend en main en quelques minutes : on touche les produits, on encaisse, c\'est tout. Vous pouvez même dicter la vente à la voix.'],
+  ['À quoi sert l\'option Assistance & Conseil ?', 'C\'est un accompagnement humain en plus de l\'application : aide au démarrage, réponses prioritaires, point régulier sur vos chiffres et conseils de gestion. Elle est facultative : l\'application fonctionne très bien sans.'],
   ['Pour quels commerces ?', 'Boutiques, alimentation, quincaillerie, mode, restauration, pharmacie, services… tout petit commerce ou PME qui vend et suit des stocks ou des crédits.'],
 ];
 
@@ -49,6 +50,7 @@ export const LandingPage: React.FC<Props> = ({ onLogin, onRegister }) => {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
   const wa = plans?.whatsapp ? `https://wa.me/${plans.whatsapp}?text=${encodeURIComponent('Bonjour, je souhaite en savoir plus sur Nafora.')}` : '';
+  const assistWa = plans?.whatsapp ? `https://wa.me/${plans.whatsapp}?text=${encodeURIComponent("Bonjour, je suis intéressé par l'option Assistance & Conseil de Nafora.")}` : '';
   const share = `https://wa.me/?text=${encodeURIComponent(`Découvre Nafora, l'application pour gérer ta boutique (ventes, stocks, crédits) même sans internet : ${typeof location !== 'undefined' ? location.origin : ''}`)}`;
   const btn = 'px-5 py-3 rounded-2xl font-bold text-sm transition active:scale-95';
 
@@ -133,6 +135,20 @@ export const LandingPage: React.FC<Props> = ({ onLogin, onRegister }) => {
               <p className="text-xs text-emerald-200">Abonnement annuel unique</p>
               <ul className="mt-3 text-sm text-emerald-100 space-y-1 list-disc pl-5"><li>Caisse, stocks, dettes, trésorerie</li><li>Fonctionne sans internet</li><li>Employés illimités</li><li>Assistant IA étendu</li><li>Paiement par Mobile Money ou en ligne (international)</li></ul>
               <p className="mt-3 text-xs text-amber-200">{plans.trialDays} jours d'essai Pro offerts à l'inscription.</p></div>
+            <div className="bg-white border-2 border-amber-300 rounded-2xl p-6" data-testid="assist-offer">
+              <div className="flex items-center justify-between gap-2"><h3 className="font-extrabold text-lg">Option Assistance & Conseil</h3><span className="text-[11px] font-bold px-2 py-1 rounded-full bg-amber-100 text-amber-900 whitespace-nowrap">En option</span></div>
+              <p className="mt-1 text-sm text-stone-600">Nafora ne vous laisse pas seul : un vrai accompagnement humain, en français, sur WhatsApp.</p>
+              <ul className="mt-3 text-sm text-stone-700 space-y-1.5 list-disc pl-5">
+                <li><b>Prise en main personnalisée</b> : on vous guide pour démarrer et saisir vos premiers produits.</li>
+                <li><b>Réponse prioritaire</b> à vos questions, du lundi au vendredi.</li>
+                <li><b>Point mensuel sur vos chiffres</b> : bénéfice, stocks à racheter, dettes à relancer.</li>
+                <li><b>Conseils de gestion</b> adaptés à votre commerce pour mieux vendre et mieux gagner.</li>
+                <li><b>Aide pour votre dossier bancaire</b> : comprendre votre score et préparer une demande de crédit.</li>
+              </ul>
+              {wa
+                ? <a href={assistWa} target="_blank" rel="noopener noreferrer" className={`${btn} mt-4 inline-block bg-green-600 text-white hover:bg-green-700`}>Demander l'option Assistance</a>
+                : <p className="mt-4 text-xs text-stone-500">Contactez-nous pour en savoir plus.</p>}
+            </div>
           </div>
         ) : (
           <p className="mt-6 text-center text-stone-600">Nafora est <b>gratuit pendant la phase de lancement</b>. Créez votre compte et profitez de toutes les fonctions.</p>)}

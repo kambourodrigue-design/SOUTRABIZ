@@ -510,15 +510,15 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
                   className="bg-white rounded-2xl border border-stone-200 p-4 sm:p-5 shadow-xs hover:border-amber-300 transition space-y-3"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="flex items-start gap-3">
+                    <div className="flex items-start gap-3 min-w-0">
                       <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-bold text-sm shrink-0 ${
                         hasDebt ? 'bg-amber-100 text-amber-900 border border-amber-200' : 'bg-emerald-100 text-emerald-800'
                       }`}>
                         {customer.name.substring(0, 2).toUpperCase()}
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-extrabold text-base text-stone-900">{customer.name}</h4>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <h4 className="font-extrabold text-base text-stone-900 break-words">{customer.name}</h4>
                           {hasDebt ? (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
                               Dette en cours
@@ -616,12 +616,12 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
                       </div>
                       <div className="space-y-1">
                         {customer.payments.slice(0, 2).map((pay) => (
-                          <div key={pay.id} className="text-xs text-stone-600 flex justify-between bg-stone-50 px-2.5 py-1 rounded-lg">
-                            <span>
+                          <div key={pay.id} className="text-xs text-stone-600 flex justify-between gap-2 bg-stone-50 px-2.5 py-1 rounded-lg">
+                            <span className="min-w-0 break-words">
                               {new Date(pay.date).toLocaleDateString('fr-FR')} • {getPaymentMethodDetails(pay.paymentMethod).label}
                               {pay.note ? ` (${pay.note})` : ''}
                             </span>
-                            <span className="font-bold text-emerald-700 font-mono-num">
+                            <span className="font-bold text-emerald-700 font-mono-num whitespace-nowrap shrink-0">
                               +{formatCurrency(pay.amount, settings.currency)}
                             </span>
                           </div>
@@ -654,15 +654,15 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
                   className="bg-white rounded-2xl border border-stone-200 p-4 sm:p-5 shadow-xs hover:border-indigo-300 transition space-y-3"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="flex items-start gap-3">
+                    <div className="flex items-start gap-3 min-w-0">
                       <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-bold text-sm shrink-0 ${
                         hasDebt ? 'bg-indigo-100 text-indigo-900 border border-indigo-200' : 'bg-emerald-100 text-emerald-800'
                       }`}>
                         <Truck className="w-5 h-5 text-indigo-700" />
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-extrabold text-base text-stone-900">{supplier.name}</h4>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <h4 className="font-extrabold text-base text-stone-900 break-words">{supplier.name}</h4>
                           {isOverdue ? (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200 animate-pulse">
                               Échéance Dépassée
@@ -759,8 +759,8 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
                       </div>
                       <div className="space-y-1">
                         {supplier.payments.slice(0, 2).map((pay) => (
-                          <div key={pay.id} className="text-xs text-stone-600 flex justify-between bg-stone-50 px-2.5 py-1 rounded-lg">
-                            <span>
+                          <div key={pay.id} className="text-xs text-stone-600 flex justify-between gap-2 bg-stone-50 px-2.5 py-1 rounded-lg">
+                            <span className="min-w-0 break-words">
                               {new Date(pay.date).toLocaleDateString('fr-FR')} • {getPaymentMethodDetails(pay.paymentMethod).label}
                               {pay.note ? ` (${pay.note})` : ''}
                             </span>

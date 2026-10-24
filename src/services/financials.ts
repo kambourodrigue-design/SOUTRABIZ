@@ -48,7 +48,7 @@ export function getPaymentMethodDetails(method: PaymentMethod): { label: string;
 export function getExpenseCategoryDetails(category: ExpenseCategory): { label: string; iconColor: string } {
   switch (category) {
     case 'supply':
-      return { label: 'Approvisionnement & Marchandises', iconColor: 'text-emerald-600' };
+      return { label: 'Achat de marchandises (stock)', iconColor: 'text-emerald-600' };
     case 'rent':
       return { label: 'Loyer boutique / Magasin', iconColor: 'text-indigo-600' };
     case 'transport':

@@ -238,9 +238,9 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
           {categoryBreakdown.map((item) => (
             <div key={item.category} className="p-3 rounded-2xl bg-stone-50 border border-stone-100">
-              <div className="flex justify-between items-center text-xs font-semibold">
-                <span className="text-stone-800 truncate">{item.details.label}</span>
-                <span className="font-mono-num font-bold text-stone-900">{formatCurrency(item.total, settings.currency)}</span>
+              <div className="flex justify-between items-center gap-2 text-xs font-semibold">
+                <span className="text-stone-800 truncate min-w-0">{item.details.label}</span>
+                <span className="font-mono-num font-bold text-stone-900 whitespace-nowrap shrink-0">{formatCurrency(item.total, settings.currency)}</span>
               </div>
 
               {/* Progress bar */}
@@ -261,7 +261,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
 
       {/* Expenses History List */}
       <div className="bg-white rounded-3xl border border-stone-200 overflow-hidden shadow-xs">
-        <div className="p-4 border-b border-stone-100 flex items-center justify-between">
+        <div className="p-4 border-b border-stone-100 flex flex-wrap items-center justify-between gap-2">
           <h3 className="font-bold text-sm text-stone-900">Historique des Dépenses</h3>
           <Select
             value={filterCategory}
@@ -269,7 +269,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
             className="text-xs bg-stone-50 border border-stone-200 rounded-xl px-2.5 py-1.5 font-medium"
           >
             <option value="all">Toutes les catégories</option>
-            <option value="supply">Approvisionnement</option>
+            <option value="supply">Achat de marchandises (stock à revendre)</option>
             <option value="transport">Transport</option>
             <option value="rent">Loyer</option>
             <option value="utilities">Factures</option>
@@ -290,35 +290,33 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
               const payDetails = getPaymentMethodDetails(expense.paymentMethod);
 
               return (
-                <div key={expense.id} className="p-3 sm:p-4 flex items-center justify-between hover:bg-stone-50/70 transition">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center shrink-0">
-                      <Receipt className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-xs sm:text-sm text-stone-900">{expense.title}</h4>
-                      <div className="text-[11px] text-stone-500 flex items-center gap-2 mt-0.5">
-                        <span className="font-medium text-stone-600">{catDetails.label}</span>
-                        <span>•</span>
-                        <span>{new Date(expense.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
-                        <span>•</span>
-                        <span className={`px-1.5 py-0.2 rounded text-[10px] ${payDetails.badgeBg}`}>
-                          {payDetails.label}
-                        </span>
-                      </div>
-                      {creditPart(expense) > 0 && (
-                        <p className="text-[11px] font-bold text-indigo-700 mt-0.5">
-                          🚚 À crédit : {formatCurrency(creditPart(expense), settings.currency)} dû{expense.supplierId ? ` à ${suppliers.find(x => x.id === expense.supplierId)?.name || 'un fournisseur'}` : ''}
-                        </p>
-                      )}
-                      {expense.notes && (
-                        <p className="text-[11px] text-stone-400 italic mt-0.5">{expense.notes}</p>
-                      )}
-                    </div>
+                <div key={expense.id} className="p-3 sm:p-4 flex items-start gap-3 hover:bg-stone-50/70 transition">
+                  <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center shrink-0">
+                    <Receipt className="w-5 h-5" />
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <span className="font-black text-rose-700 font-mono-num text-sm sm:text-base">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-bold text-sm text-stone-900 break-words">{expense.title}</h4>
+                    <div className="text-[11px] text-stone-500 flex flex-wrap items-center gap-x-2 gap-y-1 mt-0.5">
+                      <span className="font-medium text-stone-600">{catDetails.label}</span>
+                      <span>•</span>
+                      <span>{new Date(expense.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
+                      <span className={`px-1.5 py-0.5 rounded text-[10px] ${payDetails.badgeBg}`}>
+                        {payDetails.label}
+                      </span>
+                    </div>
+                    {creditPart(expense) > 0 && (
+                      <p className="text-[11px] font-bold text-indigo-700 mt-1 break-words">
+                        🚚 À crédit : {formatCurrency(creditPart(expense), settings.currency)} dû{expense.supplierId ? ` à ${suppliers.find(x => x.id === expense.supplierId)?.name || 'un fournisseur'}` : ''}
+                      </p>
+                    )}
+                    {expense.notes && (
+                      <p className="text-[11px] text-stone-400 italic mt-0.5 break-words">{expense.notes}</p>
+                    )}
+                  </div>
+
+                  <div className="shrink-0 flex flex-col items-end gap-1">
+                    <span className="font-black text-rose-700 font-mono-num text-sm sm:text-base whitespace-nowrap">
                       -{formatCurrency(expense.amount, settings.currency)}
                     </span>
                     <button
@@ -380,7 +378,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
                     className="w-full mt-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs sm:text-sm font-medium"
                   >
                     <option value="transport">Transport / Gbaka / Fret</option>
-                    <option value="supply">Approvisionnement</option>
+                    <option value="supply">Achat de marchandises (stock à revendre)</option>
                     <option value="rent">Loyer boutique</option>
                     <option value="utilities">Factures CIE/Eau/Internet</option>
                     <option value="salary">Salaires / Aides</option>
@@ -389,6 +387,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
                     <option value="maintenance">Imprévus / Réparation</option>
                     <option value="other">Autre</option>
                   </Select>
+                  {category === 'supply' && <p className="mt-1 text-[11px] text-amber-800">Pour du stock à revendre seulement. Eau, électricité, loyer, transport… : choisissez la catégorie correspondante, sinon elles ne seront pas déduites du bénéfice.</p>}
                 </div>
 
                 <div>

@@ -343,7 +343,55 @@ export const StockView: React.FC<StockViewProps> = ({
 
       {/* Products Table */}
       <div className="bg-white rounded-3xl border border-stone-200 overflow-hidden shadow-xs">
-        <div className="overflow-x-auto">
+        {/* Téléphone : une carte par article, tout est visible sans défiler de côté */}
+        <div className="md:hidden divide-y divide-stone-100">
+          {filteredProducts.length === 0 ? (
+            <div className="text-center py-8 text-stone-400 text-sm">Aucun article trouvé pour ce filtre.</div>
+          ) : filteredProducts.map(product => {
+            const unitMargin = product.sellingPrice - product.purchasePrice;
+            const isOut = product.stockQuantity === 0;
+            const isLow = product.stockQuantity > 0 && product.stockQuantity <= product.minAlertThreshold;
+            return (
+              <div key={product.id} className="p-3.5 space-y-2.5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="font-bold text-stone-900 text-sm break-words">{product.name}</div>
+                    <div className="text-[11px] text-stone-500 mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                      <span className="px-1.5 py-0.5 rounded bg-stone-100 text-stone-600 font-medium">{product.category}</span>
+                      <span>• Unité : {product.unit}</span>
+                    </div>
+                  </div>
+                  <span className={`shrink-0 inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold whitespace-nowrap ${
+                    isOut ? 'bg-rose-100 text-rose-800 border border-rose-200' : isLow ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-emerald-100 text-emerald-800'
+                  }`}>
+                    {product.stockQuantity} {product.unit}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="rounded-xl bg-stone-50 p-2">
+                    <div className="text-[10px] text-stone-500">Prix achat</div>
+                    <div className="text-xs font-bold font-mono-num text-stone-700 break-words">{formatCurrency(product.purchasePrice, settings.currency)}</div>
+                  </div>
+                  <div className="rounded-xl bg-stone-50 p-2">
+                    <div className="text-[10px] text-stone-500">Prix vente</div>
+                    <div className="text-xs font-black font-mono-num text-stone-900 break-words">{formatCurrency(product.sellingPrice, settings.currency)}</div>
+                  </div>
+                  <div className="rounded-xl bg-emerald-50 p-2">
+                    <div className="text-[10px] text-stone-500">Gain / unité</div>
+                    <div className="text-xs font-black font-mono-num text-emerald-800 break-words">+{formatCurrency(unitMargin, settings.currency)}</div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-end gap-1.5">
+                  <button onClick={() => handleOpenRestockModal(product)} className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 font-bold text-xs">+ Réappro</button>
+                  <button onClick={() => handleOpenAddModal(product)} className="p-2 rounded-lg text-stone-500 hover:bg-stone-100" title="Modifier"><Edit3 className="w-4 h-4" /></button>
+                  <button onClick={() => handleDeleteProduct(product.id)} className="p-2 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-stone-100" title="Supprimer"><Trash2 className="w-4 h-4" /></button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs sm:text-sm">
             <thead className="bg-stone-50 text-stone-500 font-extrabold uppercase tracking-wider text-[11px] border-b border-stone-200">
               <tr>

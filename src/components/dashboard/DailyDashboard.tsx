@@ -73,6 +73,9 @@ export const DailyDashboard: React.FC<DailyDashboardProps> = ({
     .reduce((sum, e) => sum + e.amount, 0);
 
   const todayEstimatedNet = todayGrossProfit - todayOperatingExpenses;
+  // Achats de stock du jour : ce n'est pas une perte, leur coût sera déduit à la vente (donc non déduits ici)
+  const todaySupply = todayExpenses.filter(e => e.category === 'supply').reduce((sum, e) => sum + e.amount, 0);
+  const todayChargesCount = todayExpenses.filter(e => e.category !== 'personal_draw' && e.category !== 'supply').length;
 
   // Outstanding customer debts total
   const totalOutstandingDebts = customers.reduce((sum, c) => sum + c.totalDebt, 0);
@@ -189,6 +192,26 @@ export const DailyDashboard: React.FC<DailyDashboardProps> = ({
         </div>
       </div>
 
+      {/* Ventes, dépenses et bénéfice du jour : visibles d'un coup d'œil */}
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-4" data-testid="today-kpis">
+        <button onClick={() => onNavigate('finances')} className="text-left bg-white rounded-2xl p-4 border border-stone-200 shadow-xs">
+          <div className="text-xs font-semibold text-stone-500 flex items-center justify-between"><span>Ventes du jour</span><ArrowUpRight className="w-4 h-4 text-emerald-600" /></div>
+          <div className="mt-1 text-xl sm:text-2xl font-black text-stone-900 font-mono-num break-words">{formatCurrency(todayRevenue, settings.currency)}</div>
+          <div className="text-[11px] text-stone-500 mt-0.5">{todaySales.length} vente(s)</div>
+        </button>
+        <button onClick={() => onNavigate('expenses')} className="text-left bg-white rounded-2xl p-4 border border-stone-200 shadow-xs">
+          <div className="text-xs font-semibold text-stone-500 flex items-center justify-between"><span>Dépenses du jour</span><ArrowDownRight className="w-4 h-4 text-rose-600" /></div>
+          <div className="mt-1 text-xl sm:text-2xl font-black text-rose-600 font-mono-num break-words">{todayOperatingExpenses > 0 ? '-' : ''}{formatCurrency(todayOperatingExpenses, settings.currency)}</div>
+          <div className="text-[11px] text-stone-500 mt-0.5">{todayChargesCount} charge(s)</div>
+        </button>
+        <button onClick={() => onNavigate('finances')} className={`col-span-2 text-left rounded-2xl p-4 border shadow-xs ${todayEstimatedNet < 0 ? 'bg-rose-50 border-rose-200' : 'bg-emerald-50 border-emerald-200'}`}>
+          <div className="text-xs font-semibold text-stone-500 flex items-center justify-between"><span>Bénéfice du jour</span><Wallet className="w-4 h-4 text-emerald-700" /></div>
+          <div className={`mt-1 text-3xl font-black font-mono-num break-words ${todayEstimatedNet < 0 ? 'text-rose-600' : 'text-emerald-700'}`}>{formatCurrency(todayEstimatedNet, settings.currency)}</div>
+          <div className="text-[11px] text-stone-500 mt-0.5">Gain sur les ventes {formatCurrency(todayGrossProfit, settings.currency)} − charges {formatCurrency(todayOperatingExpenses, settings.currency)}</div>
+          {todaySupply > 0 && <div className="text-[11px] text-stone-500 mt-1">📦 {formatCurrency(todaySupply, settings.currency)} d'achats de stock aujourd'hui : non déduits, ils le seront à la vente de ces produits.</div>}
+        </button>
+      </div>
+
       <FeedbackCard settings={settings} sales={sales} />
 
       {/* Quick Action Touch Targets (Mobile-first, prominent) */}
@@ -255,71 +278,6 @@ export const DailyDashboard: React.FC<DailyDashboardProps> = ({
       {/* Primary KPI Metrics Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-4">
         
-        {/* Today's Sales */}
-        <div 
-          onClick={() => onNavigate('finances')}
-          className="bg-white rounded-2xl p-4 sm:p-5 border border-stone-200 shadow-xs cursor-pointer hover:border-emerald-300 transition group"
-        >
-          <div className="flex items-center justify-between text-stone-500 text-xs font-semibold">
-            <span>Ventes du Jour</span>
-            <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center group-hover:bg-emerald-100 transition">
-              <ArrowUpRight className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <div className="text-xl sm:text-2xl font-black text-stone-900 font-mono-num">
-              {formatCurrency(todayRevenue, settings.currency)}
-            </div>
-            <div className="text-xs text-emerald-600 font-medium mt-0.5 flex items-center justify-between">
-              <span>{todaySales.length} ticket(s)</span>
-              <span className="text-[10px] text-emerald-700 font-bold group-hover:underline">Ratios →</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Today's Expenses */}
-        <div 
-          onClick={() => onNavigate('expenses')}
-          className="bg-white rounded-2xl p-4 sm:p-5 border border-stone-200 shadow-xs cursor-pointer hover:border-rose-300 transition"
-        >
-          <div className="flex items-center justify-between text-stone-500 text-xs font-semibold">
-            <span>Dépenses du Jour</span>
-            <div className="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
-              <ArrowDownRight className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <div className="text-xl sm:text-2xl font-black text-stone-900 font-mono-num">
-              {formatCurrency(todayOperatingExpenses, settings.currency)}
-            </div>
-            <div className="text-xs text-stone-500 font-medium mt-0.5">
-              {todayExpenses.length} charge(s) du jour
-            </div>
-          </div>
-        </div>
-
-        {/* Today's Estimated Net Profit */}
-        <div 
-          onClick={() => onNavigate('finances')}
-          className="bg-white rounded-2xl p-4 sm:p-5 border border-stone-200 shadow-xs cursor-pointer hover:border-teal-300 transition group"
-        >
-          <div className="flex items-center justify-between text-stone-500 text-xs font-semibold">
-            <span>Bénéfice Net</span>
-            <div className="w-7 h-7 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center group-hover:bg-teal-100 transition">
-              <Wallet className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <div className={`text-xl sm:text-2xl font-black font-mono-num ${todayEstimatedNet >= 0 ? 'text-teal-700' : 'text-rose-600'}`}>
-              {formatCurrency(todayEstimatedNet, settings.currency)}
-            </div>
-            <div className="text-xs text-stone-500 font-medium mt-0.5 flex items-center justify-between">
-              <span>Après coûts</span>
-              <span className="text-[10px] text-teal-700 font-bold group-hover:underline">Détails →</span>
-            </div>
-          </div>
-        </div>
-
         {/* Customer Debts to collect */}
         <div 
           onClick={() => onNavigate('debts')}

@@ -674,19 +674,19 @@ export const FinancesView: React.FC<FinancesViewProps> = ({
 
         <div className="divide-y divide-stone-100">
           {topProducts.map((p, idx) => (
-            <div key={idx} className="py-2.5 flex items-center justify-between text-xs sm:text-sm">
-              <div className="flex items-center gap-3">
+            <div key={idx} className="py-2.5 flex items-center justify-between gap-3 text-xs sm:text-sm">
+              <div className="flex items-center gap-3 min-w-0">
                 <span className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-800 font-black text-xs flex items-center justify-center shrink-0">
                   {idx + 1}
                 </span>
-                <div>
-                  <div className="font-bold text-stone-900">{p.name}</div>
+                <div className="min-w-0">
+                  <div className="font-bold text-stone-900 break-words">{p.name}</div>
                   <div className="text-stone-500 text-[11px]">{p.qty} unité(s) vendue(s)</div>
                 </div>
               </div>
 
-              <div className="text-right">
-                <div className="font-bold text-stone-900 font-mono-num">
+              <div className="text-right shrink-0">
+                <div className="font-bold text-stone-900 font-mono-num whitespace-nowrap">
                   {formatCurrency(p.revenue, settings.currency)}
                 </div>
                 <div className="text-emerald-700 font-bold text-[11px]">

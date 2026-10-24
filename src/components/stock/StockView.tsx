@@ -285,7 +285,7 @@ export const StockView: React.FC<StockViewProps> = ({
             {formatCurrency(potentialProfitValue, settings.currency)}
           </div>
           <div className="text-xs text-emerald-700 font-semibold mt-0.5">
-            + {totalStockCostValue > 0 ? ((potentialProfitValue / totalStockCostValue) * 100).toFixed(0) : 0}% de marge globale
+            Si tout le stock est vendu
           </div>
         </div>
 
@@ -348,7 +348,7 @@ export const StockView: React.FC<StockViewProps> = ({
                 <th className="py-3 px-4">Article</th>
                 <th className="py-3 px-3 text-right">Prix Achat</th>
                 <th className="py-3 px-3 text-right">Prix Vente</th>
-                <th className="py-3 px-3 text-right">Marge Brute</th>
+                <th className="py-3 px-3 text-right">Gain / unité</th>
                 <th className="py-3 px-3 text-center">Stock</th>
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
@@ -363,7 +363,6 @@ export const StockView: React.FC<StockViewProps> = ({
               ) : (
                 filteredProducts.map(product => {
                   const unitMargin = product.sellingPrice - product.purchasePrice;
-                  const unitMarginPct = product.sellingPrice > 0 ? (unitMargin / product.sellingPrice) * 100 : 0;
                   const isOut = product.stockQuantity === 0;
                   const isLow = product.stockQuantity > 0 && product.stockQuantity <= product.minAlertThreshold;
 
@@ -393,9 +392,6 @@ export const StockView: React.FC<StockViewProps> = ({
                         <span className="font-bold text-emerald-800">
                           +{formatCurrency(unitMargin, settings.currency)}
                         </span>
-                        <div className="text-[10px] text-emerald-600 font-semibold">
-                          ({unitMarginPct.toFixed(0)}%)
-                        </div>
                       </td>
 
                       <td className="py-3 px-3 text-center">
@@ -530,10 +526,9 @@ export const StockView: React.FC<StockViewProps> = ({
 
               {/* Instant Margin Preview */}
               <div className="p-2.5 bg-emerald-50 rounded-xl text-xs flex justify-between items-center text-emerald-900 font-bold">
-                <span>Marge brute unitaire :</span>
+                <span>Gain par unité vendue :</span>
                 <span>
                   {formatCurrency(formSellingPrice - formPurchasePrice, settings.currency)} 
-                  {' '}({formSellingPrice > 0 ? (((formSellingPrice - formPurchasePrice) / formSellingPrice) * 100).toFixed(0) : 0}%)
                 </span>
               </div>
 

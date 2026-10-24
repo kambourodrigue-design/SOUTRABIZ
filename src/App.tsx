@@ -103,7 +103,8 @@ export default function App() {
     const id = setInterval(load, 10 * 60_000);   // un abonnement validé ou expiré est pris en compte sans reconnexion
     return () => clearInterval(id);
   }, [syncEnabled, isPlatformAdmin, shopRole]);
-  const readOnly = !!plan?.readOnly;
+  // L'administrateur n'est jamais en lecture seule, quelle que soit la réponse du serveur
+  const readOnly = !isPlatformAdmin && !!plan?.readOnly;
   const [roToast, setRoToast] = useState(false);
   const blocked = () => { setRoToast(true); setTimeout(() => setRoToast(false), 3500); };
 
@@ -342,7 +343,7 @@ export default function App() {
   if (session === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#050b24' }} role="status" aria-label="Chargement de Nafora">
-        <Logo variant="stacked" on="dark" className="h-44 sm:h-56" />
+        <Logo variant="stacked" on="dark" className="h-[115px]" />
       </div>
     );
   }

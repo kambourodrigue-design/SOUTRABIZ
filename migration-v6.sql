@@ -1,8 +1,3 @@
--- v6 : statistiques admin cohérentes avec l'application.
--- Les charges (expenses) des tables shop_daily / shop_stats ne doivent contenir ni les achats de
--- marchandises ('supply') ni les prélèvements personnels ('personal_draw').
--- Cette requête recalcule les totaux existants à partir des enregistrements. Sans danger si relancée.
-
 UPDATE shop_daily SET expenses = COALESCE((
   SELECT SUM(COALESCE(json_extract(r.json,'$.amount'),0))
   FROM records r

@@ -38,13 +38,12 @@
       :root.dark { --boot-bg:#050b24; --boot-fg:#eef3ff; --boot-sub:#93a3ce; --boot-dim:#7284b5; color-scheme: dark; }
       body { background: var(--boot-bg); }
       /* écran de démarrage = même logo, même taille et même fond que l'écran de chargement de l'application */
-      .boot-logo { height: 176px; width: auto; max-width: 90vw; }
-      @media (min-width: 640px) { .boot-logo { height: 224px; } }
+      .boot-logo { height: 115px; width: auto; max-width: 90vw; }
     </style>
   </head>
   <body class="bg-stone-50 text-stone-900 antialiased selection:bg-emerald-500 selection:text-white">
     <div id="root"><div id="boot" style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-family:system-ui,sans-serif;color:#eef3ff;background:#050b24;text-align:center;padding:24px">
-      <img class="boot-logo" src="/brand/logo-stacked-dark.png" alt="Nafora" width="251" height="176">
+      <img class="boot-logo" src="/brand/logo-stacked-dark.png" alt="Nafora" width="164" height="115">
       <div id="boot-msg" style="display:none;font-size:14px;color:#93a3ce"></div>
       <div id="boot-detail" style="font-size:11px;color:#7284b5;max-width:320px;word-break:break-word"></div>
       <button id="boot-fix" style="display:none;padding:12px 22px;border:0;border-radius:14px;background:#1a4bd1;color:#fff;font-weight:700;font-size:15px">Réparer et recharger</button>

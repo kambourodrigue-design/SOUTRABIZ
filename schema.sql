@@ -165,8 +165,8 @@ CREATE TABLE IF NOT EXISTS feedback (
   city       TEXT,
   rating     INTEGER NOT NULL,
   text       TEXT NOT NULL,
-  consent    INTEGER NOT NULL DEFAULT 0,       -- 1 = le commerçant autorise la publication
-  status     TEXT NOT NULL DEFAULT 'new',      -- new | published | hidden
+  consent    INTEGER NOT NULL DEFAULT 0,
+  status     TEXT NOT NULL DEFAULT 'new',
   created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_feedback_status ON feedback(status, created_at);

@@ -1,6 +1,6 @@
 import { newId } from '../../../shared/syncCore';
 import React, { useState, useMemo } from 'react';
-import { Customer, DebtPayment, Supplier, SupplierPayment, PaymentMethod, ShopSettings, Expense } from '../../types';
+import { Customer, DebtPayment, Supplier, SupplierPayment, PaymentMethod, ShopSettings, Expense, Product } from '../../types';
 import { RemindersPanel } from './RemindersPanel';
 import { PurchaseModal } from '../common/PurchaseModal';
 import { formatCurrency, getPaymentMethodDetails } from '../../services/financials';
@@ -35,6 +35,8 @@ interface DebtsViewProps {
   onUpdateSuppliers: (suppliers: Supplier[]) => void;
   allowSuppliers?: boolean;
   onAddExpense?: (expense: Expense) => void;
+  products?: Product[];
+  onUpdateProducts?: (products: Product[]) => void;
 }
 
 export const DebtsView: React.FC<DebtsViewProps> = ({
@@ -45,6 +47,8 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
   onUpdateSuppliers,
   allowSuppliers = true,
   onAddExpense,
+  products = [],
+  onUpdateProducts,
 }) => {
   const [isPurchaseOpen, setIsPurchaseOpen] = useState(false);
   const [aiBusyId, setAiBusyId] = useState<string | null>(null);
@@ -1114,9 +1118,9 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
         </div>
       )}
 
-      {isPurchaseOpen && onAddExpense && (
+      {isPurchaseOpen && onAddExpense && onUpdateProducts && (
         <PurchaseModal
-          settings={settings} suppliers={suppliers}
+          settings={settings} products={products} onUpdateProducts={onUpdateProducts} suppliers={suppliers}
           onUpdateSuppliers={onUpdateSuppliers} onAddExpense={onAddExpense}
           onClose={() => setIsPurchaseOpen(false)}
         />

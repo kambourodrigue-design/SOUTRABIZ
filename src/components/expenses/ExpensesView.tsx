@@ -1,6 +1,6 @@
 import { newId } from '../../../shared/syncCore';
 import React, { useState, useMemo } from 'react';
-import { Expense, ExpenseCategory, PaymentMethod, ShopSettings, Supplier } from '../../types';
+import { Expense, ExpenseCategory, PaymentMethod, ShopSettings, Supplier, Product } from '../../types';
 import { PurchaseModal } from '../common/PurchaseModal';
 import { SupplierCreditFields } from '../common/SupplierCreditFields';
 import { applyPurchaseCredit } from '../../services/purchases';
@@ -26,6 +26,8 @@ interface ExpensesViewProps {
   onDeleteExpense: (expenseId: string) => void;
   suppliers?: Supplier[];
   onUpdateSuppliers?: (suppliers: Supplier[]) => void;
+  products?: Product[];
+  onUpdateProducts?: (products: Product[]) => void;
 }
 
 export const ExpensesView: React.FC<ExpensesViewProps> = ({
@@ -35,6 +37,8 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
   onDeleteExpense,
   suppliers = [],
   onUpdateSuppliers,
+  products = [],
+  onUpdateProducts,
 }) => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isPurchaseOpen, setIsPurchaseOpen] = useState(false);
@@ -448,9 +452,9 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
         </div>
       )}
 
-      {isPurchaseOpen && onUpdateSuppliers && (
+      {isPurchaseOpen && onUpdateSuppliers && onUpdateProducts && (
         <PurchaseModal
-          settings={settings} suppliers={suppliers}
+          settings={settings} products={products} onUpdateProducts={onUpdateProducts} suppliers={suppliers}
           onUpdateSuppliers={onUpdateSuppliers} onAddExpense={onAddExpense}
           onClose={() => setIsPurchaseOpen(false)}
         />

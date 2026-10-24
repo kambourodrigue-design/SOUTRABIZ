@@ -477,6 +477,8 @@ export default function App() {
             onDeleteExpense={handleDeleteExpense}
             suppliers={suppliers}
             onUpdateSuppliers={handleUpdateSuppliers}
+            products={products}
+            onUpdateProducts={handleUpdateProducts}
           />
         )}
 
@@ -489,6 +491,8 @@ export default function App() {
             onUpdateSuppliers={handleUpdateSuppliers}
             allowSuppliers={shopRole !== 'cashier'}
             onAddExpense={shopRole !== 'cashier' ? handleAddExpense : undefined}
+            products={products}
+            onUpdateProducts={handleUpdateProducts}
           />
         )}
 

@@ -29,3 +29,10 @@ export function applyPurchaseCredit(i: PurchaseCreditInput): PurchaseCreditResul
   }
   return { suppliers, supplierId, credit: supplierId ? credit : 0 };
 }
+
+/** Coût moyen pondéré après réception d'un lot : l'ancien stock et le nouveau lot comptent chacun à leur prix. */
+export function weightedCost(oldQty: number, oldPrice: number, newQty: number, newPrice: number): number {
+  const q0 = Math.max(0, oldQty);
+  if (q0 + newQty <= 0) return newPrice;
+  return Math.round((q0 * oldPrice + newQty * newPrice) / (q0 + newQty));
+}

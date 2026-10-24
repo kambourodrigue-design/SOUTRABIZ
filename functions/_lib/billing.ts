@@ -41,7 +41,8 @@ async function saveBilling(env: Env, b: BillingSettings) {
 export interface PlanStatus {
   enforced: boolean;
   state: 'off' | 'paid' | 'trial' | 'free';
-  readOnly: boolean;           // true = écritures refusées (essai terminé, option activée)
+  readOnly: boolean;           // true = écritures refusées (essai terminé, option activée ou boutique bloquée par l'admin)
+  blocked?: boolean;           // true = l'administrateur a bloqué cette boutique à la fin de son essai
   pro: boolean;                // true = fonctions Pro (payé, essai, ou facturation désactivée)
   paidUntil: string | null; trialEndsAt: string | null; daysLeft: number;
 }
@@ -67,7 +68,10 @@ export async function planStatus(env: Env, shopId: string, cfg?: BillingSettings
     return { enforced: true, state: 'paid', readOnly: false, pro: true, paidUntil, trialEndsAt: null, daysLeft: day(new Date(paidUntil).getTime()) };
   if (now < trialEnd)
     return { enforced: true, state: 'trial', readOnly: false, pro: true, paidUntil, trialEndsAt: new Date(trialEnd).toISOString(), daysLeft: day(trialEnd) };
-  return { enforced: true, state: 'free', readOnly: !!b.readOnlyAfterTrial, pro: false, paidUntil, trialEndsAt: new Date(trialEnd).toISOString(), daysLeft: 0 };
+  // Blocage décidé par l'administrateur pour cette boutique : lecture seule dès que l'essai est terminé
+  let blocked = false;
+  try { blocked = !!(await env.DB.prepare('SELECT 1 AS x FROM app_settings WHERE key = ?').bind('shop_block:' + shopId).first()); } catch { /* ignore */ }
+  return { enforced: true, state: 'free', readOnly: !!b.readOnlyAfterTrial || blocked, blocked, pro: false, paidUntil, trialEndsAt: new Date(trialEnd).toISOString(), daysLeft: 0 };
 }
 
 const publicSettings = (b: BillingSettings, env?: Env) => ({
@@ -300,6 +304,42 @@ export async function adminBilling(req: Request, env: Env, parts: string[]) {
        ON CONFLICT(shop_id) DO UPDATE SET paid_until = ?2, updated_at = ?3`).bind(shopId, until, now).run();
     return json({ ok: true, paidUntil: until });
   }
+  if (sub === 'shop') {
+    const shopOf = async (id: string) => env.DB.prepare('SELECT shop_id FROM shops WHERE shop_id = ?').bind(id).first();
+    const view = async (id: string) => {
+      const cfg = await loadBilling(env);
+      const st = await planStatus(env, id, cfg);
+      const blockedRow = await env.DB.prepare('SELECT 1 AS x FROM app_settings WHERE key = ?').bind('shop_block:' + id).first();
+      const subRow: any = await env.DB.prepare('SELECT paid_until FROM subscriptions WHERE shop_id = ?').bind(id).first();
+      return { billingEnabled: cfg.enabled, status: st, blocked: !!blockedRow, paidUntil: subRow?.paid_until ?? null };
+    };
+    if (m === 'GET' && parts[3]) {
+      const id = clean(parts[3], 60);
+      if (!(await shopOf(id))) return fail('Boutique introuvable.', 404);
+      return json(await view(id));
+    }
+    if (m === 'POST') {
+      const x = await readBody(req, 1_000);
+      const id = clean(x.shopId, 60), action = x.action, now = new Date().toISOString();
+      if (!(await shopOf(id))) return fail('Boutique introuvable.', 404);
+      if (action === 'activate') {
+        const cur: any = await env.DB.prepare('SELECT paid_until FROM subscriptions WHERE shop_id = ?').bind(id).first();
+        const until = extend(cur?.paid_until ?? null, 12);
+        await env.DB.prepare(
+          `INSERT INTO subscriptions (shop_id, paid_until, updated_at) VALUES (?1, ?2, ?3)
+           ON CONFLICT(shop_id) DO UPDATE SET paid_until = ?2, updated_at = ?3`).bind(id, until, now).run();
+      } else if (action === 'revoke') {
+        await env.DB.prepare(
+          `INSERT INTO subscriptions (shop_id, paid_until, updated_at) VALUES (?1, ?2, ?2)
+           ON CONFLICT(shop_id) DO UPDATE SET paid_until = ?2, updated_at = ?2`).bind(id, now).run();
+      } else if (action === 'block') {
+        await env.DB.prepare('INSERT INTO app_settings (key, value) VALUES (?1, ?2) ON CONFLICT(key) DO UPDATE SET value = ?2').bind('shop_block:' + id, '1').run();
+      } else if (action === 'unblock') {
+        await env.DB.prepare('DELETE FROM app_settings WHERE key = ?').bind('shop_block:' + id).run();
+      } else return fail('Action invalide.');
+      return json(await view(id));
+    }
+  }
   return fail('Route inconnue.', 404);
 }
 
@@ -307,6 +347,6 @@ export async function adminBilling(req: Request, env: Env, parts: string[]) {
 export async function isReadOnly(env: Env, shopId: string, isAdmin = false): Promise<boolean> {
   if (isAdmin) return false;
   const b = await loadBilling(env);
-  if (!b.enabled || !b.readOnlyAfterTrial) return false;
+  if (!b.enabled) return false;
   return (await planStatus(env, shopId, b)).readOnly;
 }

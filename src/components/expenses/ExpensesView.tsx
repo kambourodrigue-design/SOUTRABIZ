@@ -16,6 +16,8 @@ import {
   Wallet,
   AlertCircle
 } from 'lucide-react';
+import { Select } from '../common/dialogs';
+import { uiAlert, uiConfirm } from '../common/dialogs';
 
 interface ExpensesViewProps {
   expenses: Expense[];
@@ -94,7 +96,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
     if (isPurchase) {
       const paid = Math.min(Math.max(0, paidValue), Number(amount));
       if (paid < Number(amount) && !supplierId && !newSupplierName.trim()) {
-        alert('Pour un achat à crédit, choisissez ou saisissez le fournisseur.');
+        uiAlert('Pour un achat à crédit, choisissez ou saisissez le fournisseur.');
         return;
       }
       const res = applyPurchaseCredit({
@@ -128,11 +130,11 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
     setPaidInput(null);
   };
 
-  const handleDelete = (exp: Expense) => {
+  const handleDelete = async (exp: Expense) => {
     const credit = creditPart(exp);
     if (exp.supplierId && credit > 0 && onUpdateSuppliers) {
       const sup = suppliers.find(x => x.id === exp.supplierId);
-      if (sup && confirm(`Cet achat avait ${formatCurrency(credit, settings.currency)} à crédit chez ${sup.name}. Annuler aussi cette dette ?`)) {
+      if (sup && await uiConfirm(`Cet achat avait ${formatCurrency(credit, settings.currency)} à crédit chez ${sup.name}. Annuler aussi cette dette ?`)) {
         onUpdateSuppliers(suppliers.map(x => x.id === sup.id ? { ...x, totalDebt: Math.max(0, x.totalDebt - credit) } : x));
       }
     }
@@ -261,7 +263,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
       <div className="bg-white rounded-3xl border border-stone-200 overflow-hidden shadow-xs">
         <div className="p-4 border-b border-stone-100 flex items-center justify-between">
           <h3 className="font-bold text-sm text-stone-900">Historique des Dépenses</h3>
-          <select
+          <Select
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
             className="text-xs bg-stone-50 border border-stone-200 rounded-xl px-2.5 py-1.5 font-medium"
@@ -274,7 +276,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
             <option value="salary">Salaires</option>
             <option value="taxes">Taxes</option>
             <option value="personal_draw">Prélèvements perso</option>
-          </select>
+          </Select>
         </div>
 
         <div className="divide-y divide-stone-100">
@@ -372,7 +374,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-stone-700">Catégorie</label>
-                  <select
+                  <Select
                     value={category}
                     onChange={(e) => setCategory(e.target.value as ExpenseCategory)}
                     className="w-full mt-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs sm:text-sm font-medium"
@@ -386,12 +388,12 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
                     <option value="personal_draw">Prélèvement Personnel</option>
                     <option value="maintenance">Imprévus / Réparation</option>
                     <option value="other">Autre</option>
-                  </select>
+                  </Select>
                 </div>
 
                 <div>
                   <label className="text-xs font-bold text-stone-700">{isPurchase ? 'Partie payée par' : 'Payé par'}</label>
-                  <select
+                  <Select
                     value={paymentMethod}
                     onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
                     className="w-full mt-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs sm:text-sm font-medium"
@@ -402,7 +404,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
                     <option value="mtn_momo">MTN MoMo</option>
                     <option value="moov_money">Moov Money</option>
                     <option value="bank_transfer">Compte Bancaire</option>
-                  </select>
+                  </Select>
                 </div>
               </div>
 

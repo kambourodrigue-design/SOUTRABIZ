@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { api, PlanSettings, PlanStatus, PaymentRow } from '../../services/api';
+import { Select } from '../common/dialogs';
 
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR').format(Math.round(n));
 const day = (iso: string | null) => iso ? new Date(iso).toLocaleDateString('fr-FR') : '';
@@ -59,7 +60,7 @@ export const BillingPanel: React.FC = () => {
           <div className="text-xs bg-white border border-stone-200 rounded-lg p-2 whitespace-pre-wrap"><b>1.</b> Envoyez {fmt(price)} {s.currency} :{'\n'}{s.payInfo}</div>)}
         <div className="text-xs font-semibold text-stone-700"><b>2.</b> Indiquez ensuite la référence de la transaction (reçue par SMS ou affichée après le paiement) :</div>
         <div className="flex gap-2">
-          {mode === 'intl' && s.mfLink ? <span className="px-2 py-2 rounded-xl border border-stone-300 text-xs bg-white">Money Fusion</span> : <select value={method} onChange={e => setMethod(e.target.value)} className="px-2 py-2 rounded-xl border border-stone-300 text-xs"><option value="orange_money">Orange Money</option><option value="wave">Wave</option><option value="mtn_momo">MTN MoMo</option><option value="moov_money">Moov Money</option><option value="bank_transfer">Virement</option></select>}
+          {mode === 'intl' && s.mfLink ? <span className="px-2 py-2 rounded-xl border border-stone-300 text-xs bg-white">Money Fusion</span> : <Select value={method} onChange={e => setMethod(e.target.value)} className="px-2 py-2 rounded-xl border border-stone-300 text-xs"><option value="orange_money">Orange Money</option><option value="wave">Wave</option><option value="mtn_momo">MTN MoMo</option><option value="moov_money">Moov Money</option><option value="bank_transfer">Virement</option></Select>}
           <input value={ref} onChange={e => setRef(e.target.value)} placeholder="Référence / n° de transaction" maxLength={40} className="flex-1 min-w-0 px-3 py-2 rounded-xl border border-stone-300 text-sm" data-testid="pay-ref" /></div>
         {err && <p className="text-xs text-red-700">{err}</p>}{msg && <p className="text-xs text-emerald-700">{msg}</p>}
         <button disabled={busy || ref.trim().length < 4} className="w-full py-2 rounded-xl bg-emerald-700 text-white font-bold text-sm disabled:opacity-50" data-testid="pay-submit">J'ai payé : envoyer pour validation</button>

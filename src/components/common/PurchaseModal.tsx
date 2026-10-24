@@ -3,6 +3,8 @@ import { Expense, PaymentMethod, ShopSettings, Supplier } from '../../types';
 import { SupplierCreditFields } from './SupplierCreditFields';
 import { applyPurchaseCredit } from '../../services/purchases';
 import { newId } from '../../../shared/syncCore';
+import { Select } from './dialogs';
+import { uiAlert } from './dialogs';
 
 interface Props {
   settings: ShopSettings;
@@ -31,7 +33,7 @@ export const PurchaseModal: React.FC<Props> = ({
     e.preventDefault();
     if (!title.trim() || amount <= 0) return;
     if (paid < amount && !supplierId && !newSupplier.trim()) {
-      alert('Pour un achat à crédit, choisissez ou saisissez le fournisseur.');
+      uiAlert('Pour un achat à crédit, choisissez ou saisissez le fournisseur.');
       return;
     }
     const res = applyPurchaseCredit({ total: amount, paid, supplierId, newSupplierName: newSupplier, suppliers });
@@ -81,14 +83,14 @@ export const PurchaseModal: React.FC<Props> = ({
               {paid > 0 && (
                 <div>
                   <label className="text-xs font-bold text-stone-700">Partie payée par</label>
-                  <select className={field} value={method} onChange={(e) => setMethod(e.target.value as PaymentMethod)}>
+                  <Select className={field} value={method} onChange={(e) => setMethod(e.target.value as PaymentMethod)}>
                     <option value="cash">Espèces Caisse</option>
                     <option value="wave">Wave</option>
                     <option value="orange_money">Orange Money</option>
                     <option value="mtn_momo">MTN MoMo</option>
                     <option value="moov_money">Moov Money</option>
                     <option value="bank_transfer">Compte Bancaire</option>
-                  </select>
+                  </Select>
                 </div>
               )}
               {paid < amount && (

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Mic, X, Loader2, Check } from 'lucide-react';
 import { Product, Customer } from '../../types';
 import { analyseSale, matchProduct, VoiceResult } from '../../services/voiceSale';
+import { Select } from '../common/dialogs';
 
 interface Props {
   products: Product[];
@@ -75,10 +76,10 @@ export const VoiceSaleModal: React.FC<Props> = ({ products, customers, onClose, 
             {res.lines.map((l, i) => (
               <div key={i} className={`flex items-center gap-2 p-2 rounded-xl border ${l.product ? 'border-emerald-200 bg-emerald-50' : 'border-amber-300 bg-amber-50'}`}>
                 <input type="number" min={1} value={l.qty} onChange={e => setQty(i, parseInt(e.target.value, 10))} className="w-14 px-2 py-1 rounded-lg border border-stone-300 text-sm" />
-                <select value={l.product?.id || ''} onChange={e => setProd(i, e.target.value)} className="flex-1 min-w-0 px-2 py-1 rounded-lg border border-stone-300 text-sm">
+                <Select value={l.product?.id || ''} onChange={e => setProd(i, e.target.value)} className="flex-1 min-w-0 px-2 py-1 rounded-lg border border-stone-300 text-sm">
                   <option value="">« {l.label} » : choisir…</option>
                   {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                </select>
+                </Select>
                 {l.product && l.qty > l.product.stockQuantity && <span className="text-[10px] text-rose-700 font-bold">Stock {l.product.stockQuantity}</span>}
               </div>
             ))}

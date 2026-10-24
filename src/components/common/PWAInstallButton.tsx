@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
 import { Download, Smartphone, X, CheckCircle2 } from 'lucide-react';
+import { uiAlert } from './dialogs';
 
 export const PWAInstallButton: React.FC = () => {
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
@@ -93,7 +94,7 @@ export const PWAInstallButton: React.FC = () => {
   // Fallback indicator button if browser already handled or doesn't support beforeinstallprompt
   return (
     <button
-      onClick={() => alert("Pour installer l'application sur votre écran d'accueil : Ouvrez le menu de votre navigateur (les 3 points verticaux) puis sélectionnez « Ajouter à l'écran d'accueil ».")}
+      onClick={() => uiAlert("Pour installer l'application sur votre écran d'accueil : Ouvrez le menu de votre navigateur (les 3 points verticaux) puis sélectionnez « Ajouter à l'écran d'accueil ».")}
       className="flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white/80 px-2.5 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 shadow-xs"
       title="Application Web Progressive"
     >

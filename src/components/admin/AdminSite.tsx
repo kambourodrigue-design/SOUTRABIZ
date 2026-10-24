@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { api, SiteStats, AdminAnnouncement } from '../../services/api';
 import { formatCurrency } from '../../services/financials';
+import { Select } from '../common/dialogs';
+import { uiConfirm } from '../common/dialogs';
 
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR').format(Math.round(n));
 const card = 'bg-white rounded-2xl border border-stone-200 p-4';
@@ -68,7 +70,7 @@ export const AdminMessagesPanel: React.FC = () => {
     try { await api.adminAnnouncementAdd({ title: f.title, body: f.body, audience, level: f.level, days: f.days }); setF({ ...f, title: '', body: '' }); await load(); }
     catch (x) { setErr((x as Error).message); } finally { setBusy(false); }
   };
-  const del = async (id: string) => { if (confirm('Supprimer ce message ?')) { await api.adminAnnouncementDelete(id).catch(x => setErr(x.message)); load(); } };
+  const del = async (id: string) => { if (await uiConfirm('Supprimer ce message ?')) { await api.adminAnnouncementDelete(id).catch(x => setErr(x.message)); load(); } };
   const inp = 'w-full px-3 py-2 rounded-xl border border-stone-300 text-sm';
   return (
     <div className="space-y-4" data-testid="admin-messages">
@@ -77,11 +79,11 @@ export const AdminMessagesPanel: React.FC = () => {
         <input className={inp} placeholder="Titre (80 car. max)" maxLength={80} value={f.title} onChange={e => setF({ ...f, title: e.target.value })} data-testid="msg-title" />
         <textarea className={inp} rows={3} maxLength={1000} placeholder="Votre message…" value={f.body} onChange={e => setF({ ...f, body: e.target.value })} data-testid="msg-body" />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <select className={inp} value={f.audience} onChange={e => setF({ ...f, audience: e.target.value })}>
-            <option value="all">Tous les utilisateurs</option><option value="owners">Propriétaires seulement</option><option value="category">Un secteur</option><option value="country">Un pays</option></select>
+          <Select className={inp} value={f.audience} onChange={e => setF({ ...f, audience: e.target.value })}>
+            <option value="all">Tous les utilisateurs</option><option value="owners">Propriétaires seulement</option><option value="category">Un secteur</option><option value="country">Un pays</option></Select>
           {(f.audience === 'category' || f.audience === 'country') && <input className={inp} placeholder={f.audience === 'category' ? 'code secteur' : 'ex : Burkina Faso'} value={f.value} onChange={e => setF({ ...f, value: e.target.value })} />}
-          <select className={inp} value={f.level} onChange={e => setF({ ...f, level: e.target.value })}><option value="info">Information</option><option value="important">Important</option></select>
-          <select className={inp} value={f.days} onChange={e => setF({ ...f, days: Number(e.target.value) })}>{[3, 7, 14, 30, 90].map(n => <option key={n} value={n}>Visible {n} jours</option>)}</select>
+          <Select className={inp} value={f.level} onChange={e => setF({ ...f, level: e.target.value })}><option value="info">Information</option><option value="important">Important</option></Select>
+          <Select className={inp} value={f.days} onChange={e => setF({ ...f, days: Number(e.target.value) })}>{[3, 7, 14, 30, 90].map(n => <option key={n} value={n}>Visible {n} jours</option>)}</Select>
         </div>
         {err && <p className="text-xs text-red-700">{err}</p>}
         <button disabled={busy || !f.title.trim() || !f.body.trim()} className="px-4 py-2 rounded-xl bg-emerald-700 text-white font-bold text-sm disabled:opacity-50" data-testid="msg-send">Publier le message</button>

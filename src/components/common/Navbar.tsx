@@ -16,6 +16,7 @@ import {
   LayoutDashboard,
   Sparkles
 } from 'lucide-react';
+import { uiConfirm } from './dialogs';
 
 interface NavbarProps {
   settings: ShopSettings;
@@ -135,7 +136,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
 
             <button
-              onClick={() => { if (confirm('Se déconnecter ?')) onLogout(); }}
+              onClick={async () => { if (await uiConfirm('Se déconnecter ?')) onLogout(); }}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-800/90 hover:bg-emerald-800 text-xs font-bold text-emerald-100 border border-emerald-700 transition"
               title="Se déconnecter"
             >

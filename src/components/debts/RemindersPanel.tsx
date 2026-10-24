@@ -5,6 +5,7 @@ import { api } from '../../services/api';
 import { formatCurrency } from '../../services/financials';
 import { cleanPhoneNumber, generateDebtReminderWhatsAppUrl } from '../../services/whatsapp';
 import { dueReminders, daysSince, REMINDER_GAP_DAYS } from '../../services/reminders';
+import { Select } from '../common/dialogs';
 
 interface Props {
   customers: Customer[];
@@ -51,9 +52,9 @@ export const RemindersPanel: React.FC<Props> = ({ customers, settings, onUpdateC
           <p className="text-[11px] text-stone-600">{formatCurrency(total, settings.currency)} à récupérer. Un client déjà relancé n'apparaît plus avant {REMINDER_GAP_DAYS} jours.</p>
         </div>
         {allowAi && (
-          <select value={tone} onChange={(e) => setTone(e.target.value as 'amical' | 'ferme')} className="text-[11px] font-bold border border-amber-300 rounded-lg px-1.5 py-1 bg-white" aria-label="Ton du message">
+          <Select value={tone} onChange={(e) => setTone(e.target.value as 'amical' | 'ferme')} className="text-[11px] font-bold border border-amber-300 rounded-lg px-1.5 py-1 bg-white" aria-label="Ton du message">
             <option value="amical">Ton amical</option><option value="ferme">Ton ferme</option>
-          </select>
+          </Select>
         )}
       </div>
       <div className="space-y-2">

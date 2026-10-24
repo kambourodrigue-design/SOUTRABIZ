@@ -20,6 +20,8 @@ import {
   Coins,
   Mic
 } from 'lucide-react';
+import { Select } from '../common/dialogs';
+import { uiAlert } from '../common/dialogs';
 
 interface POSViewProps {
   products: Product[];
@@ -202,7 +204,7 @@ export const POSView: React.FC<POSViewProps> = ({
     for (const it of cart) {
       const prod = products.find(x => x.id === it.productId);
       if (prod && it.quantity > prod.stockQuantity) {
-        alert(prod.stockQuantity <= 0
+        uiAlert(prod.stockQuantity <= 0
           ? `« ${prod.name} » est maintenant en rupture de stock. Retirez-le du panier.`
           : `Stock insuffisant pour « ${prod.name} » : il n'en reste que ${unitLabel(prod, prod.stockQuantity)}. Réduisez la quantité.`);
         return;
@@ -210,12 +212,12 @@ export const POSView: React.FC<POSViewProps> = ({
     }
     // Une vente à crédit doit être rattachée à un client, sinon la dette serait perdue.
     if (paymentMethod === 'credit' && !selectedCustomerId && !newCustomerName.trim()) {
-      alert('Vente à crédit : choisissez un client ou saisissez son nom pour enregistrer la dette.');
+      uiAlert('Vente à crédit : choisissez un client ou saisissez son nom pour enregistrer la dette.');
       return;
     }
     // Espèces : le montant reçu doit couvrir la vente (sinon, passer en « À crédit »).
     if (paymentMethod === 'cash' && amountPaid < cartSubtotal) {
-      alert('Le montant reçu est inférieur au total. Corrigez-le, ou choisissez « À crédit » pour noter le reste en dette.');
+      uiAlert('Le montant reçu est inférieur au total. Corrigez-le, ou choisissez « À crédit » pour noter le reste en dette.');
       return;
     }
 
@@ -650,7 +652,7 @@ export const POSView: React.FC<POSViewProps> = ({
                 {/* Select Existing Customer */}
                 <div className="space-y-1">
                   <label className="text-xs text-stone-600 font-semibold">Choisir un client habituel :</label>
-                  <select
+                  <Select
                     value={selectedCustomerId}
                     onChange={(e) => {
                       setSelectedCustomerId(e.target.value);
@@ -664,7 +666,7 @@ export const POSView: React.FC<POSViewProps> = ({
                         {c.name} ({c.phone}) - Dette actuelle : {formatCurrency(c.totalDebt, settings.currency)}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
 
                 {/* Or new customer entry */}

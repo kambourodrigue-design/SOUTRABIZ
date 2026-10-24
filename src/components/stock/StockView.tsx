@@ -17,6 +17,8 @@ import {
   TrendingUp,
   Boxes
 } from 'lucide-react';
+import { Select } from '../common/dialogs';
+import { uiAlert, uiConfirm } from '../common/dialogs';
 
 interface StockViewProps {
   products: Product[];
@@ -182,7 +184,7 @@ export const StockView: React.FC<StockViewProps> = ({
     if (canRecordPurchase && restockRecord && total > 0) {
       const paid = Math.min(Math.max(0, restockPaidInput ?? total), total);
       if (paid < total && !restockSupplierId && !restockNewSupplier.trim()) {
-        alert('Pour un achat à crédit, choisissez ou saisissez le fournisseur.');
+        uiAlert('Pour un achat à crédit, choisissez ou saisissez le fournisseur.');
         return;
       }
       const res = applyPurchaseCredit({ total, paid, supplierId: restockSupplierId, newSupplierName: restockNewSupplier, suppliers });
@@ -217,8 +219,8 @@ export const StockView: React.FC<StockViewProps> = ({
   };
 
   // Delete product
-  const handleDeleteProduct = (productId: string) => {
-    if (confirm("Voulez-vous vraiment retirer cet article du catalogue ?")) {
+  const handleDeleteProduct = async (productId: string) => {
+    if (await uiConfirm("Voulez-vous vraiment retirer cet article du catalogue ?")) {
       onUpdateProducts(products.filter(p => p.id !== productId));
     }
   };
@@ -474,7 +476,7 @@ export const StockView: React.FC<StockViewProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-stone-700">Rayon / Catégorie</label>
-                  <select
+                  <Select
                     value={formCategory}
                     onChange={(e) => setFormCategory(e.target.value)}
                     className="w-full mt-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-sm"
@@ -485,7 +487,7 @@ export const StockView: React.FC<StockViewProps> = ({
                     <option value="Quincaillerie">Quincaillerie</option>
                     <option value="Cosmétique">Cosmétique</option>
                     <option value="Divers">Divers</option>
-                  </select>
+                  </Select>
                 </div>
 
                 <div>
@@ -644,7 +646,7 @@ export const StockView: React.FC<StockViewProps> = ({
                       />
                       <div>
                         <label className="text-[11px] font-bold text-stone-700">Partie payée par</label>
-                        <select value={restockMethod} onChange={(e) => setRestockMethod(e.target.value as PaymentMethod)}
+                        <Select value={restockMethod} onChange={(e) => setRestockMethod(e.target.value as PaymentMethod)}
                           className="w-full mt-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium">
                           <option value="cash">Espèces Caisse</option>
                           <option value="wave">Wave</option>
@@ -652,7 +654,7 @@ export const StockView: React.FC<StockViewProps> = ({
                           <option value="mtn_momo">MTN MoMo</option>
                           <option value="moov_money">Moov Money</option>
                           <option value="bank_transfer">Compte Bancaire</option>
-                        </select>
+                        </Select>
                       </div>
                     </>
                   )}

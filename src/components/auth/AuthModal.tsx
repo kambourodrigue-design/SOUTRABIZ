@@ -16,6 +16,7 @@ import {
   Phone,
   Mail
 } from 'lucide-react';
+import { Select } from '../common/dialogs';
 
 interface AuthModalProps {
   onClose: () => void;
@@ -312,7 +313,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <label className="text-xs font-bold text-stone-700">
                 Secteur d'Activité Économique *
               </label>
-              <select
+              <Select
                 value={regSector}
                 onChange={(e) => setRegSector(e.target.value as BusinessCategoryType)}
                 className="w-full mt-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs sm:text-sm font-bold text-emerald-900"
@@ -322,7 +323,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     {preset.icon} {preset.title}
                   </option>
                 ))}
-              </select>
+              </Select>
               <p className="text-[11px] text-stone-500 mt-1 italic">
                 {BUSINESS_PRESETS[regSector]?.tagline}
               </p>

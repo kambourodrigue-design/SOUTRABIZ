@@ -34,6 +34,7 @@ import { FinancesView } from './components/finances/FinancesView';
 import { CreditScoreView } from './components/credit/CreditScoreView';
 import { FormalizationGuide } from './components/formalization/FormalizationGuide';
 import { AdminDashboard } from './components/admin/AdminDashboard';
+import { uiAlert, uiConfirm } from './components/common/dialogs';
 
 type SessionState = 'loading' | 'out' | 'in';
 type ShopRole = 'owner' | 'manager' | 'cashier';
@@ -92,8 +93,8 @@ export default function App() {
     if (!back) return;
     try { history.replaceState(null, '', location.pathname); } catch { /* ignore */ }
     api.mfCheck().then(async (r) => {
-      if (r.approved > 0) { alert('✅ Paiement confirmé ! Votre abonnement annuel Nafora Pro est actif.'); api.billing().then(x => setPlan(x.status)).catch(() => {}); }
-      else if (r.pending > 0) alert("⏳ Paiement en cours de confirmation. Ouvrez Paramètres → Abonnement et touchez « Vérifier mon paiement » dans un instant.");
+      if (r.approved > 0) { uiAlert('✅ Paiement confirmé ! Votre abonnement annuel Nafora Pro est actif.'); api.billing().then(x => setPlan(x.status)).catch(() => {}); }
+      else if (r.pending > 0) uiAlert("⏳ Paiement en cours de confirmation. Ouvrez Paramètres → Abonnement et touchez « Vérifier mon paiement » dans un instant.");
     }).catch(() => { /* hors-ligne : le panneau Abonnement permettra de revérifier */ });
   }, [syncEnabled, isPlatformAdmin]);
   useEffect(() => {
@@ -150,7 +151,7 @@ export default function App() {
     setSession('out');
   }, [engine]);
   unauthorizedRef.current = () => {
-    alert('Votre session a expiré ou votre accès a été suspendu. Veuillez vous reconnecter.');
+    uiAlert('Votre session a expiré ou votre accès a été suspendu. Veuillez vous reconnecter.');
     goLoggedOut();
   };
 
@@ -300,7 +301,7 @@ export default function App() {
       setSession('in');
       setActiveTab(firstTab(user));
     } catch {
-      alert('Impossible de charger vos données. Vérifiez votre connexion et réessayez.');
+      uiAlert('Impossible de charger vos données. Vérifiez votre connexion et réessayez.');
       try { await api.logout(); } catch { /* ignore */ }
       goLoggedOut();
     }
@@ -309,7 +310,7 @@ export default function App() {
   const handleLogout = async () => {
     if (!isDemo && syncEnabled) {
       try { await engine.syncNow(); } catch { /* dernière sauvegarde au mieux */ }
-      if (engine.pendingCount() > 0 && !confirm(
+      if (engine.pendingCount() > 0 && !await uiConfirm(
         `${engine.pendingCount()} modification(s) n'ont pas encore été envoyées (pas de réseau ?). Elles seront PERDUES si vous vous déconnectez. Se déconnecter quand même ?`
       )) return;
     }
@@ -327,7 +328,7 @@ export default function App() {
       engine.applyForeign(snap);
       setViewingAs(user);
       setActiveTab('dashboard');
-    } catch (e) { alert((e as Error).message); }
+    } catch (e) { uiAlert((e as Error).message); }
   };
 
   const handleExitViewing = async () => {

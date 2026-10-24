@@ -15,6 +15,7 @@ import {
   TrendingUp,
   Sparkles
 } from 'lucide-react';
+import { Select } from '../common/dialogs';
 
 interface CreditScoreViewProps {
   creditScore: CreditScoreResult;
@@ -233,7 +234,7 @@ export const CreditScoreView: React.FC<CreditScoreViewProps> = ({
           {/* Durée */}
           <div>
             <label className="text-xs font-bold text-stone-700">Durée du prêt</label>
-            <select
+            <Select
               value={loanMonths}
               onChange={(e) => setLoanMonths(Number(e.target.value))}
               className="w-full mt-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs sm:text-sm font-medium"
@@ -243,13 +244,13 @@ export const CreditScoreView: React.FC<CreditScoreViewProps> = ({
               <option value={12}>12 mois (1 an)</option>
               <option value={18}>18 mois (1 an et demi)</option>
               <option value={24}>24 mois (2 ans)</option>
-            </select>
+            </Select>
           </div>
 
           {/* Taux */}
           <div>
             <label className="text-xs font-bold text-stone-700">Taux mensuel indicatif</label>
-            <select
+            <Select
               value={interestRateMonthly}
               onChange={(e) => setInterestRateMonthly(Number(e.target.value))}
               className="w-full mt-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs sm:text-sm font-medium"
@@ -257,7 +258,7 @@ export const CreditScoreView: React.FC<CreditScoreViewProps> = ({
               <option value={1.0}>1.0% / mois (Banque commerciale)</option>
               <option value={1.5}>1.5% / mois (Microfinance standard - Cofina, Baobab)</option>
               <option value={2.0}>2.0% / mois (Microcrédit rapide)</option>
-            </select>
+            </Select>
           </div>
 
         </div>

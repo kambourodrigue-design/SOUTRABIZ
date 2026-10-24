@@ -1,6 +1,7 @@
 import React from 'react';
 import { Supplier, CurrencyCode } from '../../types';
 import { formatCurrency } from '../../services/financials';
+import { Select } from './dialogs';
 
 interface Props {
   total: number;
@@ -27,10 +28,10 @@ export const SupplierCreditFields: React.FC<Props> = ({
       <div className="grid grid-cols-2 gap-2">
         <div>
           <label className="text-[11px] font-bold text-stone-700">Fournisseur</label>
-          <select className={field} value={supplierId} onChange={(e) => { setSupplierId(e.target.value); if (e.target.value) setNewSupplierName(''); }}>
+          <Select className={field} value={supplierId} onChange={(e) => { setSupplierId(e.target.value); if (e.target.value) setNewSupplierName(''); }}>
             <option value="">— Aucun / nouveau —</option>
             {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}{s.totalDebt > 0 ? ` (doit ${Math.round(s.totalDebt)})` : ''}</option>)}
-          </select>
+          </Select>
         </div>
         <div>
           <label className="text-[11px] font-bold text-stone-700">Ou nouveau fournisseur</label>

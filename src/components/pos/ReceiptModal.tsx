@@ -4,6 +4,7 @@ import { formatCurrency, getPaymentMethodDetails } from '../../services/financia
 import { generateReceiptWhatsAppUrl } from '../../services/whatsapp';
 import { shareReceiptPdf, downloadReceiptPdf } from '../../services/receiptPdf';
 import { Printer, Share2, CheckCircle, X, ShoppingCart, FileDown } from 'lucide-react';
+import { uiAlert } from '../common/dialogs';
 
 interface ReceiptModalProps {
   sale: Sale;
@@ -27,14 +28,14 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   const handleSharePdf = async () => {
     setBusy(true);
     try { await shareReceiptPdf(sale, settings, whatsappUrl); }
-    catch { alert('Impossible de générer le PDF. Réessayez.'); }
+    catch { uiAlert('Impossible de générer le PDF. Réessayez.'); }
     finally { setBusy(false); }
   };
 
   const handleDownloadPdf = async () => {
     setBusy(true);
     try { await downloadReceiptPdf(sale, settings); }
-    catch { alert('Impossible de générer le PDF. Réessayez.'); }
+    catch { uiAlert('Impossible de générer le PDF. Réessayez.'); }
     finally { setBusy(false); }
   };
 

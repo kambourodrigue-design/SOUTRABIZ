@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { api, MonitorData, BillingAdminSettings, PaymentRow } from '../../services/api';
+import { uiConfirm, uiPrompt } from '../common/dialogs';
 
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR').format(Math.round(n));
 const card = 'bg-white rounded-2xl border border-stone-200 p-4';
@@ -17,7 +18,7 @@ export const AdminMonitorPanel: React.FC = () => {
   const label = d.level === 'green' ? 'Tout va bien' : d.level === 'orange' ? 'Quelques erreurs ces dernières 24 h' : 'Beaucoup d\'erreurs : à vérifier';
   const max = Math.max(1, ...d.series.map(s => s.n));
   const test = async () => { setMsg(''); try { await api.adminMonitorTest(); setMsg('Alerte de test envoyée sur Telegram.'); } catch (e) { setMsg((e as Error).message); } };
-  const clear = async () => { if (confirm('Vider le journal d\'erreurs ?')) { await api.adminMonitorClear(); load(); } };
+  const clear = async () => { if (await uiConfirm('Vider le journal d\'erreurs ?')) { await api.adminMonitorClear(); load(); } };
   return (
     <div className="space-y-4" data-testid="admin-monitor">
       <div className={`${card} flex items-center gap-3`}><span className={`w-4 h-4 rounded-full ${color}`} /><div><div className="font-black text-stone-900">{label}</div><div className="text-xs text-stone-500">Base de données : {d.dbMs} ms • erreurs 24 h : {d.errors24h} (serveur {d.server24h}, application {d.client24h}) • dernière heure : {d.lastHour}</div></div></div>
@@ -55,7 +56,7 @@ export const AdminBillingPanel: React.FC = () => {
   const num = (k: keyof BillingAdminSettings) => <input type="number" min={0} className={inp} value={f[k] as number} onChange={e => setF({ ...f, [k]: Number(e.target.value) })} />;
   const save = async () => { setErr(''); setMsg(''); try { await api.adminBillingSave(f); setMsg('Réglages enregistrés.'); load(); } catch (e) { setErr((e as Error).message); } };
   const decide = async (p: PaymentRow, a: 'approve' | 'reject') => {
-    const note = a === 'reject' ? (prompt('Motif du refus (facultatif) :') ?? '') : '';
+    const note = a === 'reject' ? (await uiPrompt('Motif du refus (facultatif) :') ?? '') : '';
     try { await api.adminPayDecide(p.id, a, note); load(); } catch (e) { setErr((e as Error).message); }
   };
   const row = (p: PaymentRow, actions: boolean) => (
@@ -105,7 +106,7 @@ export const AdminFeedbackPanel: React.FC = () => {
   const set = async (id: string, status: 'new' | 'published' | 'hidden') => {
     setErr(''); try { await api.adminFeedbackSet(id, status); await load(); } catch (e: any) { setErr(e?.message || 'Erreur'); }
   };
-  const del = async (id: string) => { if (!confirm('Supprimer cet avis ?')) return; try { await api.adminFeedbackDelete(id); await load(); } catch (e: any) { setErr(e?.message || 'Erreur'); } };
+  const del = async (id: string) => { if (!await uiConfirm('Supprimer cet avis ?')) return; try { await api.adminFeedbackDelete(id); await load(); } catch (e: any) { setErr(e?.message || 'Erreur'); } };
   const label: Record<string, string> = { new: 'À examiner', published: 'Publié', hidden: 'Masqué' };
   return (
     <div className="space-y-3">

@@ -24,6 +24,8 @@ import {
   Scale,
   Sparkles
 } from 'lucide-react';
+import { Select } from '../common/dialogs';
+import { uiAlert } from '../common/dialogs';
 
 interface DebtsViewProps {
   customers: Customer[];
@@ -176,7 +178,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
     if (!selectedCustomer || repayAmount <= 0) return;
     // On n'enregistre jamais plus que la dette restante (sinon la caisse compterait de l'argent en trop).
     const repayNow = Math.min(Number(repayAmount), selectedCustomer.totalDebt);
-    if (repayNow <= 0) { alert("Ce client n'a plus de dette."); return; }
+    if (repayNow <= 0) { uiAlert("Ce client n'a plus de dette."); return; }
 
     const newPayment: DebtPayment = {
       id: newId('pay'),
@@ -254,7 +256,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
     e.preventDefault();
     if (!selectedSupplier || supRepayAmount <= 0) return;
     const supRepayNow = Math.min(Number(supRepayAmount), selectedSupplier.totalDebt);
-    if (supRepayNow <= 0) { alert("Ce fournisseur n'a plus de dette."); return; }
+    if (supRepayNow <= 0) { uiAlert("Ce fournisseur n'a plus de dette."); return; }
 
     const newPayment: SupplierPayment = {
       id: newId('spay'),
@@ -858,7 +860,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
               </div>
               <div>
                 <label className="text-xs font-bold text-stone-700">Mode de versement</label>
-                <select
+                <Select
                   value={repayMethod}
                   onChange={(e) => setRepayMethod(e.target.value as PaymentMethod)}
                   className="w-full mt-1 px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl text-xs sm:text-sm font-medium"
@@ -868,7 +870,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
                   <option value="orange_money">🍊 Orange Money</option>
                   <option value="mtn_momo">💛 MTN MoMo</option>
                   <option value="moov_money">💙 Moov Money</option>
-                </select>
+                </Select>
               </div>
               <div className="pt-2 flex gap-2">
                 <button type="button" onClick={() => setIsRepaymentModalOpen(false)} className="flex-1 py-2.5 rounded-xl border border-stone-300 text-stone-700 font-bold text-xs">Annuler</button>
@@ -1039,7 +1041,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
               </div>
               <div>
                 <label className="text-xs font-bold text-stone-700">Mode de paiement utilisé</label>
-                <select
+                <Select
                   value={supRepayMethod}
                   onChange={(e) => setSupRepayMethod(e.target.value as PaymentMethod)}
                   className="w-full mt-1 px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl text-xs sm:text-sm font-medium"
@@ -1049,7 +1051,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
                   <option value="mtn_momo">💛 MTN MoMo</option>
                   <option value="cash">💵 Espèces (Remis en main propre)</option>
                   <option value="bank_transfer">🏦 Virement Bancaire</option>
-                </select>
+                </Select>
               </div>
               <div>
                 <label className="text-xs font-bold text-stone-700">Note ou référence de reçu</label>

@@ -16,6 +16,8 @@ import {
   HardDrive,
   Check
 } from 'lucide-react';
+import { Select } from '../common/dialogs';
+import { uiAlert, uiConfirm } from '../common/dialogs';
 
 interface SettingsModalProps {
   settings: ShopSettings;
@@ -72,7 +74,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       setFormData(f => ({ ...f, logo: data }));
       URL.revokeObjectURL(url);
     };
-    img.onerror = () => { alert('Image illisible.'); URL.revokeObjectURL(url); };
+    img.onerror = () => { uiAlert('Image illisible.'); URL.revokeObjectURL(url); };
     img.src = url;
     e.target.value = '';
   };
@@ -115,11 +117,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     reader.readAsText(file);
   };
 
-  const handleResetDemo = () => {
+  const handleResetDemo = async () => {
     const msg = isDemo
       ? "Réinitialiser les données avec les exemples par défaut ?"
       : "Effacer TOUTES les données de votre boutique (produits, ventes, dépenses, clients) ? Cette action est définitive.";
-    if (confirm(msg)) {
+    if (await uiConfirm(msg)) {
       if (isDemo) { storage.resetToDemo(); onReloadAllData(); } else { onClearData('all'); }
       onClose();
     }
@@ -187,7 +189,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
             <div>
               <label className="text-xs font-bold text-stone-700">Devise Principale</label>
-              <select
+              <Select
                 value={formData.currency}
                 onChange={(e) => setFormData({ ...formData, currency: e.target.value as CurrencyCode })}
                 className="w-full mt-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-sm font-bold text-emerald-800"
@@ -196,7 +198,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <option value="GNF">GNF (Franc Guinéen)</option>
                 <option value="USD">USD ($ Dollar)</option>
                 <option value="EUR">EUR (€ Euro)</option>
-              </select>
+              </Select>
             </div>
           </div>
 
@@ -236,7 +238,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
             <div>
               <label className="text-xs font-bold text-stone-700">Secteur d'Activité</label>
-              <select
+              <Select
                 value={formData.businessCategory || 'retail_food'}
                 onChange={(e) => setFormData({ ...formData, businessCategory: e.target.value as any })}
                 className="w-full mt-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs sm:text-sm font-bold text-emerald-900"
@@ -250,7 +252,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <option value="services_cyber">📱 Services, Cyber & Mobile Money</option>
                 <option value="health_pharma">💊 Dépôt Pharmaceutique</option>
                 <option value="other">🏢 Autre Activité</option>
-              </select>
+              </Select>
             </div>
           </div>
 
@@ -408,8 +410,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <button
                   key={kind}
                   type="button"
-                  onClick={() => {
-                    if (confirm(`Effacer définitivement : ${label.slice(3)} ?`)) onClearData(kind);
+                  onClick={async () => {
+                    if (await uiConfirm(`Effacer définitivement : ${label.slice(3)} ?`)) onClearData(kind);
                   }}
                   className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold text-xs border border-rose-200 transition"
                 >
@@ -418,8 +420,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               ))}
               <button
                 type="button"
-                onClick={() => {
-                  if (confirm("Charger un catalogue d'exemple de votre secteur ? Il REMPLACERA vos produits actuels.")) onClearData('sample');
+                onClick={async () => {
+                  if (await uiConfirm("Charger un catalogue d'exemple de votre secteur ? Il REMPLACERA vos produits actuels.")) onClearData('sample');
                 }}
                 className="p-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs border border-stone-200 transition"
               >

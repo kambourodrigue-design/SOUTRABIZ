@@ -1,5 +1,6 @@
 import React from 'react';
 import {createRoot} from 'react-dom/client';
+import { DialogHost } from './components/common/dialogs';
 import App from './App.tsx';
 import './index.css';
 import { api } from './services/api';
@@ -35,4 +36,4 @@ class Boundary extends React.Component<{ children: React.ReactNode }, { failed: 
   }
 }
 
-createRoot(document.getElementById('root')!).render(<Boundary><App /></Boundary>);
+createRoot(document.getElementById('root')!).render(<Boundary><App /><DialogHost /></Boundary>);

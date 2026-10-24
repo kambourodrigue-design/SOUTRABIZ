@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { api, TeamMember } from '../../services/api';
 import { Users, UserPlus, KeyRound, Trash2, Ban, CheckCircle2 } from 'lucide-react';
+import { Select } from '../common/dialogs';
+import { uiConfirm, uiPrompt } from '../common/dialogs';
 
 const ROLE_TXT: Record<string, string> = {
   owner: 'Propriétaire', manager: 'Gérant', cashier: 'Caissier',
@@ -65,10 +67,10 @@ export const TeamPanel: React.FC = () => {
           <input className={input} placeholder="Téléphone (sert d'identifiant)" value={phone} onChange={e => setPhone(e.target.value)} required />
           <input className={input} type="password" autoComplete="new-password" placeholder="Mot de passe (8 caractères min.)"
             value={password} onChange={e => setPassword(e.target.value)} minLength={8} required />
-          <select className={input} value={role} onChange={e => setRole(e.target.value as 'manager' | 'cashier')}>
+          <Select className={input} value={role} onChange={e => setRole(e.target.value as 'manager' | 'cashier')}>
             <option value="cashier">Caissier</option>
             <option value="manager">Gérant</option>
-          </select>
+          </Select>
           <p className="text-[11px] text-stone-600">{ROLE_HELP[role]}</p>
           <button disabled={busy} className="w-full py-2 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs disabled:opacity-60">
             {busy ? 'Création…' : 'Créer le compte'}
@@ -90,12 +92,12 @@ export const TeamPanel: React.FC = () => {
                 {isOwner ? (
                   <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 font-bold shrink-0">{ROLE_TXT.owner}</span>
                 ) : (
-                  <select value={m.shopRole}
+                  <Select value={m.shopRole}
                     onChange={e => act(() => api.teamUpdate(m.id, { shopRole: e.target.value as 'manager' | 'cashier' }), 'Rôle modifié (l\'employé devra se reconnecter).')}
                     className="px-2 py-1 rounded-lg border border-stone-200 bg-white font-semibold shrink-0">
                     <option value="cashier">Caissier</option>
                     <option value="manager">Gérant</option>
-                  </select>
+                  </Select>
                 )}
               </div>
               {!isOwner && (
@@ -107,12 +109,12 @@ export const TeamPanel: React.FC = () => {
                     <button type="button" onClick={() => act(() => api.teamUpdate(m.id, { status: 'active' }), 'Accès rétabli.')}
                       className="px-2 py-1 rounded-lg bg-emerald-100 text-emerald-900 font-bold flex items-center gap-1"><CheckCircle2 className="w-3 h-3" />Réactiver</button>
                   )}
-                  <button type="button" onClick={() => {
-                    const pw = prompt(`Nouveau mot de passe pour ${m.name} (8 caractères min.) :`);
+                  <button type="button" onClick={async () => {
+                    const pw = await uiPrompt(`Nouveau mot de passe pour ${m.name} (8 caractères min.) :`);
                     if (pw) act(() => api.teamResetPassword(m.id, pw), 'Mot de passe changé.');
                   }} className="px-2 py-1 rounded-lg bg-stone-200 text-stone-800 font-bold flex items-center gap-1"><KeyRound className="w-3 h-3" />Mot de passe</button>
-                  <button type="button" onClick={() => {
-                    if (confirm(`Supprimer le compte de ${m.name} ? Ses ventes déjà enregistrées sont conservées.`)) act(() => api.teamRemove(m.id), 'Compte supprimé.');
+                  <button type="button" onClick={async () => {
+                    if (await uiConfirm(`Supprimer le compte de ${m.name} ? Ses ventes déjà enregistrées sont conservées.`)) act(() => api.teamRemove(m.id), 'Compte supprimé.');
                   }} className="px-2 py-1 rounded-lg bg-rose-100 text-rose-800 font-bold flex items-center gap-1"><Trash2 className="w-3 h-3" />Supprimer</button>
                   {m.status === 'suspended' && <span className="text-rose-700 font-bold">Suspendu</span>}
                 </div>

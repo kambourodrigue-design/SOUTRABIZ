@@ -24,6 +24,8 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
+import { Select } from '../common/dialogs';
+import { uiAlert, uiConfirm, uiPrompt } from '../common/dialogs';
 
 interface AdminDashboardProps {
   currentUser: UserAccount;
@@ -81,25 +83,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onI
   const kpis = data?.kpis;
 
   const handleResetPw = async (user: UserAccount) => {
-    const pw = prompt(`Nouveau mot de passe pour ${user.name} (8 caractères minimum) :`);
+    const pw = await uiPrompt(`Nouveau mot de passe pour ${user.name} (8 caractères minimum) :`);
     if (!pw) return;
-    if (pw.length < 8) { alert('Mot de passe trop court (8 caractères minimum).'); return; }
+    if (pw.length < 8) { uiAlert('Mot de passe trop court (8 caractères minimum).'); return; }
     try {
       await api.adminResetPassword(user.id, pw);
-      alert(`Mot de passe modifié. Communiquez-le à ${user.name} ; ses sessions ont été fermées.`);
+      uiAlert(`Mot de passe modifié. Communiquez-le à ${user.name} ; ses sessions ont été fermées.`);
       load();
-    } catch (e) { alert((e as Error).message); }
+    } catch (e) { uiAlert((e as Error).message); }
   };
 
   const handleDelete = async (user: UserAccount) => {
-    if (!confirm(`Supprimer définitivement la boutique de ${user.name}, son équipe et toutes ses données ? Cette action est irréversible.`)) return;
-    try { await api.adminDelete(user.id); load(); } catch (e) { alert((e as Error).message); }
+    if (!await uiConfirm(`Supprimer définitivement la boutique de ${user.name}, son équipe et toutes ses données ? Cette action est irréversible.`)) return;
+    try { await api.adminDelete(user.id); load(); } catch (e) { uiAlert((e as Error).message); }
   };
 
   const handleToggleStatus = async (user: UserAccount) => {
     const next = user.status === 'active' ? 'suspended' : 'active';
-    if (next === 'suspended' && !confirm(`Suspendre ${user.name} ? Son équipe sera aussi bloquée.`)) return;
-    try { await api.adminSetStatus(user.id, next); load(); } catch (e) { alert((e as Error).message); }
+    if (next === 'suspended' && !await uiConfirm(`Suspendre ${user.name} ? Son équipe sera aussi bloquée.`)) return;
+    try { await api.adminSetStatus(user.id, next); load(); } catch (e) { uiAlert((e as Error).message); }
   };
 
   const genTempPassword = () => {
@@ -109,7 +111,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onI
   };
 
   const handleTempPasswordWhatsApp = async (u: { id: string; name: string; phone: string }) => {
-    if (!confirm(`Générer un mot de passe temporaire pour ${u.name} et ouvrir WhatsApp ?`)) return;
+    if (!await uiConfirm(`Générer un mot de passe temporaire pour ${u.name} et ouvrir WhatsApp ?`)) return;
     const pw = genTempPassword();
     try {
       await api.adminResetPassword(u.id, pw);
@@ -117,7 +119,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onI
       const msg = `Bonjour ${u.name}, voici votre mot de passe temporaire Nafora : ${pw}\nConnectez-vous puis changez-le dans Paramètres > Mon mot de passe.`;
       window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
       load();
-    } catch (e) { alert((e as Error).message); }
+    } catch (e) { uiAlert((e as Error).message); }
   };
 
   const filteredMerchants = useMemo(() => (data?.items || []).map(({ user, shop, stats, teamCount }) => {
@@ -150,7 +152,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onI
       link.download = `nafora_commercants_${new Date().toISOString().split('T')[0]}.csv`;
       link.click();
       URL.revokeObjectURL(url);
-    } catch (e) { alert((e as Error).message); }
+    } catch (e) { uiAlert((e as Error).message); }
   };
 
   return (
@@ -310,7 +312,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onI
         </div>
 
         <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto text-xs font-medium">
-          <select
+          <Select
             value={selectedSector}
             onChange={(e) => { setSelectedSector(e.target.value); setPage(1); }}
             className="px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl font-bold text-stone-700"
@@ -322,9 +324,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onI
             <option value="restaurant_maquis">🍽️ Restaurant & Maquis</option>
             <option value="beauty_salon">💇 Salon de Coiffure</option>
             <option value="garage_mechanic">🔧 Garage & Pièces</option>
-          </select>
+          </Select>
 
-          <select
+          <Select
             value={selectedStatus}
             onChange={(e) => { setSelectedStatus(e.target.value); setPage(1); }}
             className="px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl font-bold text-stone-700"
@@ -332,7 +334,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onI
             <option value="all">Tous les statuts</option>
             <option value="active">Actifs</option>
             <option value="suspended">Suspendus</option>
-          </select>
+          </Select>
         </div>
       </div>
 

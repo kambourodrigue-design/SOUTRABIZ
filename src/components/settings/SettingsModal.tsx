@@ -149,7 +149,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 : <span className="text-2xl">🏪</span>}
             </div>
             <div className="flex-1 space-y-1.5">
-              <span className="text-xs font-bold text-stone-700 block">Logo de la boutique (reçus PDF)</span>
+              <span className="text-xs font-bold text-stone-700 block">Logo de la boutique (en-tête et reçus)</span>
               <div className="flex gap-2">
                 <label className="px-3 py-1.5 rounded-lg bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs cursor-pointer">
                   Choisir une image

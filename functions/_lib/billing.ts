@@ -19,7 +19,7 @@ export interface BillingSettings {
   readOnlyAfterTrial: boolean; // true = après l'essai sans abonnement, la boutique passe en lecture seule
 }
 const DEFAULTS: BillingSettings = {
-  enabled: false, launchedAt: '', trialDays: 30, price1: 2500, price3: 6500, price12: 25000, currency: 'F CFA',
+  enabled: false, launchedAt: '', trialDays: 30, price1: 2500, price3: 6500, price12: 50000, currency: 'F CFA',
   mfLink: '', payInfo: '', freeAiPerDay: 5, freeTeamMax: 1, readOnlyAfterTrial: false,
 };
 const clean = (v: unknown, n: number) => String(v ?? '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]+/g, ' ').trim().slice(0, n);

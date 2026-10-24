@@ -94,7 +94,7 @@ export async function handlePush(req: Request, env: Env, user: UserRow) {
 
   const shopId = user.shop_id;
   const role = shopRoleOf(user);
-  if (await isReadOnly(env, shopId)) return fail("Période d'essai terminée : la boutique est en lecture seule. Le propriétaire doit activer l'abonnement Pro.", 402);
+  if (await isReadOnly(env, shopId, user.role === 'admin')) return fail("Période d'essai terminée : la boutique est en lecture seule. Le propriétaire doit activer l'abonnement Pro.", 402);
 
   // Lot déjà appliqué (réponse perdue lors d'un envoi précédent) → on renvoie le même résultat.
   const replay = await readLog(env, batchId, shopId);

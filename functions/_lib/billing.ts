@@ -46,9 +46,10 @@ export interface PlanStatus {
   paidUntil: string | null; trialEndsAt: string | null; daysLeft: number;
 }
 
-export async function planStatus(env: Env, shopId: string, cfg?: BillingSettings): Promise<PlanStatus> {
+export async function planStatus(env: Env, shopId: string, cfg?: BillingSettings, isAdmin = false): Promise<PlanStatus> {
   const b = cfg || await loadBilling(env);
-  if (!b.enabled) return { enforced: false, state: 'off', readOnly: false, pro: true, paidUntil: null, trialEndsAt: null, daysLeft: 0 };
+  // L'administrateur n'est jamais limité : ni essai, ni lecture seule
+  if (!b.enabled || isAdmin) return { enforced: false, state: 'off', readOnly: false, pro: true, paidUntil: null, trialEndsAt: null, daysLeft: 0 };
   const now = Date.now();
   let paidUntil: string | null = null, created = now;
   try {
@@ -88,7 +89,7 @@ const payRow = (p: any) => ({
 /* ---------- Côté commerçant ---------- */
 export async function myBilling(env: Env, user: UserRow) {
   const b = await loadBilling(env);
-  const status = await planStatus(env, user.shop_id, b);
+  const status = await planStatus(env, user.shop_id, b, user.role === 'admin');
   let payments: any[] = [];
   if (shopRoleOf(user) === 'owner' && b.enabled) {
     try {
@@ -303,7 +304,8 @@ export async function adminBilling(req: Request, env: Env, parts: string[]) {
 }
 
 /** Boutique en lecture seule ? (essai terminé, sans abonnement, option activée par l'administrateur) */
-export async function isReadOnly(env: Env, shopId: string): Promise<boolean> {
+export async function isReadOnly(env: Env, shopId: string, isAdmin = false): Promise<boolean> {
+  if (isAdmin) return false;
   const b = await loadBilling(env);
   if (!b.enabled || !b.readOnlyAfterTrial) return false;
   return (await planStatus(env, shopId, b)).readOnly;

@@ -49,9 +49,13 @@ export const Navbar: React.FC<NavbarProps> = ({
         
         {/* Brand & Store Name */}
         <div className="flex items-center gap-2 sm:gap-3 cursor-pointer min-w-0 shrink" onClick={() => setActiveTab('dashboard')}>
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-400 flex items-center justify-center shadow-inner text-emerald-950 font-black text-xl shrink-0">
-            {preset.icon || 'S'}
-          </div>
+          {settings.logo ? (
+            <img src={settings.logo} alt="" className="w-10 h-10 rounded-xl object-cover bg-white shadow-inner shrink-0" />
+          ) : (
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-400 flex items-center justify-center shadow-inner text-emerald-950 font-black text-xl shrink-0">
+              {preset.icon || 'S'}
+            </div>
+          )}
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
               <h1 className="font-extrabold text-base sm:text-lg tracking-tight truncate max-w-[105px] min-[400px]:max-w-[150px] sm:max-w-[240px] xl:max-w-[150px] 2xl:max-w-xs text-white">

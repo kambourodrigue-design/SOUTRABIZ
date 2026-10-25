@@ -12,6 +12,7 @@ import { handleAi } from '../_lib/ai';
 import { logError, health, clientLog, adminMonitor, adminMonitorAction } from '../_lib/monitor';
 import { myBilling, submitPayment, adminBilling, publicPlans, mfStart, mfCheck, mfWebhook } from '../_lib/billing';
 import { myCatalog, saveCatalog } from '../_lib/catalog';
+import { handleImages } from '../_lib/images';
 import { myFeedback, submitFeedback, publicTestimonials, adminFeedback } from '../_lib/feedback';
 import { hit, adminStats, adminAnnouncements, myAnnouncements, readAnnouncement } from '../_lib/site';
 import { adminList, adminExport, adminUser } from '../_lib/admin';
@@ -53,6 +54,8 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
     if (route === 'data' && m === 'PUT') {
       return fail("Mise à jour requise : fermez complètement l'application puis rouvrez-la.", 410);
     }
+
+    if (parts[0] === 'images') return await handleImages(request, env, user, parts);
 
     if (route === 'ai' && m === 'POST') return await handleAi(request, env, user);
 

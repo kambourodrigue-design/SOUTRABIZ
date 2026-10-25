@@ -1,5 +1,5 @@
 import { newId } from '../../../shared/syncCore';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Product, ShopSettings, Supplier, Expense, PaymentMethod } from '../../types';
 import { SupplierCreditFields } from '../common/SupplierCreditFields';
 import { applyPurchaseCredit } from '../../services/purchases';
@@ -15,10 +15,13 @@ import {
   CheckCircle, 
   X,
   TrendingUp,
-  Boxes
+  Boxes,
+  ImagePlus
 } from 'lucide-react';
 import { Select } from '../common/dialogs';
 import { uiAlert, uiConfirm } from '../common/dialogs';
+import { Thumb } from './Thumb';
+import { usePhotos, photoUrl, loadPhotos, compressImage, savePhoto, removePhoto } from '../../services/photos';
 
 interface StockViewProps {
   products: Product[];
@@ -53,6 +56,16 @@ export const StockView: React.FC<StockViewProps> = ({
   const [formQuantity, setFormQuantity] = useState<number>(10);
   const [formThreshold, setFormThreshold] = useState<number>(5);
   const [formUnit, setFormUnit] = useState('pièce');
+  // Photo du produit (envoyée à l'enregistrement)
+  const photos = usePhotos();
+  const [formId, setFormId] = useState('');
+  const [formPhoto, setFormPhoto] = useState<Blob | null>(null);
+  const [formPreview, setFormPreview] = useState('');
+  const [dropPhoto, setDropPhoto] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoErr, setPhotoErr] = useState('');
+  useEffect(() => { loadPhotos(); }, []);
+  useEffect(() => () => { if (formPreview) URL.revokeObjectURL(formPreview); }, [formPreview]);
 
   // Quick Restock form
   const [restockQty, setRestockQty] = useState<number>(10);
@@ -93,6 +106,8 @@ export const StockView: React.FC<StockViewProps> = ({
 
   // Open add/edit modal
   const handleOpenAddModal = (existing?: Product) => {
+    setFormPhoto(null); setFormPreview(''); setDropPhoto(false); setPhotoErr(''); setPhotoBusy(false);
+    setFormId(existing ? existing.id : newId('prod'));
     if (existing) {
       setTargetProduct(existing);
       setFormName(existing.name);
@@ -114,6 +129,15 @@ export const StockView: React.FC<StockViewProps> = ({
     }
     setIsAddModalOpen(true);
   };
+
+  const handlePickPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; e.target.value = '';
+    if (!file) return;
+    setPhotoErr(''); setPhotoBusy(true);
+    try { const blob = await compressImage(file); setFormPhoto(blob); setFormPreview(URL.createObjectURL(blob)); setDropPhoto(false); }
+    catch (x) { setPhotoErr((x as Error).message); } finally { setPhotoBusy(false); }
+  };
+  const currentPhoto = formPreview || (!dropPhoto && formId && photos.map[formId] ? photoUrl(formId, photos.map[formId]) : '');
 
   const handleSaveProduct = (e: React.FormEvent) => {
     e.preventDefault();
@@ -139,7 +163,7 @@ export const StockView: React.FC<StockViewProps> = ({
     } else {
       // Add
       const newProd: Product = {
-        id: newId('prod'),
+        id: formId || newId('prod'),
         name: formName.trim(),
         category: formCategory,
         purchasePrice: Number(formPurchasePrice),
@@ -151,6 +175,13 @@ export const StockView: React.FC<StockViewProps> = ({
       onUpdateProducts([...products, newProd]);
     }
 
+    // Photo : envoyée après l'enregistrement (le produit reste enregistré même si l'envoi échoue)
+    const pid = targetProduct ? targetProduct.id : formId;
+    if (formPhoto) {
+      savePhoto(pid, formPhoto).catch((x) => uiAlert(`L'article est enregistré, mais sa photo n'a pas pu être envoyée : ${(x as Error).message}\nRouvrez l'article pour la renvoyer.`));
+    } else if (dropPhoto && photos.map[pid]) {
+      removePhoto(pid).catch(() => { /* pas grave : la photo sera retirée plus tard */ });
+    }
     setIsAddModalOpen(false);
   };
 
@@ -222,6 +253,7 @@ export const StockView: React.FC<StockViewProps> = ({
   const handleDeleteProduct = async (productId: string) => {
     if (await uiConfirm("Voulez-vous vraiment retirer cet article du catalogue ?")) {
       onUpdateProducts(products.filter(p => p.id !== productId));
+      if (photos.map[productId]) removePhoto(productId).catch(() => { /* ignore */ });
     }
   };
 
@@ -354,11 +386,14 @@ export const StockView: React.FC<StockViewProps> = ({
             return (
               <div key={product.id} className="p-3.5 space-y-2.5">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex items-start gap-2.5">
+                    <Thumb id={product.id} name={product.name} />
+                    <div className="min-w-0">
                     <div className="font-bold text-stone-900 text-sm break-words">{product.name}</div>
                     <div className="text-[11px] text-stone-500 mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-1">
                       <span className="px-1.5 py-0.5 rounded bg-stone-100 text-stone-600 font-medium">{product.category}</span>
                       <span>• Unité : {product.unit}</span>
+                    </div>
                     </div>
                   </div>
                   <span className={`shrink-0 inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold whitespace-nowrap ${
@@ -419,13 +454,16 @@ export const StockView: React.FC<StockViewProps> = ({
                   return (
                     <tr key={product.id} className="hover:bg-stone-50/80 transition">
                       <td className="py-3 px-4 font-bold text-stone-900">
-                        <div>
+                        <div className="flex items-center gap-3">
+                          <Thumb id={product.id} name={product.name} size="w-10 h-10" />
+                          <div>
                           <span>{product.name}</span>
                           <div className="text-[11px] text-stone-500 font-normal flex items-center gap-1.5 mt-0.5">
                             <span className="px-1.5 py-0.2 rounded bg-stone-100 text-stone-600 font-medium">
                               {product.category}
                             </span>
                             <span>• Unité : {product.unit}</span>
+                          </div>
                           </div>
                         </div>
                       </td>
@@ -508,6 +546,23 @@ export const StockView: React.FC<StockViewProps> = ({
             </div>
 
             <form onSubmit={handleSaveProduct} className="space-y-3.5">
+
+              <div className="flex items-center gap-3" data-testid="photo-block">
+                <div className="w-20 h-20 rounded-2xl overflow-hidden bg-stone-100 border border-stone-200 flex items-center justify-center shrink-0 text-stone-400">
+                  {currentPhoto ? <img src={currentPhoto} alt="" className="w-full h-full object-cover" /> : <ImagePlus className="w-7 h-7" />}
+                </div>
+                <div className="min-w-0 space-y-1.5">
+                  <label className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold cursor-pointer ${photoBusy ? 'bg-stone-200 text-stone-500' : 'bg-emerald-700 text-white'}`}>
+                    <input type="file" accept="image/*" className="hidden" onChange={handlePickPhoto} disabled={photoBusy} data-testid="photo-input" />
+                    {photoBusy ? 'Préparation…' : currentPhoto ? 'Changer la photo' : 'Ajouter une photo'}
+                  </label>
+                  {currentPhoto && !photoBusy && (
+                    <button type="button" onClick={() => { setFormPhoto(null); setFormPreview(''); setDropPhoto(true); }} className="block text-[11px] font-bold text-rose-600">Retirer la photo</button>
+                  )}
+                  <p className="text-[11px] text-stone-500 leading-snug">Affichée sur votre catalogue en ligne. Réduite automatiquement pour rester légère.</p>
+                  {photoErr && <p className="text-[11px] text-rose-600">{photoErr}</p>}
+                </div>
+              </div>
               
               <div>
                 <label className="text-xs font-bold text-stone-700">Nom de l'article *</label>

@@ -107,6 +107,16 @@ export const api = {
   mfStart: (b: { phone?: string }) => call<{ ok: true; url: string }>('POST', 'billing/moneyfusion/start', b, 20000),
   mfCheck: () => call<{ approved: number; pending: number }>('POST', 'billing/moneyfusion/check', {}, 20000),
   catalog: () => call<{ slug: string; on: boolean; intro: string }>('GET', 'catalog', undefined, 8000),
+  images: () => call<{ images: Record<string, number>; max: number; unavailable?: boolean }>('GET', 'images', undefined, 8000),
+  imageDelete: (pid: string) => call<{ ok: true }>('DELETE', `images/${encodeURIComponent(pid)}`),
+  imagePut: async (pid: string, blob: Blob): Promise<{ ok: true; v: number }> => {
+    let res: Response;
+    try { res = await fetch(`/api/images/${encodeURIComponent(pid)}`, { method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': blob.type }, body: blob }); }
+    catch { throw new ApiError('Réseau indisponible : la photo sera à renvoyer.', 0); }
+    let data: any = null; try { data = await res.json(); } catch { /* ignore */ }
+    if (!res.ok) throw new ApiError(data?.error || (res.status === 404 ? "Le serveur (API) n'est pas disponible." : `Erreur ${res.status}`), res.status);
+    return data;
+  },
   feedback: () => call<{ feedback: MyFeedback | null }>('GET', 'feedback', undefined, 8000),
   feedbackSend: (b: { rating: number; text: string; consent: boolean; name: string; shopLabel: string; city: string }) => call<{ ok: true }>('POST', 'feedback', b),
   testimonials: () => call<{ items: PublicTestimonial[] }>('GET', 'testimonials', undefined, 8000),

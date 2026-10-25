@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../../services/api';
+import { usePhotos, loadPhotos } from '../../services/photos';
 
 const slugify = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30);
 
@@ -8,6 +9,8 @@ export const CatalogPanel: React.FC<{ shopName: string }> = ({ shopName }) => {
   const [loaded, setLoaded] = useState(false);
   const [on, setOn] = useState(false); const [slug, setSlug] = useState(''); const [intro, setIntro] = useState('');
   const [busy, setBusy] = useState(false); const [msg, setMsg] = useState(''); const [err, setErr] = useState('');
+  const photoCount = Object.keys(usePhotos().map).length;
+  useEffect(() => { loadPhotos(); }, []);
   useEffect(() => {
     api.catalog().then((c) => { setOn(c.on); setSlug(c.slug || slugify(shopName)); setIntro(c.intro || ''); setLoaded(true); }).catch(() => { /* hors-ligne : panneau masqué */ });
   }, [shopName]);
@@ -24,6 +27,7 @@ export const CatalogPanel: React.FC<{ shopName: string }> = ({ shopName }) => {
       <div className="flex items-center justify-between gap-2"><h4 className="font-bold text-stone-800 text-sm">🛍️ Catalogue en ligne</h4>
         <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${on ? 'bg-emerald-100 text-emerald-800' : 'bg-stone-200 text-stone-700'}`}>{on ? 'En ligne' : 'Désactivé'}</span></div>
       <p className="text-xs text-stone-600">Vos produits en stock et leurs prix sur une page à partager sur WhatsApp. Vos clients choisissent et vous envoient leur commande en un appui. Ni vos prix d'achat ni vos quantités ne sont visibles.</p>
+      <p className="text-xs text-stone-600 bg-stone-50 border border-stone-200 rounded-xl px-3 py-2">📷 {photoCount > 0 ? `${photoCount} produit${photoCount > 1 ? 's' : ''} avec photo.` : 'Aucune photo pour le moment.'} Pour en ajouter : onglet Stock → modifier un article → « Ajouter une photo ». Les articles avec photo se vendent mieux.</p>
       <label className="block text-xs font-semibold text-stone-600">Adresse de la page
         <div className="flex items-center mt-1 rounded-xl border border-stone-300 bg-white overflow-hidden"><span className="pl-3 text-xs text-stone-400 whitespace-nowrap">/boutique/</span>
           <input value={slug} onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))} maxLength={30} className="flex-1 min-w-0 px-1 py-2 text-sm outline-none" data-testid="catalog-slug" /></div></label>

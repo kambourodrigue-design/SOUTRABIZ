@@ -170,3 +170,14 @@ CREATE TABLE IF NOT EXISTS feedback (
   created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_feedback_status ON feedback(status, created_at);
+
+-- v8 : photos des produits (catalogue en ligne)
+CREATE TABLE IF NOT EXISTS product_images (
+  shop_id TEXT NOT NULL,
+  product_id TEXT NOT NULL,
+  mime TEXT NOT NULL,
+  data TEXT NOT NULL,
+  bytes INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (shop_id, product_id)
+);

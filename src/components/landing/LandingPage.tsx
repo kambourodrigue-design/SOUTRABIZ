@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { api, PlanSettings, PublicTestimonial } from '../../services/api';
 import { Logo } from '../brand/Logo';
 import { ThemeToggle } from '../common/ThemeToggle';
-import { MerchantImage, Scene } from './MerchantArt';
 
 const SHOWCASE: [string, string, string, string][] = [
   ['ventes', 'Gestion des ventes', 'Suivez vos ventes en toute simplicité.', 'Commerçante qui suit ses ventes sur son téléphone avec Nafora'],
@@ -43,12 +42,6 @@ const PAINS: [string, string][] = [
 ];
 const REASSURE: [string, string][] = [
   ['🎁', 'Essai Pro offert'], ['💳', 'Sans carte bancaire'], ['📶', 'Marche sans internet'], ['📱', 'Paiement Mobile Money'],
-];
-const MERCHANTS: [Scene, string, string][] = [
-  ['boutique', 'Boutique de quartier', 'Chaque vente notée, chaque article suivi.'],
-  ['marche', 'Marché & alimentation', 'Vendez vite, sachez ce qu\'il reste en stock.'],
-  ['couture', 'Couture & mode', 'Commandes, acomptes et crédits clients sous contrôle.'],
-  ['resto', 'Restauration', 'Encaissez en quelques touches, même en plein rush.'],
 ];
 const SCREENS: [string, string, string][] = [
   ['accueil', 'Votre journée en un coup d\'œil', 'Ventes, dépenses, bénéfice et trésorerie réelle dès l\'ouverture.'],
@@ -96,7 +89,7 @@ export const LandingPage: React.FC<Props> = ({ onLogin, onRegister }) => {
         </div>
       </header>
 
-      <section className="bg-gradient-to-b from-emerald-950 to-emerald-800 text-white">
+      <section className="bg-gradient-to-b from-emerald-950 via-emerald-950 to-emerald-900 text-white">
         <div className="max-w-6xl mx-auto px-4 py-12 sm:py-20 text-center">
           <Logo variant="stacked" on="dark" className="mx-auto mb-4 h-32 sm:h-40" alt="" />
           <h1 className="text-3xl sm:text-5xl font-black leading-tight">Gérez votre commerce depuis votre téléphone, <span className="text-amber-300">même sans internet</span></h1>
@@ -108,25 +101,21 @@ export const LandingPage: React.FC<Props> = ({ onLogin, onRegister }) => {
           <ul className="mt-8 flex flex-wrap justify-center gap-2 sm:gap-3 text-xs sm:text-sm font-semibold">
             {REASSURE.map(([i, t]) => <li key={t} className="px-3 py-1.5 rounded-full bg-white/10 border border-white/15"><span aria-hidden>{i}</span> {t}</li>)}
           </ul>
-          <div className="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-4xl mx-auto">
-            {MERCHANTS.map(([sc, t], i) => (
-              <figure key={sc} className={`rounded-2xl overflow-hidden border-2 border-white/20 shadow-xl bg-white/10 ${i % 2 ? 'sm:translate-y-4' : ''}`}>
-                <MerchantImage scene={sc} className="aspect-[4/3]" />
-                <figcaption className="px-2 py-1.5 text-[11px] sm:text-xs font-bold text-white bg-emerald-950/70">{t}</figcaption>
-              </figure>))}
-          </div>
         </div>
       </section>
 
-      <section className="max-w-6xl mx-auto px-4 pt-16 pb-4" aria-labelledby="commercants">
-        <h2 id="commercants" className="text-2xl sm:text-3xl font-black text-center">Conçu pour les commerçants comme vous</h2>
-        <p className="mt-2 text-center text-sm text-stone-600 max-w-xl mx-auto">Du petit étal à la boutique bien installée : Nafora suit vos ventes, vos stocks et vos crédits dans votre poche.</p>
-        <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {MERCHANTS.map(([sc, t, d]) => (
-            <article key={sc} className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm">
-              <MerchantImage scene={sc} className="aspect-[4/3]" />
-              <div className="p-4"><h3 className="font-extrabold">{t}</h3><p className="mt-1 text-sm text-stone-600">{d}</p></div>
-            </article>))}
+      <section className="max-w-6xl mx-auto px-4 py-12" aria-labelledby="enaction">
+        <h2 id="enaction" className="text-2xl sm:text-3xl font-black text-center">Nafora en action dans votre boutique</h2>
+        <p className="mt-2 text-center text-sm text-stone-600 max-w-xl mx-auto">Des commerçants comme vous, au comptoir, avec leur téléphone.</p>
+        <figure className="mt-8 rounded-3xl overflow-hidden border border-stone-200 shadow-lg bg-emerald-950">
+          <img src="/showcase/commerce.webp" alt="Commerçante souriante qui utilise Nafora sur son téléphone dans sa boutique" width={1200} height={800} loading="lazy" decoding="async" className="w-full h-auto block" />
+        </figure>
+        <div className="mt-5 grid gap-5 md:grid-cols-3">
+          {SHOWCASE.map(([f, t, d, alt]) => (
+            <figure key={f} className="rounded-2xl overflow-hidden border border-stone-200 shadow-md bg-white">
+              <img src={`/showcase/${f}.webp`} alt={alt} width={1200} height={800} loading="lazy" decoding="async" className="w-full aspect-[3/2] object-cover object-top block" />
+              <figcaption className="p-4"><h3 className="font-extrabold">{t}</h3><p className="mt-1 text-sm text-stone-600">{d}</p></figcaption>
+            </figure>))}
         </div>
       </section>
 
@@ -148,21 +137,6 @@ export const LandingPage: React.FC<Props> = ({ onLogin, onRegister }) => {
             <article key={t} className="bg-white rounded-2xl border border-stone-200 p-5 shadow-xs">
               <div className="text-3xl" aria-hidden>{i}</div><h3 className="mt-2 font-extrabold">{t}</h3><p className="mt-1 text-sm text-stone-600">{d}</p>
             </article>))}
-        </div>
-      </section>
-
-      <section className="max-w-6xl mx-auto px-4 py-12" aria-labelledby="enaction">
-        <h2 id="enaction" className="text-2xl sm:text-3xl font-black text-center">Nafora en action dans votre boutique</h2>
-        <p className="mt-2 text-center text-sm text-stone-600 max-w-xl mx-auto">Des commerçants comme vous, au comptoir, avec leur téléphone.</p>
-        <figure className="mt-8 rounded-3xl overflow-hidden border border-stone-200 shadow-lg bg-emerald-950">
-          <img src="/showcase/commerce.webp" alt="Commerçante souriante qui utilise Nafora sur son téléphone dans sa boutique" width={1200} height={800} loading="lazy" decoding="async" className="w-full h-auto block" />
-        </figure>
-        <div className="mt-5 grid gap-5 md:grid-cols-3">
-          {SHOWCASE.map(([f, t, d, alt]) => (
-            <figure key={f} className="rounded-2xl overflow-hidden border border-stone-200 shadow-md bg-white">
-              <img src={`/showcase/${f}.webp`} alt={alt} width={1200} height={800} loading="lazy" decoding="async" className="w-full aspect-[3/2] object-cover object-top block" />
-              <figcaption className="p-4"><h3 className="font-extrabold">{t}</h3><p className="mt-1 text-sm text-stone-600">{d}</p></figcaption>
-            </figure>))}
         </div>
       </section>
 

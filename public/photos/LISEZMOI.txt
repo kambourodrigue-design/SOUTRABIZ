@@ -1,0 +1,3 @@
+Pour remplacer les illustrations par de vraies photos de commerçants, déposez ici :
+boutique.jpg, marche.jpg, couture.jpg, resto.jpg (format 4:3, ~1200x900, moins de 300 Ko chacune).
+Le site les utilise automatiquement ; sinon il affiche les illustrations.

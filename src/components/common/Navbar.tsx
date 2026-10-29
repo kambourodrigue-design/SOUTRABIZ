@@ -46,10 +46,10 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <header className="sticky top-0 z-40 bg-emerald-900 text-white shadow-md border-b border-emerald-800">
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 min-h-16 py-1.5 flex items-center justify-between gap-2">
         
         {/* Brand & Store Name */}
-        <div className="flex items-center gap-2 sm:gap-3 cursor-pointer min-w-0 shrink" onClick={() => setActiveTab('dashboard')}>
+        <div className="flex items-center gap-2 sm:gap-3 cursor-pointer min-w-0 flex-1 xl:flex-none" onClick={() => setActiveTab('dashboard')}>
           {settings.logo ? (
             <img src={settings.logo} alt="" className="w-10 h-10 rounded-xl object-cover bg-white shadow-inner shrink-0" />
           ) : (
@@ -59,7 +59,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           )}
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <h1 className="font-extrabold text-base sm:text-lg tracking-tight truncate max-w-[105px] min-[400px]:max-w-[150px] sm:max-w-[240px] xl:max-w-[150px] 2xl:max-w-xs text-white">
+              <h1 className="font-extrabold text-sm min-[400px]:text-base sm:text-lg tracking-tight leading-tight break-words [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical] overflow-hidden sm:max-w-[240px] xl:max-w-[150px] 2xl:max-w-xs text-white">
                 {settings.shopName}
               </h1>
               {settings.isFormalized && (
@@ -69,7 +69,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
             </div>
             <div className="flex items-center gap-2 text-xs text-emerald-200 min-w-0">
-              <span className="truncate max-w-[110px] sm:max-w-[200px]">{settings.city}</span>
+              <span className="truncate max-w-[90px] sm:max-w-[200px]">{settings.city}</span>
               <span>•</span>
               <span className="font-semibold text-amber-300">{settings.currency}</span>
             </div>

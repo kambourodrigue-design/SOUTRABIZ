@@ -200,4 +200,6 @@
   .dark .text-sky-700{color:#7fdcfb}
   .dark .text-yellow-600{color:#ffd97a}
   .dark .text-yellow-800{color:#ffd97a}
+  .dark .from-stone-50{--tw-gradient-from:#0a1334}
+  .dark .to-emerald-50{--tw-gradient-to:#0f1b47}
 }

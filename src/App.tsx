@@ -569,7 +569,7 @@ export default function App() {
 
       {/* Indicateur de synchronisation : pastille centrée au-dessus de la barre du bas */}
       {syncEnabled && (syncInfo.status === 'syncing' || syncInfo.status === 'error' || (syncInfo.status === 'pending' && syncInfo.pending > 0) || (syncInfo.status === 'offline' && syncInfo.pending > 0)) && (
-        <div className="fixed inset-x-0 bottom-[84px] xl:bottom-5 z-40 flex justify-center px-4 pointer-events-none" role="status" aria-live="polite">
+        <div className="fixed inset-x-0 bottom-[84px] xl:bottom-5 z-40 flex justify-center pl-4 pr-[72px] xl:px-4 pointer-events-none" role="status" aria-live="polite">
           <div className={`sb-pop-up inline-flex max-w-full whitespace-nowrap items-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold leading-none shadow-lg ring-1 backdrop-blur ${
             syncInfo.status === 'error' ? 'bg-rose-50/95 text-rose-900 ring-rose-300'
             : syncInfo.status === 'offline' ? 'bg-amber-50/95 text-amber-950 ring-amber-300'

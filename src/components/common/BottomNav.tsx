@@ -59,10 +59,10 @@ export const BottomNav: React.FC<BottomNavProps> = ({
         aria-label="Ouvrir l'assistant IA"
         title="Assistant IA"
         data-testid="assistant-fab"
-        className="xl:hidden fixed right-3 bottom-[148px] z-40 flex items-center gap-1.5 h-12 pl-3.5 pr-4 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-white font-extrabold text-sm shadow-xl shadow-blue-900/30 ring-2 ring-amber-300/80 active:scale-95 transition"
+        className={`xl:hidden fixed right-3 ${activeTab === 'pos' ? 'bottom-[140px]' : 'bottom-[80px]'} z-40 flex flex-col items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-lg shadow-blue-900/30 ring-2 ring-amber-300/80 active:scale-95 transition`}
       >
         <Sparkles className="w-5 h-5 text-amber-300" />
-        <span>IA</span>
+        <span className="text-[9px] font-extrabold leading-none mt-0.5">IA</span>
       </button>
     )}
     <div className="xl:hidden fixed -bottom-px left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-stone-200 px-1 py-1.5 pb-[calc(0.375rem+1px)] shadow-lg safe-bottom">

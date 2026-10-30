@@ -34,8 +34,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   const [moreOpen, setMoreOpen] = useState(false);
   const ok = (id: string) => !allowedTabs || allowedTabs.includes(id);
   const moreTabs = [
-    { id: 'assistant', label: 'Assistant IA', icon: Sparkles },
-    { id: 'expenses', label: 'Dépenses', icon: Wallet },
+    { id: 'finances', label: 'Ratios', icon: TrendingUp },
     { id: 'credit', label: 'Score Crédit', icon: Landmark },
     { id: 'formalization', label: 'Formalisation', icon: ShieldCheck },
   ].filter(t => ok(t.id));
@@ -44,7 +43,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   const tabs = [
     { id: 'dashboard', label: 'Accueil', icon: LayoutDashboard },
     { id: 'pos', label: 'Caisse', icon: ShoppingCart, highlight: true },
-    { id: 'finances', label: 'Ratios', icon: TrendingUp },
+    { id: 'expenses', label: 'Dépenses', icon: Wallet },
     { id: 'stock', label: 'Stocks', icon: Package, badge: lowStockCount > 0 ? lowStockCount : null },
     { id: 'debts', label: 'Dettes', icon: BookUser, badge: totalDebtorsCount > 0 ? totalDebtorsCount : null },
     ...(isAdmin ? [{ id: 'admin', label: 'Admin', icon: Landmark, badge: '👑' }] : []),
@@ -52,6 +51,20 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   const cols = tabs.length + (moreTabs.length ? 1 : 0);
 
   return (
+    <>
+    {/* Bulle flottante : Assistant IA (à droite, dans la zone du pouce, au-dessus de la barre et des bandeaux d'état) */}
+    {ok('assistant') && activeTab !== 'assistant' && (
+      <button
+        onClick={() => setActiveTab('assistant')}
+        aria-label="Ouvrir l'assistant IA"
+        title="Assistant IA"
+        data-testid="assistant-fab"
+        className="xl:hidden fixed right-3 bottom-[148px] z-40 flex items-center gap-1.5 h-12 pl-3.5 pr-4 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-white font-extrabold text-sm shadow-xl shadow-blue-900/30 ring-2 ring-amber-300/80 active:scale-95 transition"
+      >
+        <Sparkles className="w-5 h-5 text-amber-300" />
+        <span>IA</span>
+      </button>
+    )}
     <div className="xl:hidden fixed -bottom-px left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-stone-200 px-1 py-1.5 pb-[calc(0.375rem+1px)] shadow-lg safe-bottom">
       <div className="grid gap-0.5 max-w-xl mx-auto" style={{ gridTemplateColumns: `repeat(${Math.max(cols, 2)}, minmax(0, 1fr))` }}>
         {tabs.map((tab) => {
@@ -129,5 +142,6 @@ export const BottomNav: React.FC<BottomNavProps> = ({
         </>
       )}
     </div>
+    </>
   );
 };

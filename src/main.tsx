@@ -1,3 +1,4 @@
+import { openSupport } from './services/support';
 import React from 'react';
 import {createRoot} from 'react-dom/client';
 import { DialogHost } from './components/common/dialogs';
@@ -30,6 +31,7 @@ class Boundary extends React.Component<{ children: React.ReactNode }, { failed: 
           <h1 style={{ fontSize: 20, fontWeight: 800 }}>Une erreur est survenue</h1>
           <p style={{ margin: '12px 0 20px' }}>Vos données sont conservées. Rechargez l'application pour continuer.</p>
           <button onClick={() => location.reload()} style={{ padding: '10px 20px', borderRadius: 12, border: 0, fontWeight: 700 }}>Recharger</button>
+          <div style={{ marginTop: 14 }}><button onClick={() => { openSupport().then(ok => { if (!ok) alert("L'assistance n'est pas joignable pour le moment."); }); }} style={{ padding: '8px 16px', borderRadius: 12, border: '1px solid #8fb0ff', background: 'transparent', color: '#eef3ff', fontWeight: 700 }}>Contacter l'assistance</button></div>
         </div>
       </div>
     );

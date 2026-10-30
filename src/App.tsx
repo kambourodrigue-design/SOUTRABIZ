@@ -16,6 +16,7 @@ import { getSectorProducts } from './data/sectorCatalogSeeds';
 
 // Components
 import { Navbar } from './components/common/Navbar';
+import { setSupportContext } from './services/support';
 import { BottomNav } from './components/common/BottomNav';
 import { AnnouncementsBar } from './components/common/AnnouncementsBar';
 import { AssistantView } from './components/assistant/AssistantView';
@@ -106,6 +107,7 @@ export default function App() {
   }, [syncEnabled, isPlatformAdmin, shopRole]);
   // L'administrateur n'est jamais en lecture seule, quelle que soit la réponse du serveur
   const readOnly = !isPlatformAdmin && !!plan?.readOnly;
+  useEffect(() => { setSupportContext({ shop: settings.shopName || '', name: currentUser.name || '', phone: currentUser.phone || '', plan: plan?.state || '' }); }, [settings.shopName, currentUser.name, currentUser.phone, plan?.state]);
   const [roToast, setRoToast] = useState(false);
   const blocked = () => { setRoToast(true); setTimeout(() => setRoToast(false), 3500); };
 

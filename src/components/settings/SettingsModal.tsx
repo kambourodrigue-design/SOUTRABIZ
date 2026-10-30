@@ -4,6 +4,7 @@ import { storage } from '../../services/storage';
 import { api } from '../../services/api';
 import { TeamPanel } from './TeamPanel';
 import { BillingPanel } from './BillingPanel';
+import { SupportPanel } from './SupportPanel';
 import { CatalogPanel } from './CatalogPanel';
 import { 
   Settings as SettingsIcon, 
@@ -391,6 +392,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
           {!isDemo && isOwner && <CatalogPanel shopName={formData.shopName || ''} />}
           {!isDemo && isOwner && <BillingPanel />}
+          {!isDemo && <SupportPanel />}
           {!isDemo && isOwner && <TeamPanel />}
 
           {/* Gestion des données */}

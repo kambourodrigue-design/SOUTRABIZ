@@ -6,6 +6,7 @@ export interface Env {
   DB: D1Database;
   ADMIN_EMAIL?: string;
   SUPPORT_WHATSAPP?: string;
+  SUPPORT_HOURS?: string;
   /** Liaison Workers AI (Cloudflare Pages → Paramètres → Liaisons → Workers AI, nom : AI) */
   AI?: { run(model: string, input: unknown): Promise<any> };
   AI_MODEL?: string;

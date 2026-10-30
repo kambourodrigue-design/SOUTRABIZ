@@ -82,7 +82,7 @@ const publicSettings = (b: BillingSettings, env?: Env) => ({
 });
 export const publicPlans = async (env: Env) => {
   const b = await loadBilling(env);
-  return json({ ...publicSettings(b, env), whatsapp: (env.SUPPORT_WHATSAPP || '').replace(/\D/g, '') });
+  return json({ ...publicSettings(b, env), whatsapp: (env.SUPPORT_WHATSAPP || '').replace(/\D/g, ''), supportHours: (env.SUPPORT_HOURS || '').slice(0, 80) });
 };
 
 const payRow = (p: any) => ({

@@ -26,7 +26,7 @@ const faqList = (plans: (PlanSettings & { whatsapp: string }) | null): [string, 
   ['Mes données sont-elles en sécurité ?', 'Votre compte est protégé par un mot de passe, et vos données sont stockées sur l\'infrastructure Cloudflare. Seuls vous et les personnes à qui vous donnez un accès y ont accès.'],
   ['Puis-je l\'utiliser sur téléphone ?', 'Oui. Nafora s\'installe comme une application depuis votre navigateur (Chrome), sans passer par un magasin d\'applications, et fonctionne aussi sur ordinateur.'],
   ['Combien ça coûte ?', plans?.enabled
-    ? `La création du compte est gratuite, avec ${plans.trialDays} jours d\'essai des fonctions Pro. Ensuite, l\'abonnement annuel Pro coûte ${fmt(plans.price12)} ${plans.currency} par an, avec le conseil et l\'assistance inclus. Paiement par Mobile Money.`
+    ? `La création du compte est gratuite, avec ${jours(plans.trialDays)} d\'essai des fonctions Pro. Ensuite, l\'abonnement annuel Pro coûte ${fmt(plans.price12)} ${plans.currency} par an, avec le conseil et l\'assistance inclus. Paiement par Mobile Money.`
     : 'Nafora est gratuit pendant la phase de lancement. Créez votre compte et profitez de toutes les fonctions.'],
   ['Que comprend l\'abonnement annuel ?', 'Toutes les fonctions Pro (caisse, stocks, dettes, trésorerie, employés illimités, assistant IA étendu) et le conseil et l\'assistance : prise en main, réponses prioritaires sur WhatsApp, point mensuel sur vos chiffres, conseils de gestion et aide pour votre dossier bancaire. Un seul prix, sans option à ajouter.'],
   ['Que se passe-t-il à la fin de l\'essai ?', 'Votre compte passe en lecture seule : vous gardez l\'accès à toutes vos données, mais rien de nouveau ne s\'enregistre tant que l\'abonnement Pro n\'est pas activé. Rien n\'est supprimé.'],
@@ -34,14 +34,13 @@ const faqList = (plans: (PlanSettings & { whatsapp: string }) | null): [string, 
   ['Pour quels commerces ?', 'Boutiques, alimentation, quincaillerie, mode, restauration, pharmacie, services… tout petit commerce ou PME qui vend et suit des stocks ou des crédits.'],
 ];
 
-const PAINS: [string, string][] = [
-  ['Le cahier se perd, se mouille, se contredit', 'Nafora garde chaque vente, chaque dépense et chaque dette en sécurité, même si le téléphone change.'],
-  ['« Combien j\'ai vraiment gagné ce mois ? »', 'Bénéfice du jour, du mois dernier ou d\'une période choisie, calculé automatiquement.'],
-  ['Les clients qui oublient de payer', 'Le carnet de crédit note tout et prépare le rappel WhatsApp en un clic.'],
-  ['Le stock qui manque au mauvais moment', 'Alertes de rupture, et la caisse bloque la vente d\'un produit épuisé.'],
-  ['Des ventes oubliées ou mal notées', 'Chaque vente est enregistrée à la caisse avec son montant exact : plus d\'oubli ni d\'erreur de calcul.'],
-  ['Des employés difficiles à contrôler', 'Chacun a son propre accès (gérant ou caissier) et vous voyez qui a fait quoi.'],
-  ['Pas de réseau, donc plus de caisse', 'Nafora continue de fonctionner sans internet et se synchronise au retour du réseau.'],
+const PAINS: [string, string, string][] = [
+  ['📓', 'Le cahier se perd, se mouille, se contredit', 'Nafora garde chaque vente, chaque dépense et chaque dette en sécurité, même si le téléphone change.'],
+  ['📊', '« Combien j\'ai vraiment gagné ce mois ? »', 'Bénéfice du jour, du mois dernier ou d\'une période choisie, calculé automatiquement.'],
+  ['🤝', 'Les clients qui oublient de payer', 'Le carnet de crédit note tout et prépare le rappel WhatsApp en un clic.'],
+  ['📦', 'Le stock qui manque au mauvais moment', 'Alertes de rupture, et la caisse bloque la vente d\'un produit épuisé.'],
+  ['🧾', 'Des ventes oubliées ou mal notées', 'Chaque vente est enregistrée à la caisse avec son montant exact : plus d\'oubli ni d\'erreur de calcul.'],
+  ['👥', 'Des employés difficiles à contrôler', 'Chacun a son propre accès (gérant ou caissier) et vous voyez qui a fait quoi.'],
 ];
 const OFFLINE: [string, string, string][] = [
   ['📴', 'Le réseau coupe', 'Vous continuez à vendre, noter vos dépenses et vos dettes comme d\'habitude.'],
@@ -65,6 +64,7 @@ const Phone: React.FC<{ src: string; alt: string }> = ({ src, alt }) => (
     </div>
   </div>
 );
+const jours = (n: number) => `${n} jour${n > 1 ? 's' : ''}`;
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR').format(n);
 
 export const LandingPage: React.FC<Props> = ({ onLogin, onRegister }) => {
@@ -109,7 +109,7 @@ export const LandingPage: React.FC<Props> = ({ onLogin, onRegister }) => {
           </div>
           <p className="mt-3 text-xs text-emerald-200">Sans carte bancaire • installation depuis le navigateur • en français</p>
           <ul className="mt-8 flex flex-wrap justify-center gap-2 sm:gap-3 text-xs sm:text-sm font-semibold">
-            {REASSURE.map(([i, t]) => <li key={t} className="px-3 py-1.5 rounded-full bg-white/10 border border-white/15"><span aria-hidden>{i}</span> {t === 'Essai Pro offert' && trial ? `${trial} jours d'essai Pro offerts` : t}</li>)}
+            {REASSURE.map(([i, t]) => <li key={t} className="px-3 py-1.5 rounded-full bg-white/10 border border-white/15"><span aria-hidden>{i}</span> {t === 'Essai Pro offert' && trial ? `${jours(trial)} d'essai Pro offert${trial > 1 ? 's' : ''}` : t}</li>)}
           </ul>
         </div>
       </section>
@@ -119,6 +119,7 @@ export const LandingPage: React.FC<Props> = ({ onLogin, onRegister }) => {
         <p className="mt-2 text-center text-sm text-stone-600 max-w-xl mx-auto">Des commerçants comme vous, au comptoir, avec leur téléphone.</p>
         <figure className="mt-8 rounded-3xl overflow-hidden border border-stone-200 shadow-lg bg-emerald-950">
           <img src="/showcase/commerce.webp" alt="Commerçante souriante qui utilise Nafora sur son téléphone dans sa boutique" width={1200} height={800} loading="lazy" decoding="async" className="w-full h-auto block" />
+          <figcaption className="px-5 py-4 text-center text-base sm:text-lg font-extrabold text-white bg-emerald-950">Nafora vous aide à piloter votre activité</figcaption>
         </figure>
         <div className="mt-5 grid gap-5 md:grid-cols-3">
           {SHOWCASE.map(([f, t, d, alt]) => (
@@ -129,15 +130,29 @@ export const LandingPage: React.FC<Props> = ({ onLogin, onRegister }) => {
         </div>
       </section>
 
-      <section className="max-w-5xl mx-auto px-4 py-12" aria-labelledby="problemes">
-        <h2 id="problemes" className="text-2xl sm:text-3xl font-black text-center">Vous perdez peut-être de l'argent <span className="text-rose-700">sans le savoir</span></h2>
-        <p className="mt-2 text-center text-sm text-stone-600 max-w-xl mx-auto">Gérer un commerce sans outil adapté mène à des erreurs, des pertes et un manque de visibilité. Vous vous reconnaissez ?</p>
-        <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {PAINS.map(([p, a]) => (
-            <div key={p} className="rounded-2xl border border-stone-200 bg-white p-5">
-              <p className="font-extrabold text-rose-700">✗ {p}</p>
-              <p className="mt-2 text-sm text-stone-700"><span className="font-bold text-emerald-700">✓ Avec Nafora : </span>{a}</p>
-            </div>))}
+      <section className="relative overflow-hidden bg-gradient-to-b from-stone-50 via-white to-stone-50" aria-labelledby="problemes">
+        <div className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 h-64 w-[36rem] max-w-full rounded-full bg-rose-200/40 blur-3xl" aria-hidden />
+        <div className="relative max-w-6xl mx-auto px-4 py-16">
+          <p className="text-center text-xs font-extrabold tracking-[0.2em] text-rose-700">LES DÉFIS DU QUOTIDIEN</p>
+          <h2 id="problemes" className="mt-3 text-center text-3xl sm:text-4xl font-black leading-tight">Vous perdez peut-être de l'argent <span className="text-rose-700">sans le savoir</span></h2>
+          <p className="mt-3 text-center text-sm sm:text-base text-stone-600 max-w-xl mx-auto">Gérer un commerce sans outil adapté mène à des erreurs, des pertes et un manque de visibilité. Voici ce que Nafora règle pour vous.</p>
+          <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {PAINS.map(([ic, p, a], n) => (
+              <article key={p} className="group relative overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+                <span className="absolute right-4 top-1 text-7xl font-black text-stone-100 select-none" aria-hidden>{String(n + 1).padStart(2, '0')}</span>
+                <div className="relative p-6">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-50 text-2xl ring-1 ring-rose-100" aria-hidden>{ic}</div>
+                  <h3 className="mt-4 text-lg font-extrabold leading-snug text-stone-900">{p}</h3>
+                </div>
+                <div className="relative border-t border-dashed border-stone-200 bg-emerald-50/70 p-6">
+                  <p className="flex items-center gap-2 text-xs font-extrabold tracking-wide text-emerald-700"><span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-[11px] text-white" aria-hidden>✓</span>AVEC NAFORA</p>
+                  <p className="mt-2 text-sm text-stone-700">{a}</p>
+                </div>
+              </article>))}
+          </div>
+          <div className="mt-10 text-center">
+            <button onClick={onRegister} className={`${btn} bg-amber-400 text-stone-950 hover:bg-amber-300 shadow-md`}>Reprendre le contrôle de mon commerce</button>
+          </div>
         </div>
       </section>
 
@@ -161,7 +176,7 @@ export const LandingPage: React.FC<Props> = ({ onLogin, onRegister }) => {
           <p className="mt-3 text-sm sm:text-base text-stone-700 max-w-xl mx-auto">Notre équipe vous aide à configurer votre boutique, importer vos produits, former vos employés et démarrer rapidement avec Nafora.</p>
           <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
             {demoWa && <a href={demoWa} target="_blank" rel="noopener noreferrer" className={`${btn} bg-emerald-600 text-white hover:bg-emerald-700`} data-testid="landing-demo">📅 Demander une démo sur WhatsApp</a>}
-            <button onClick={onRegister} className={`${btn} bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-100`}>Essayer gratuitement {trial ? `${trial} jours` : ''}</button>
+            <button onClick={onRegister} className={`${btn} bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-100`}>Essayer gratuitement {trial ? `${jours(trial)}` : ''}</button>
           </div>
         </div>
       </section>
@@ -222,7 +237,7 @@ export const LandingPage: React.FC<Props> = ({ onLogin, onRegister }) => {
             <div className="bg-emerald-900 text-white rounded-2xl p-6"><h3 className="font-extrabold text-lg">Pro</h3><div className="text-3xl font-black mt-1">{fmt(plans.price12)} <span className="text-base font-bold">{plans.currency} / an</span></div>
               <p className="text-xs text-emerald-200">Abonnement annuel unique, assistance et conseil compris</p>
               <ul className="mt-3 text-sm text-emerald-100 space-y-1 list-disc pl-5"><li>Caisse, stocks, dettes, trésorerie</li><li>Fonctionne sans internet</li><li>Employés illimités</li><li>Assistant IA étendu</li><li><b>Conseil &amp; Assistance inclus</b> (accompagnement humain sur WhatsApp)</li><li>Paiement par Mobile Money ou en ligne (international)</li></ul>
-              <p className="mt-3 text-xs text-amber-200">{plans.trialDays} jours d'essai Pro offerts à l'inscription.</p></div>
+              <p className="mt-3 text-xs text-amber-200">{jours(plans.trialDays)} d'essai Pro offert{plans.trialDays > 1 ? 's' : ''} à l'inscription.</p></div>
             <div className="bg-white border-2 border-amber-300 rounded-2xl p-6" data-testid="assist-offer">
               <div className="flex items-center justify-between gap-2"><h3 className="font-extrabold text-lg">Assistance & Conseil</h3><span className="text-[11px] font-bold px-2 py-1 rounded-full bg-amber-100 text-amber-900 whitespace-nowrap">Inclus dans Pro</span></div>
               <p className="mt-1 text-sm text-stone-600">Nafora ne vous laisse pas seul : un vrai accompagnement humain, en français, sur WhatsApp.</p>
@@ -251,7 +266,7 @@ export const LandingPage: React.FC<Props> = ({ onLogin, onRegister }) => {
 
       <section className="max-w-4xl mx-auto px-4 py-12 text-center">
         <h2 className="text-2xl sm:text-3xl font-black">Prêt à mieux gérer votre commerce ?</h2>
-        <p className="mt-2 text-sm text-stone-600">{plans?.enabled && plans.trialDays ? `${plans.trialDays} jours d'essai Pro offerts, sans carte bancaire.` : 'Création du compte en 2 minutes.'}</p>
+        <p className="mt-2 text-sm text-stone-600">{plans?.enabled && plans.trialDays ? `${jours(plans.trialDays)} d'essai Pro offert${plans.trialDays > 1 ? 's' : ''}, sans carte bancaire.` : 'Création du compte en 2 minutes.'}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <button onClick={onRegister} className={`${btn} bg-emerald-700 text-white hover:bg-emerald-800`}>Créer mon compte</button>
           {wa && <a href={wa} target="_blank" rel="noopener noreferrer" className={`${btn} bg-green-600 text-white hover:bg-green-700`}>Nous écrire sur WhatsApp</a>}

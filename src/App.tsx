@@ -420,7 +420,7 @@ export default function App() {
       {plan?.enforced && !readOnly && ((plan.state === 'trial' && plan.daysLeft <= 7) || plan.state === 'free') && (
         <div className="px-3 pt-2 max-w-7xl mx-auto w-full">
           <button onClick={() => setIsSettingsOpen(true)} className="w-full text-left rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-950" data-testid="plan-banner">
-            {plan.state === 'trial' ? `Votre essai Pro se termine dans ${plan.daysLeft} jour(s).` : 'Vous êtes sur le plan gratuit.'} <b>Voir l'abonnement →</b>
+            {plan.state === 'trial' ? `Votre essai Pro se termine dans ${plan.daysLeft} jour${plan.daysLeft > 1 ? 's' : ''}.` : 'Vous êtes sur le plan gratuit.'} <b>Voir l'abonnement →</b>
           </button>
         </div>
       )}

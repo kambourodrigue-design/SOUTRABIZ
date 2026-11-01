@@ -201,5 +201,8 @@
   .dark .text-yellow-600{color:#ffd97a}
   .dark .text-yellow-800{color:#ffd97a}
   .dark .from-stone-50{--tw-gradient-from:#0a1334}
+  .dark .via-white{--tw-gradient-via:#0a1334}
+  .dark .to-stone-50{--tw-gradient-to:#0a1334}
+  .dark .text-stone-100{color:rgba(120,150,255,.14)}
   .dark .to-emerald-50{--tw-gradient-to:#0f1b47}
 }

@@ -14,7 +14,7 @@ Envoyez ensuite tout le dossier sur GitHub (nouveaux dossiers inclus : `function
 Désactivée par défaut : **tant que vous ne cochez pas « Facturation activée », rien ne change pour personne.**
 - Plan **Pro** payé par Mobile Money / virement, validé à la main : le commerçant (Paramètres → Abonnement) choisit 1, 3 ou 12 mois, paie selon vos instructions, saisit la référence de transaction ; vous vérifiez sur votre application Mobile Money puis cliquez **Valider** (ou Refuser). L'abonnement se prolonge automatiquement.
 - Réglages : prix, durée d'essai, questions IA/jour et employés autorisés en gratuit, instructions de paiement. Prix par défaut : 2 500 / 6 500 / 25 000 F CFA — à adapter.
-- À l'activation, chaque boutique reçoit l'essai Pro (30 jours par défaut) à partir de ce jour.
+- À l'activation, chaque boutique reçoit l'essai Pro (4 jours par défaut) à partir de ce jour.
 - Plan gratuit : **jamais de blocage de la caisse ni des données**. Limites : assistant IA (5/jour), employés (1). Pro/essai : IA 15/jour, employés illimités.
 - Vous pouvez aussi offrir des mois à une boutique (route admin « grant »).
 - Un paiement par application (CinetPay, PayDunya, FedaPay…) automatiserait la validation : possible plus tard, après ouverture d'un compte marchand chez l'un d'eux.

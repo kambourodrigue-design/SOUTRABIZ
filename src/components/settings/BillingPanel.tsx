@@ -16,7 +16,7 @@ export const BillingPanel: React.FC = () => {
   const { status: st, settings: s } = data;
   const price = s.price12; const months = 12;
   const badge = st.state === 'paid' ? ['bg-emerald-100 text-emerald-800', `Pro jusqu'au ${day(st.paidUntil)}`]
-    : st.state === 'trial' ? ['bg-amber-100 text-amber-800', `Essai Pro : ${st.daysLeft} jour(s) restant(s)`]
+    : st.state === 'trial' ? ['bg-amber-100 text-amber-800', `Essai Pro : ${st.daysLeft} jour${st.daysLeft > 1 ? 's' : ''} restant${st.daysLeft > 1 ? 's' : ''}`]
     : ['bg-stone-200 text-stone-700', 'Plan gratuit'];
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); setErr(''); setMsg(''); setBusy(true);

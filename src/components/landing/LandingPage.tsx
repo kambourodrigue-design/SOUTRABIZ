@@ -39,6 +39,14 @@ const PAINS: [string, string][] = [
   ['« Combien j\'ai vraiment gagné ce mois ? »', 'Bénéfice du jour, du mois dernier ou d\'une période choisie, calculé automatiquement.'],
   ['Les clients qui oublient de payer', 'Le carnet de crédit note tout et prépare le rappel WhatsApp en un clic.'],
   ['Le stock qui manque au mauvais moment', 'Alertes de rupture, et la caisse bloque la vente d\'un produit épuisé.'],
+  ['Des ventes oubliées ou mal notées', 'Chaque vente est enregistrée à la caisse avec son montant exact : plus d\'oubli ni d\'erreur de calcul.'],
+  ['Des employés difficiles à contrôler', 'Chacun a son propre accès (gérant ou caissier) et vous voyez qui a fait quoi.'],
+  ['Pas de réseau, donc plus de caisse', 'Nafora continue de fonctionner sans internet et se synchronise au retour du réseau.'],
+];
+const OFFLINE: [string, string, string][] = [
+  ['📴', 'Le réseau coupe', 'Vous continuez à vendre, noter vos dépenses et vos dettes comme d\'habitude.'],
+  ['💾', 'Tout est gardé sur votre téléphone', 'Chaque opération est enregistrée en sécurité, rien ne se perd.'],
+  ['🔄', 'Le réseau revient', 'Tout est envoyé et synchronisé automatiquement, sans rien faire.'],
 ];
 const REASSURE: [string, string][] = [
   ['🎁', 'Essai Pro offert'], ['💳', 'Sans carte bancaire'], ['📶', 'Marche sans internet'], ['📱', 'Paiement Mobile Money'],
@@ -74,6 +82,8 @@ export const LandingPage: React.FC<Props> = ({ onLogin, onRegister }) => {
   const wa = plans?.whatsapp ? `https://wa.me/${plans.whatsapp}?text=${encodeURIComponent('Bonjour, je souhaite en savoir plus sur Nafora.')}` : '';
   const assistWa = plans?.whatsapp ? `https://wa.me/${plans.whatsapp}?text=${encodeURIComponent("Bonjour, je souhaite profiter de l'assistance et du conseil inclus dans mon abonnement Nafora.")}` : '';
   const share = `https://wa.me/?text=${encodeURIComponent(`Découvre Nafora, l'application pour gérer ta boutique (ventes, stocks, crédits) même sans internet : ${typeof location !== 'undefined' ? location.origin : ''}`)}`;
+  const demoWa = plans?.whatsapp ? `https://wa.me/${plans.whatsapp}?text=${encodeURIComponent('Bonjour, je souhaite une démonstration de Nafora.')}` : '';
+  const trial = plans?.enabled && plans.trialDays ? plans.trialDays : 0;
   const btn = 'px-5 py-3 rounded-2xl font-bold text-sm transition active:scale-95';
 
   return (
@@ -99,7 +109,7 @@ export const LandingPage: React.FC<Props> = ({ onLogin, onRegister }) => {
           </div>
           <p className="mt-3 text-xs text-emerald-200">Sans carte bancaire • installation depuis le navigateur • en français</p>
           <ul className="mt-8 flex flex-wrap justify-center gap-2 sm:gap-3 text-xs sm:text-sm font-semibold">
-            {REASSURE.map(([i, t]) => <li key={t} className="px-3 py-1.5 rounded-full bg-white/10 border border-white/15"><span aria-hidden>{i}</span> {t}</li>)}
+            {REASSURE.map(([i, t]) => <li key={t} className="px-3 py-1.5 rounded-full bg-white/10 border border-white/15"><span aria-hidden>{i}</span> {t === 'Essai Pro offert' && trial ? `${trial} jours d'essai Pro offerts` : t}</li>)}
           </ul>
         </div>
       </section>
@@ -120,13 +130,39 @@ export const LandingPage: React.FC<Props> = ({ onLogin, onRegister }) => {
       </section>
 
       <section className="max-w-5xl mx-auto px-4 py-12" aria-labelledby="problemes">
-        <h2 id="problemes" className="text-2xl sm:text-3xl font-black text-center">Vous vous reconnaissez ?</h2>
-        <div className="mt-8 grid sm:grid-cols-2 gap-4">
+        <h2 id="problemes" className="text-2xl sm:text-3xl font-black text-center">Vous perdez peut-être de l'argent <span className="text-rose-700">sans le savoir</span></h2>
+        <p className="mt-2 text-center text-sm text-stone-600 max-w-xl mx-auto">Gérer un commerce sans outil adapté mène à des erreurs, des pertes et un manque de visibilité. Vous vous reconnaissez ?</p>
+        <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {PAINS.map(([p, a]) => (
             <div key={p} className="rounded-2xl border border-stone-200 bg-white p-5">
               <p className="font-extrabold text-rose-700">✗ {p}</p>
               <p className="mt-2 text-sm text-stone-700"><span className="font-bold text-emerald-700">✓ Avec Nafora : </span>{a}</p>
             </div>))}
+        </div>
+      </section>
+
+      <section className="bg-emerald-950 text-white" aria-labelledby="horsligne">
+        <div className="max-w-5xl mx-auto px-4 py-12">
+          <h2 id="horsligne" className="text-2xl sm:text-3xl font-black text-center">Pas de réseau ? <span className="text-amber-300">Vous vendez quand même.</span></h2>
+          <p className="mt-2 text-center text-emerald-100 text-sm sm:text-base max-w-xl mx-auto">Contrairement à la plupart des logiciels, Nafora ne s'arrête pas quand internet coupe.</p>
+          <ol className="mt-8 grid sm:grid-cols-3 gap-4">
+            {OFFLINE.map(([i, t, d], n) => (
+              <li key={t} className="rounded-2xl bg-white/10 border border-white/15 p-5">
+                <div className="flex items-center gap-2"><span className="text-2xl" aria-hidden>{i}</span><span className="text-xs font-bold text-amber-300">ÉTAPE {n + 1}</span></div>
+                <h3 className="mt-2 font-extrabold">{t}</h3><p className="mt-1 text-sm text-emerald-100">{d}</p>
+              </li>))}
+          </ol>
+        </div>
+      </section>
+
+      <section className="max-w-4xl mx-auto px-4 py-12" aria-labelledby="demo">
+        <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-6 sm:p-10 text-center">
+          <h2 id="demo" className="text-2xl sm:text-3xl font-black">Un conseiller vous accompagne <span className="text-emerald-700">pas à pas</span></h2>
+          <p className="mt-3 text-sm sm:text-base text-stone-700 max-w-xl mx-auto">Notre équipe vous aide à configurer votre boutique, importer vos produits, former vos employés et démarrer rapidement avec Nafora.</p>
+          <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
+            {demoWa && <a href={demoWa} target="_blank" rel="noopener noreferrer" className={`${btn} bg-emerald-600 text-white hover:bg-emerald-700`} data-testid="landing-demo">📅 Demander une démo sur WhatsApp</a>}
+            <button onClick={onRegister} className={`${btn} bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-100`}>Essayer gratuitement {trial ? `${trial} jours` : ''}</button>
+          </div>
         </div>
       </section>
 

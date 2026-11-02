@@ -40,6 +40,7 @@ export function generateReceiptWhatsAppUrl(
   });
 
   lines.push(`--------------------------------`);
+  if (sale.discount > 0) lines.push(`🏷️ Réduction : -${formatCurrency(sale.discount, settings.currency)}`);
   lines.push(`*TOTAL À PAYER : ${formatCurrency(sale.total, settings.currency)}*`);
   lines.push(`Mode de paiement : ${sale.paymentMethod.toUpperCase()}`);
   

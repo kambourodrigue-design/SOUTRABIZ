@@ -321,12 +321,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onI
             className="px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl font-bold text-stone-700"
           >
             <option value="all">Tous les secteurs d'activité</option>
-            <option value="retail_food">🛒 Commerce & Alimentation</option>
-            <option value="fashion_tailor">👗 Couture & Mode</option>
-            <option value="hardware_craft">🔨 Quincaillerie & BTP</option>
-            <option value="restaurant_maquis">🍽️ Restaurant & Maquis</option>
-            <option value="beauty_salon">💇 Salon de Coiffure</option>
-            <option value="garage_mechanic">🔧 Garage & Pièces</option>
+            {Object.values(BUSINESS_PRESETS).map(preset => (
+              <option key={preset.id} value={preset.id}>{preset.icon} {preset.title}</option>
+            ))}
           </Select>
 
           <Select
@@ -537,7 +534,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onI
                 </div>
                 <div>
                   <h3 className="font-black text-base text-stone-900">{inspectUser.shop.shopName}</h3>
-                  <p className="text-xs text-stone-500">{inspectUser.shop.businessType} • {inspectUser.shop.city}</p>
+                  <p className="text-xs text-stone-500">{BUSINESS_PRESETS[inspectUser.shop.businessCategory]?.title || inspectUser.shop.businessType} • {inspectUser.shop.city}</p>
                 </div>
               </div>
               <button onClick={() => setInspectUser(null)} className="text-stone-400 p-1">✕</button>

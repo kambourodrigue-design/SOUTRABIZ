@@ -2,6 +2,8 @@ import React from 'react';
 import { CreditScoreResult, ShopSettings, Sale, Expense, Product, Customer, Supplier } from '../../types';
 import { formatCurrency, calculateSummaryForPeriod } from '../../services/financials';
 import { Printer, Download, X, Landmark, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { BUSINESS_PRESETS } from '../../services/businessPresets';
+import { stockCostValue } from '../../services/stockRules';
 
 interface BankDossierModalProps {
   creditScore: CreditScoreResult;
@@ -25,7 +27,7 @@ export const BankDossierModal: React.FC<BankDossierModalProps> = ({
   onClose,
 }) => {
   const summary30d = calculateSummaryForPeriod(sales, expenses, 30);
-  const totalStockValue = products.reduce((sum, p) => sum + (p.stockQuantity * p.purchasePrice), 0);
+  const totalStockValue = stockCostValue(products);
   const totalReceivables = customers.reduce((sum, c) => sum + c.totalDebt, 0);
   const totalSupplierDebt = suppliers.reduce((sum, s) => sum + s.totalDebt, 0);
   const netCommercialPosition = totalReceivables - totalSupplierDebt;
@@ -77,7 +79,7 @@ export const BankDossierModal: React.FC<BankDossierModalProps> = ({
                     {settings.shopName}
                   </h1>
                   <p className="text-xs text-stone-600 font-medium">
-                    {settings.businessType} • Établi depuis {settings.foundedYear}
+                    {BUSINESS_PRESETS[settings.businessCategory]?.title || settings.businessType} • Établi depuis {settings.foundedYear}
                   </p>
                 </div>
               </div>

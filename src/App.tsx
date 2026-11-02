@@ -36,6 +36,7 @@ import { CreditScoreView } from './components/credit/CreditScoreView';
 import { FormalizationGuide } from './components/formalization/FormalizationGuide';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { uiAlert, uiConfirm } from './components/common/dialogs';
+import { needsRestock } from './services/stockRules';
 
 type SessionState = 'loading' | 'out' | 'in';
 type ShopRole = 'owner' | 'manager' | 'cashier';
@@ -218,7 +219,7 @@ export default function App() {
 
   // Counts for notification badges
   const lowStockCount = useMemo(() => {
-    return products.filter(p => p.stockQuantity <= p.minAlertThreshold).length;
+    return products.filter(needsRestock).length;
   }, [products]);
 
   const debtorsCount = useMemo(() => {

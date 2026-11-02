@@ -16,6 +16,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { Select } from '../common/dialogs';
+import { LOAN_MONTHS, LOAN_MONTHLY_RATE } from '../../services/creditScore';
 
 interface CreditScoreViewProps {
   creditScore: CreditScoreResult;
@@ -42,8 +43,8 @@ export const CreditScoreView: React.FC<CreditScoreViewProps> = ({
 
   // Loan simulator state
   const [loanAmount, setLoanAmount] = useState<number>(creditScore.maxRecommendedLoan || 1000000);
-  const [loanMonths, setLoanMonths] = useState<number>(12);
-  const [interestRateMonthly, setInterestRateMonthly] = useState<number>(1.5); // 1.5% par mois standard microfinance
+  const [loanMonths, setLoanMonths] = useState<number>(LOAN_MONTHS);
+  const [interestRateMonthly, setInterestRateMonthly] = useState<number>(LOAN_MONTHLY_RATE * 100); // 1.5% par mois standard microfinance
 
   // Calculate monthly repayment
   // Formule mensualité: M = P * [r / (1 - (1+r)^-n)]
@@ -213,7 +214,8 @@ export const CreditScoreView: React.FC<CreditScoreViewProps> = ({
             <input
               type="number"
               step="50000"
-              value={loanAmount}
+              value={loanAmount || ''}
+              placeholder="0"
               onChange={(e) => setLoanAmount(Number(e.target.value))}
               className="w-full mt-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl font-mono-num font-bold text-sm text-stone-900"
             />

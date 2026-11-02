@@ -5,7 +5,7 @@ import { PurchaseModal } from '../common/PurchaseModal';
 import { SupplierCreditFields } from '../common/SupplierCreditFields';
 import { applyPurchaseCredit } from '../../services/purchases';
 import { creditPart } from '../../services/treasury';
-import { formatCurrency, getExpenseCategoryDetails, getPaymentMethodDetails } from '../../services/financials';
+import { formatCurrency, getExpenseCategoryDetails, getPaymentMethodDetails, periodStart } from '../../services/financials';
 import { 
   Receipt, 
   Plus, 
@@ -57,8 +57,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
   const paidValue = paidInput ?? amount;
 
   // 30 days cutoff
-  const now = Date.now();
-  const last30dCutoff = now - 30 * 86400000;
+  const last30dCutoff = periodStart(30);
   
   const recentExpenses = useMemo(() => {
     return expenses.filter(e => new Date(e.date).getTime() >= last30dCutoff);
@@ -135,6 +134,21 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
   };
 
   const handleDelete = async (exp: Expense) => {
+    // Achat de marchandises : proposer de retirer du stock les quantités que cet achat avait ajoutées
+    if (exp.stockIn?.length && onUpdateProducts) {
+      const back = new Map<string, number>();
+      for (const si of exp.stockIn) back.set(si.productId, (back.get(si.productId) || 0) + si.qty);
+      const rows = [...back.entries()]
+        .map(([id, qty]) => ({ p: products.find(x => x.id === id), qty }))
+        .filter((r): r is { p: Product; qty: number } => !!r.p && !r.p.isService);
+      if (rows.length) {
+        const list = rows.map(r => `${r.qty} × ${r.p.name}`).join(', ');
+        if (await uiConfirm(`Cet achat avait ajouté au stock : ${list}. Retirer aussi ces quantités du stock ?`)) {
+          const dec = new Map(rows.map(r => [r.p.id, r.qty] as [string, number]));
+          onUpdateProducts(products.map(p => (dec.has(p.id) ? { ...p, stockQuantity: Math.max(0, p.stockQuantity - dec.get(p.id)!) } : p)));
+        }
+      }
+    }
     const credit = creditPart(exp);
     if (exp.supplierId && credit > 0 && onUpdateSuppliers) {
       const sup = suppliers.find(x => x.id === exp.supplierId);

@@ -6,6 +6,13 @@ export function localDay(d: Date | string): string {
   return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
 }
 
+/** Début (minuit local) de la période « N derniers jours », aujourd'hui inclus. Même fenêtre pour tous les écrans. */
+export function periodStart(days: number, now: Date = new Date()): number {
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  d.setDate(d.getDate() - (days - 1));
+  return d.getTime();
+}
+
 export function formatCurrency(amount: number, currency: CurrencyCode = 'XOF'): string {
   const rounded = Math.round(amount);
   const formatted = new Intl.NumberFormat('fr-FR').format(rounded);
@@ -84,7 +91,7 @@ export interface FinancialSummary {
 }
 
 export function calculateSummaryForPeriod(sales: Sale[], expenses: Expense[], daysLimit: number = 30): FinancialSummary {
-  const cutoff = Date.now() - (daysLimit * 86400000);
+  const cutoff = periodStart(daysLimit);
   
   const periodSales = sales.filter(s => s.status !== 'cancelled' && new Date(s.date).getTime() >= cutoff);
   const periodExpenses = expenses.filter(e => new Date(e.date).getTime() >= cutoff);

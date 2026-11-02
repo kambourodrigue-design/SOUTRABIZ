@@ -4,6 +4,7 @@
 // Les ventes à crédit et les achats à crédit ne bougent la trésorerie qu'au moment du paiement.
 
 import { Sale, Expense, Customer, Supplier, ShopSettings, PaymentMethod } from '../types';
+import { periodStart } from './financials';
 
 export type Channel = 'cash' | 'mobile' | 'bank';
 export const channelOf = (m: PaymentMethod | string): Channel | null => {
@@ -39,7 +40,7 @@ export function computeTreasury(
     mobile: Number(settings.openingMobile) || 0,
     bank: Number(settings.openingBank) || 0,
   };
-  const cutoff = Date.now() - 30 * 86400000;
+  const cutoff = periodStart(30);
   let in30 = 0, out30 = 0;
   const inflow = (method: string, amount: number, date: string) => {
     const ch = channelOf(method);

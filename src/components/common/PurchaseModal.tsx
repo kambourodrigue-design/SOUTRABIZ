@@ -62,6 +62,7 @@ export const PurchaseModal: React.FC<Props> = ({
     // Les marchandises reçues entrent en stock (quantité + prix d'achat moyen), ou créent un nouvel article
     let stock = products;
     const now = new Date().toISOString();
+    const stockIn: { productId: string; qty: number }[] = [];
     for (const l of validLines) {
       if (l.productId === NEW) {
         const same = stock.find((p) => p.name.trim().toLowerCase() === l.newName.trim().toLowerCase());
@@ -69,9 +70,12 @@ export const PurchaseModal: React.FC<Props> = ({
           stock = stock.map((p) => (p.id === same.id
             ? { ...p, stockQuantity: p.stockQuantity + l.qty, purchasePrice: weightedCost(p.stockQuantity, p.purchasePrice, l.qty, l.unitPrice), lastRestockedDate: now }
             : p));
+          stockIn.push({ productId: same.id, qty: l.qty });
         } else {
+          const newProdId = newId('prod');
+          stockIn.push({ productId: newProdId, qty: l.qty });
           stock = [...stock, {
-            id: newId('prod'), name: l.newName.trim(), category: 'Divers', purchasePrice: l.unitPrice, sellingPrice: l.newSelling,
+            id: newProdId, name: l.newName.trim(), category: 'Divers', purchasePrice: l.unitPrice, sellingPrice: l.newSelling,
             stockQuantity: l.qty, minAlertThreshold: 5, unit: 'pièce', lastRestockedDate: now,
           }];
         }
@@ -79,6 +83,7 @@ export const PurchaseModal: React.FC<Props> = ({
         stock = stock.map((p) => (p.id === l.productId
           ? { ...p, stockQuantity: p.stockQuantity + l.qty, purchasePrice: weightedCost(p.stockQuantity, p.purchasePrice, l.qty, l.unitPrice), lastRestockedDate: now }
           : p));
+        stockIn.push({ productId: l.productId, qty: l.qty });
       }
     }
     onUpdateProducts(stock);
@@ -91,6 +96,7 @@ export const PurchaseModal: React.FC<Props> = ({
       paymentMethod: method,
       supplierId: res.supplierId,
       paidAmount: paid,
+      stockIn,
     });
     onClose();
   };
@@ -112,7 +118,7 @@ export const PurchaseModal: React.FC<Props> = ({
                   <div className="flex items-start gap-2">
                     <Select className={field + ' !mt-0 flex-1 min-w-0'} value={l.productId} onChange={(e) => pickProduct(l.key, e.target.value)}>
                       <option value="">— Choisir un article —</option>
-                      {products.map((x) => <option key={x.id} value={x.id}>{x.name} (en stock : {x.stockQuantity})</option>)}
+                      {products.filter((x) => !x.isService).map((x) => <option key={x.id} value={x.id}>{x.name} (en stock : {x.stockQuantity})</option>)}
                       <option value={NEW}>➕ Nouvel article</option>
                     </Select>
                     {lines.length > 1 && (
@@ -128,7 +134,7 @@ export const PurchaseModal: React.FC<Props> = ({
                   {l.productId && (
                     <div className="grid grid-cols-2 gap-2">
                       <label className="text-[11px] font-bold text-stone-600">Quantité reçue
-                        <input type="number" min="1" className={field + ' font-mono-num'} value={l.qty || ''} onChange={(e) => setLine(l.key, { qty: Number(e.target.value) })} />
+                        <input type="number" min="0" step="any" className={field + ' font-mono-num'} value={l.qty || ''} onChange={(e) => setLine(l.key, { qty: Number(e.target.value) })} />
                       </label>
                       <label className="text-[11px] font-bold text-stone-600">Prix d'achat unitaire
                         <input type="number" min="0" className={field + ' font-mono-num'} value={l.unitPrice || ''} onChange={(e) => setLine(l.key, { unitPrice: Number(e.target.value) })} />

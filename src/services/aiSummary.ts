@@ -3,6 +3,8 @@
 import { Sale, Expense, Customer, Supplier, Product, ShopSettings } from '../types';
 import { computeTreasury, isStockPurchase } from './treasury';
 import { formatCurrency } from './financials';
+import { BUSINESS_PRESETS } from './businessPresets';
+import { needsRestock } from './stockRules';
 
 const DAY = 86400000;
 
@@ -37,7 +39,7 @@ export function buildAiSummary(
     }
   const top = [...byProd.entries()].sort((a, b) => b[1].r - a[1].r).slice(0, 5)
     .map(([n, v]) => `${n} (${v.q} vendus, ${f(v.r)})`);
-  const low = products.filter(p => p.stockQuantity <= p.minAlertThreshold)
+  const low = products.filter(needsRestock)
     .slice(0, 10).map(p => `${p.name} (reste ${p.stockQuantity} ${p.unit})`);
   const debtors = customers.filter(c => c.totalDebt > 0);
   const owed = debtors.reduce((a, c) => a + c.totalDebt, 0);
@@ -47,7 +49,7 @@ export function buildAiSummary(
   const trend = w0.revenue > 0 ? `${Math.round(((w1.revenue - w0.revenue) / w0.revenue) * 100)} %` : 'n/a';
 
   return [
-    `Boutique : ${settings.shopName} (${settings.businessType || settings.businessCategory}, ${settings.city}). Devise : ${settings.currency}.`,
+    `Boutique : ${settings.shopName} (${BUSINESS_PRESETS[settings.businessCategory]?.title || settings.businessType || settings.businessCategory}, ${settings.city}). Devise : ${settings.currency}.`,
     `Aujourd'hui : ${today.n} ventes, chiffre d'affaires ${f(today.revenue)}, marge brute ${f(today.gross)}.`,
     `7 derniers jours : ${w1.n} ventes, CA ${f(w1.revenue)}, marge brute ${f(w1.gross)}, dépenses ${f(w1.exp)}, bénéfice net ${f(w1.net)}. Évolution du CA vs semaine précédente : ${trend}.`,
     `30 derniers jours : ${m1.n} ventes, CA ${f(m1.revenue)}, marge brute ${f(m1.gross)}, dépenses ${f(m1.exp)}, bénéfice net ${f(m1.net)}.`,

@@ -637,7 +637,7 @@ export const FinancesView: React.FC<FinancesViewProps> = ({
               <span className="font-bold text-stone-900 font-mono-num">{formatCurrency(summary30d.operatingExpenses, settings.currency)}</span>
             </div>
             <div className="flex justify-between text-xs text-stone-600">
-              <span>Seuil de CA mensuel nécessaire :</span>
+              <span>Seuil de CA nécessaire (sur 30 jours) :</span>
               <span className="font-bold text-indigo-700 font-mono-num text-sm">{formatCurrency(breakEvenRevenue, settings.currency)}</span>
             </div>
             <div className="flex justify-between text-xs text-stone-600">
@@ -660,7 +660,7 @@ export const FinancesView: React.FC<FinancesViewProps> = ({
             <p className="text-[11px] text-stone-500 mt-2">
               {breakEvenAchieved 
                 ? `Félicitations ! Vous avez dépassé votre point mort de ${formatCurrency(summary30d.revenue - breakEvenRevenue, settings.currency)}. Chaque nouvelle vente génère du bénéfice net pur.`
-                : `Il vous reste ${formatCurrency(Math.max(0, breakEvenRevenue - summary30d.revenue), settings.currency)} à vendre ce mois-ci pour couvrir l'ensemble de vos charges d'exploitation.`}
+                : `Il vous reste ${formatCurrency(Math.max(0, breakEvenRevenue - summary30d.revenue), settings.currency)} à vendre sur ces 30 jours pour couvrir l'ensemble de vos charges d'exploitation.`}
             </p>
           </div>
         </div>

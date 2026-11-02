@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { Select } from '../common/dialogs';
 import { uiAlert } from '../common/dialogs';
+import { isOutOfStock as outOfStockRule, isLowStock as lowStockRule } from '../../services/stockRules';
 
 interface POSViewProps {
   products: Product[];
@@ -55,6 +56,7 @@ export const POSView: React.FC<POSViewProps> = ({
   };
   /** Peut-on ajouter `add` unités de ce produit au panier ? Sinon, explique pourquoi. */
   const checkStock = (p: Product, add: number): boolean => {
+    if (p.isService) return true;   // une prestation n'a pas de stock
     if (p.stockQuantity <= 0) { setStockNotice(`⛔ « ${p.name} » est en rupture de stock.`); return false; }
     if (qtyInCart(p.id) + add > p.stockQuantity) {
       const left = p.stockQuantity;
@@ -97,6 +99,11 @@ export const POSView: React.FC<POSViewProps> = ({
     return cart.reduce((sum, item) => sum + item.totalPrice, 0);
   }, [cart]);
 
+  // Réduction accordée au client (montant en FCFA), jamais supérieure au sous-total
+  const [discountInput, setDiscountInput] = useState<number>(0);
+  const cartDiscount = Math.min(Math.max(0, Math.round(discountInput || 0)), cartSubtotal);
+  const cartTotal = cartSubtotal - cartDiscount;
+
   const cartTotalCost = useMemo(() => {
     return cart.reduce((sum, item) => sum + (item.costPrice * item.quantity), 0);
   }, [cart]);
@@ -104,6 +111,9 @@ export const POSView: React.FC<POSViewProps> = ({
   const cartTotalItemsCount = useMemo(() => {
     return cart.reduce((sum, item) => sum + item.quantity, 0);
   }, [cart]);
+
+  // Panier vidé : on remet la réduction à zéro
+  useEffect(() => { if (cart.length === 0 && discountInput) setDiscountInput(0); }, [cart.length, discountInput]);
 
   // Add to cart
   const addToCart = (product: Product) => {
@@ -134,7 +144,7 @@ export const POSView: React.FC<POSViewProps> = ({
     // On ne dépasse jamais le stock disponible (stock − déjà dans le panier)
     const notes: string[] = [];
     const lines = rawLines.map(({ product, qty }) => {
-      const free = Math.max(0, product.stockQuantity - qtyInCart(product.id));
+      const free = product.isService ? Infinity : Math.max(0, product.stockQuantity - qtyInCart(product.id));
       if (qty > free) notes.push(free <= 0 ? `« ${product.name} » : rupture` : `« ${product.name} » : seulement ${unitLabel(product, free)} disponible(s)`);
       return { product, qty: Math.min(qty, free) };
     }).filter(l => l.qty > 0);
@@ -177,13 +187,13 @@ export const POSView: React.FC<POSViewProps> = ({
   // Open checkout modal
   const handleOpenCheckout = () => {
     if (cart.length === 0) return;
-    setAmountPaid(cartSubtotal);
+    setAmountPaid(cartTotal);
     setIsCheckoutOpen(true);
   };
 
   // Preset cash quick buttons
   const cashSuggestions = useMemo(() => {
-    const base = cartSubtotal;
+    const base = cartTotal;
     const suggestions: number[] = [base];
     const steps = [500, 1000, 2000, 5000, 10000, 20000];
     for (const step of steps) {
@@ -196,14 +206,14 @@ export const POSView: React.FC<POSViewProps> = ({
       }
     }
     return suggestions.sort((a, b) => a - b).slice(0, 5);
-  }, [cartSubtotal]);
+  }, [cartTotal]);
 
   // Submit sale
   const handleFinalizeSale = () => {
     if (cart.length === 0) return;
     for (const it of cart) {
       const prod = products.find(x => x.id === it.productId);
-      if (prod && it.quantity > prod.stockQuantity) {
+      if (prod && !prod.isService && it.quantity > prod.stockQuantity) {
         uiAlert(prod.stockQuantity <= 0
           ? `« ${prod.name} » est maintenant en rupture de stock. Retirez-le du panier.`
           : `Stock insuffisant pour « ${prod.name} » : il n'en reste que ${unitLabel(prod, prod.stockQuantity)}. Réduisez la quantité.`);
@@ -216,7 +226,7 @@ export const POSView: React.FC<POSViewProps> = ({
       return;
     }
     // Espèces : le montant reçu doit couvrir la vente (sinon, passer en « À crédit »).
-    if (paymentMethod === 'cash' && amountPaid < cartSubtotal) {
+    if (paymentMethod === 'cash' && amountPaid < cartTotal) {
       uiAlert('Le montant reçu est inférieur au total. Corrigez-le, ou choisissez « À crédit » pour noter le reste en dette.');
       return;
     }
@@ -248,7 +258,7 @@ export const POSView: React.FC<POSViewProps> = ({
       // If credit sale, increment customer's debt
       if (paymentMethod === 'credit' && customerId) {
         updatedCustomers = updatedCustomers.map(c => 
-          c.id === customerId ? { ...c, totalDebt: c.totalDebt + cartSubtotal } : c
+          c.id === customerId ? { ...c, totalDebt: c.totalDebt + cartTotal } : c
         );
       }
     }
@@ -256,7 +266,7 @@ export const POSView: React.FC<POSViewProps> = ({
     // Deduct stock from products
     const updatedProducts = products.map(p => {
       const cartItem = cart.find(ci => ci.productId === p.id);
-      if (cartItem) {
+      if (cartItem && !p.isService) {
         return {
           ...p,
           stockQuantity: Math.max(0, p.stockQuantity - cartItem.quantity)
@@ -267,8 +277,8 @@ export const POSView: React.FC<POSViewProps> = ({
 
     const isCredit = paymentMethod === 'credit';
     // Mobile Money / banque : le client paie exactement le total ; seul le cash donne lieu à de la monnaie.
-    const finalAmountPaid = isCredit ? 0 : paymentMethod === 'cash' ? amountPaid : cartSubtotal;
-    const changeGiven = paymentMethod === 'cash' ? Math.max(0, amountPaid - cartSubtotal) : 0;
+    const finalAmountPaid = isCredit ? 0 : paymentMethod === 'cash' ? amountPaid : cartTotal;
+    const changeGiven = paymentMethod === 'cash' ? Math.max(0, amountPaid - cartTotal) : 0;
 
     const invoiceNumber = `FAC-${new Date().getFullYear()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
 
@@ -277,10 +287,10 @@ export const POSView: React.FC<POSViewProps> = ({
       date: new Date().toISOString(),
       items: [...cart],
       subtotal: cartSubtotal,
-      discount: 0,
-      total: cartSubtotal,
+      discount: cartDiscount,
+      total: cartTotal,
       totalCost: cartTotalCost,
-      profit: cartSubtotal - cartTotalCost,
+      profit: cartTotal - cartTotalCost,
       paymentMethod,
       amountPaid: finalAmountPaid,
       changeGiven,
@@ -296,6 +306,7 @@ export const POSView: React.FC<POSViewProps> = ({
     setIsCheckoutOpen(false);
     setCompletedSale(newSale);
     setCart([]);
+    setDiscountInput(0);
   };
 
   return (
@@ -351,8 +362,8 @@ export const POSView: React.FC<POSViewProps> = ({
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-3">
           {filteredProducts.map(product => {
             const inCart = cart.find(ci => ci.productId === product.id);
-            const isOutOfStock = product.stockQuantity <= 0;
-            const isLowStock = product.stockQuantity > 0 && product.stockQuantity <= product.minAlertThreshold;
+            const isOutOfStock = outOfStockRule(product);
+            const isLowStock = lowStockRule(product);
 
             return (
               <div
@@ -474,7 +485,7 @@ export const POSView: React.FC<POSViewProps> = ({
                       <button
                         onClick={() => updateQuantity(item.productId, 1)}
                         aria-label="Ajouter une unité"
-                        className={`w-6 h-6 rounded-lg hover:bg-stone-100 text-stone-600 flex items-center justify-center font-bold transition ${item.quantity >= (products.find(x => x.id === item.productId)?.stockQuantity ?? Infinity) ? 'opacity-30' : ''}`}
+                        className={`w-6 h-6 rounded-lg hover:bg-stone-100 text-stone-600 flex items-center justify-center font-bold transition ${item.quantity >= (() => { const pr = products.find(x => x.id === item.productId); return pr && !pr.isService ? pr.stockQuantity : Infinity; })() ? 'opacity-30' : ''}`}
                       >
                         <Plus className="w-3 h-3" />
                       </button>
@@ -493,10 +504,41 @@ export const POSView: React.FC<POSViewProps> = ({
 
           {/* Cart Bottom Summary & Checkout Button */}
           <div className="pt-3 border-t border-stone-200 space-y-3">
+            {cart.length > 0 && (
+              <div className="space-y-1.5">
+                <div className="flex justify-between items-center text-xs text-stone-500">
+                  <span className="font-semibold">Sous-total</span>
+                  <span className="font-mono-num font-bold">{formatCurrency(cartSubtotal, settings.currency)}</span>
+                </div>
+                <div className="flex justify-between items-center gap-3">
+                  <label htmlFor="pos-discount" className="text-xs font-bold text-stone-600">🏷️ Montant de la réduction</label>
+                  <div className="relative w-32">
+                    <input
+                      id="pos-discount"
+                      data-testid="pos-discount"
+                      type="number"
+                      inputMode="numeric"
+                      min="0"
+                      max={cartSubtotal}
+                      placeholder="0"
+                      value={discountInput || ''}
+                      onChange={(e) => setDiscountInput(Math.min(cartSubtotal, Math.max(0, Number(e.target.value))))}
+                      className="w-full px-2.5 py-1.5 bg-white border border-stone-300 rounded-xl text-right font-black font-mono-num text-sm text-stone-900 focus:ring-2 focus:ring-emerald-700"
+                    />
+                  </div>
+                </div>
+                {cartDiscount > 0 && (
+                  <div className="flex justify-between items-center text-xs text-rose-600 font-bold">
+                    <span>Réduction appliquée</span>
+                    <span className="font-mono-num">- {formatCurrency(cartDiscount, settings.currency)}</span>
+                  </div>
+                )}
+              </div>
+            )}
             <div className="flex justify-between items-baseline">
               <span className="text-xs uppercase font-extrabold text-stone-500 tracking-wider">Total à encaisser :</span>
               <span className="text-2xl font-black text-stone-950 font-mono-num">
-                {formatCurrency(cartSubtotal, settings.currency)}
+                {formatCurrency(cartTotal, settings.currency)}
               </span>
             </div>
 
@@ -533,7 +575,7 @@ export const POSView: React.FC<POSViewProps> = ({
 
             <div className="flex items-center gap-2">
               <span className="text-sm sm:text-base font-black font-mono-num">
-                {formatCurrency(cartSubtotal, settings.currency)}
+                {formatCurrency(cartTotal, settings.currency)}
               </span>
               <div className="bg-amber-400 text-emerald-950 px-3 py-1 rounded-xl text-xs font-black flex items-center gap-1 shadow-xs">
                 <span>Encaisser</span>
@@ -552,7 +594,7 @@ export const POSView: React.FC<POSViewProps> = ({
             <div className="flex items-center justify-between pb-3 border-b border-stone-100">
               <div>
                 <h3 className="font-black text-lg text-stone-900">Finaliser l'Encaissement</h3>
-                <p className="text-xs text-stone-500">{cartTotalItemsCount} article(s) • Total : {formatCurrency(cartSubtotal, settings.currency)}</p>
+                <p className="text-xs text-stone-500">{cartTotalItemsCount} article(s) • Total : {formatCurrency(cartTotal, settings.currency)}{cartDiscount > 0 ? ` (réduction de ${formatCurrency(cartDiscount, settings.currency)} déduite)` : ''}</p>
               </div>
               <button
                 onClick={() => setIsCheckoutOpen(false)}
@@ -581,7 +623,7 @@ export const POSView: React.FC<POSViewProps> = ({
                     type="button"
                     onClick={() => {
                       setPaymentMethod(item.id as PaymentMethod);
-                      if (item.id === 'cash') setAmountPaid(cartSubtotal);
+                      if (item.id === 'cash') setAmountPaid(cartTotal);
                     }}
                     className={`p-2.5 rounded-xl border text-xs font-bold text-left transition ${
                       paymentMethod === item.id
@@ -632,10 +674,10 @@ export const POSView: React.FC<POSViewProps> = ({
                 {/* Change to return */}
                 <div className="pt-2 border-t border-stone-200 flex justify-between items-center text-sm">
                   <span className="font-semibold text-stone-600">Monnaie à rendre :</span>
-                  <span className={`text-base font-black font-mono-num ${amountPaid >= cartSubtotal ? 'text-emerald-700' : 'text-rose-600'}`}>
-                    {amountPaid >= cartSubtotal 
-                      ? formatCurrency(amountPaid - cartSubtotal, settings.currency)
-                      : `Manque ${formatCurrency(cartSubtotal - amountPaid, settings.currency)}`}
+                  <span className={`text-base font-black font-mono-num ${amountPaid >= cartTotal ? 'text-emerald-700' : 'text-rose-600'}`}>
+                    {amountPaid >= cartTotal 
+                      ? formatCurrency(amountPaid - cartTotal, settings.currency)
+                      : `Manque ${formatCurrency(cartTotal - amountPaid, settings.currency)}`}
                   </span>
                 </div>
               </div>

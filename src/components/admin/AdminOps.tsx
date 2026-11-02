@@ -53,7 +53,7 @@ export const AdminBillingPanel: React.FC = () => {
   useEffect(() => { load(); }, []);
   if (err && !d) return <p className="text-sm text-red-700">{err} (la migration v5 a-t-elle été exécutée ?)</p>;
   if (!d || !f) return <p className="text-sm text-stone-500">Chargement…</p>;
-  const num = (k: keyof BillingAdminSettings) => <input type="number" min={0} className={inp} value={f[k] as number} onChange={e => setF({ ...f, [k]: Number(e.target.value) })} />;
+  const num = (k: keyof BillingAdminSettings) => <input type="number" min={0} className={inp} value={(f[k] as number) || ''} placeholder="0" onChange={e => setF({ ...f, [k]: Number(e.target.value) })} />;
   const save = async () => { setErr(''); setMsg(''); try { await api.adminBillingSave(f); setMsg('Réglages enregistrés.'); load(); } catch (e) { setErr((e as Error).message); } };
   const decide = async (p: PaymentRow, a: 'approve' | 'reject') => {
     const note = a === 'reject' ? (await uiPrompt('Motif du refus (facultatif) :') ?? '') : '';

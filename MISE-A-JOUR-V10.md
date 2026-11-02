@@ -1,0 +1,12 @@
+# Mise à jour V10
+
+- **Vente (POS)** : champ « Montant de la réduction » dans le panier. Le total à encaisser, la monnaie, la dette (vente à crédit), le bénéfice, le reçu (écran, PDF, WhatsApp) tiennent compte de la réduction.
+- **Activités** : 14 nouveaux secteurs (poissonnerie, télécom, mode & vêtements, boucherie/volaille, boulangerie, céréales, intrants agricoles, élevage, électroménager & solaire, gaz & énergie, librairie/papeterie, cosmétiques, pressing, artisanat & karité) avec catégories, unités et produits de démonstration. Les listes (inscription, paramètres, admin) se génèrent automatiquement depuis `businessPresets.ts`.
+- **Champs numériques** : suppression du « 0 » qui restait devant le chiffre saisi (stock, seuil d'alerte, réapprovisionnement, prix d'achat du lot, paiement fournisseur, montant du prêt, réglages admin, quantité vocale).
+- **Audit** : l'activité affichée (tableau de bord, dossier bancaire, résumé IA, admin) vient maintenant du secteur choisi et non plus du nom de la boutique ; le calcul du coût moyen pondéré n'existe plus qu'à un seul endroit (`services/purchases.ts`).
+- **Prestations sans stock** : nouvelle case « C'est une prestation (sans stock) » sur l'article. Une prestation n'est jamais en rupture, n'est pas décomptée à la vente, n'apparaît pas dans les achats fournisseur et n'est plus comptée dans la valeur du stock (écran Stock, dossier bancaire, score de crédit). Règles centralisées dans `services/stockRules.ts`. Les articles de démonstration des services sont déjà marqués.
+- **Période de 30 jours unique** : `periodStart(30)` (minuit local, aujourd'hui inclus) sert au score de crédit, au seuil de rentabilité, à la trésorerie et aux dépenses. Libellés précisés (« sur 30 jours »).
+- **Prêt conseillé** : calculé par annuité (12 mois, 1,5 %/mois, mêmes valeurs que le simulateur), arrondi vers le bas. La mensualité du prêt conseillé ne dépasse plus la capacité de remboursement.
+- **Suppression d'un achat** : propose de retirer du stock les quantités que l'achat avait ajoutées (achats enregistrés à partir de cette version).
+- **Réapprovisionnement** : message clair si la quantité est 0 ; les quantités décimales (2,5 kg) sont acceptées.
+- **Tests** : `tests/calculs.test.ts` (28 tests sur la réduction, la trésorerie, les achats, le stock, les périodes et le prêt). Lancer : `npx tsx tests/calculs.test.ts`.

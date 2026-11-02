@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Select } from '../common/dialogs';
 import { uiAlert, uiConfirm } from '../common/dialogs';
+import { BUSINESS_PRESETS } from '../../services/businessPresets';
 
 interface SettingsModalProps {
   settings: ShopSettings;
@@ -244,15 +245,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 onChange={(e) => setFormData({ ...formData, businessCategory: e.target.value as any })}
                 className="w-full mt-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs sm:text-sm font-bold text-emerald-900"
               >
-                <option value="retail_food">🛒 Commerce Général & Alimentation</option>
-                <option value="fashion_tailor">👗 Couture & Atelier Mode</option>
-                <option value="hardware_craft">🔨 Quincaillerie & BTP</option>
-                <option value="restaurant_maquis">🍽️ Restaurant, Fast-food & Maquis</option>
-                <option value="beauty_salon">💇 Salon Coiffure & Esthétique</option>
-                <option value="garage_mechanic">🔧 Garage & Pièces Auto/Moto</option>
-                <option value="services_cyber">📱 Services, Cyber & Mobile Money</option>
-                <option value="health_pharma">💊 Dépôt Pharmaceutique</option>
-                <option value="other">🏢 Autre Activité</option>
+                {Object.values(BUSINESS_PRESETS).map(preset => (
+                  <option key={preset.id} value={preset.id}>{preset.icon} {preset.title}</option>
+                ))}
               </Select>
             </div>
           </div>

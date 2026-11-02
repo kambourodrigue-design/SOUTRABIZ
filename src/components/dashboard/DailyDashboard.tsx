@@ -1,6 +1,7 @@
 import { TreasuryCard } from './TreasuryCard';
 import { FeedbackCard } from './FeedbackCard';
 import React, { useMemo } from 'react';
+import { BUSINESS_PRESETS } from '../../services/businessPresets';
 import { Sale, Expense, Customer, Supplier, Product, ShopSettings, CreditScoreResult } from '../../types';
 import { formatCurrency, localDay } from '../../services/financials';
 import { 
@@ -31,6 +32,7 @@ import {
   Truck,
   Scale
 } from 'lucide-react';
+import { needsRestock } from '../../services/stockRules';
 
 interface DailyDashboardProps {
   sales: Sale[];
@@ -87,7 +89,7 @@ export const DailyDashboard: React.FC<DailyDashboardProps> = ({
   const netDebtBalance = totalOutstandingDebts - totalSupplierDebts;
 
   // Low stock products
-  const lowStockItems = products.filter(p => p.stockQuantity <= p.minAlertThreshold);
+  const lowStockItems = products.filter(needsRestock);
 
   // Practical tip of the day for informal/formal merchants
   const dailyTips = [
@@ -158,7 +160,7 @@ export const DailyDashboard: React.FC<DailyDashboardProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs uppercase tracking-wider font-extrabold text-amber-400 bg-amber-400/10 px-2.5 py-0.5 rounded-full border border-amber-400/20">
-                {settings.businessType}
+                {BUSINESS_PRESETS[settings.businessCategory]?.title || settings.businessType}
               </span>
               <span className="text-xs text-emerald-200">
                 Aujourd'hui, {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}

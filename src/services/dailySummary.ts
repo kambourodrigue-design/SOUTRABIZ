@@ -2,6 +2,7 @@ import { Customer, Expense, Product, Sale, ShopSettings } from '../types';
 import { formatCurrency, localDay } from './financials';
 import { cleanPhoneNumber } from './whatsapp';
 import { dueReminders } from './reminders';
+import { needsRestock } from './stockRules';
 
 
 export interface DailySummary {
@@ -22,7 +23,7 @@ export function buildDailySummary(
     .filter((e) => isToday(e.date) && e.category !== 'personal_draw' && e.category !== 'supply')
     .reduce((a, e) => a + e.amount, 0);
   const net = profit - expensesTotal;
-  const lowStock = products.filter((p) => p.stockQuantity <= p.minAlertThreshold).sort((a, b) => a.stockQuantity - b.stockQuantity);
+  const lowStock = products.filter(needsRestock).sort((a, b) => a.stockQuantity - b.stockQuantity);
   const toRemind = dueReminders(customers);
   const m = (n: number) => formatCurrency(n, s.currency);
   const date = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });

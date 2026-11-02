@@ -41,7 +41,7 @@ export const SupplierCreditFields: React.FC<Props> = ({
       </div>
       <div>
         <label className="text-[11px] font-bold text-stone-700">Payé maintenant ({currency})</label>
-        <input type="number" min="0" max={total} className={field + ' font-mono-num font-bold'} value={paid}
+        <input type="number" min="0" max={total} className={field + ' font-mono-num font-bold'} value={paid || ''} placeholder="0"
           onChange={(e) => setPaid(Math.min(total, Math.max(0, Number(e.target.value))))} />
         <div className="flex gap-1.5 mt-1.5">
           <button type="button" onClick={() => setPaid(total)} className="px-2.5 py-1 rounded-lg bg-white border border-stone-200 text-[11px] font-bold">Tout payé</button>

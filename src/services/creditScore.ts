@@ -1,5 +1,10 @@
 import { Sale, Expense, Customer, Supplier, Product, CreditScoreResult, CreditScoreFactor } from '../types';
-import { calculateSummaryForPeriod, localDay } from './financials';
+import { calculateSummaryForPeriod, localDay, periodStart } from './financials';
+import { stockCostValue, isOutOfStock, isLowStock } from './stockRules';
+
+/** Hypothèses par défaut du prêt conseillé (reprises par le simulateur de l'écran Crédit). */
+export const LOAN_MONTHS = 12;
+export const LOAN_MONTHLY_RATE = 0.015; // 1,5 % par mois, taux indicatif de microfinance
 
 export function calculateCreditScore(
   sales: Sale[],
@@ -13,7 +18,7 @@ export function calculateCreditScore(
   
   // 1. Régularité des flux d'encaissement (250 pts max)
   // Analyse des jours de vente sur les 30 derniers jours
-  const cutoff30 = Date.now() - 30 * 86400000;
+  const cutoff30 = periodStart(30);
   const uniqueSalesDays = new Set(
     sales.filter(s => s.status !== 'cancelled' && new Date(s.date).getTime() >= cutoff30).map(s => localDay(s.date))
   ).size;
@@ -50,7 +55,7 @@ export function calculateCreditScore(
     maxScore: 200,
     weight: 20,
     status: marginScore >= 165 ? 'excellent' : marginScore >= 120 ? 'good' : marginScore >= 80 ? 'average' : 'poor',
-    feedback: `Marge nette estimée à ${summary30d.netMarginPct.toFixed(1)}%. Bénéfice net mensuel : ${Math.round(summary30d.netProfit)} F CFA.`,
+    feedback: `Marge nette estimée à ${summary30d.netMarginPct.toFixed(1)}%. Bénéfice net sur 30 jours : ${Math.round(summary30d.netProfit)} F CFA.`,
     recommendation: summary30d.netMarginPct < 15 ? "Optimisez vos coûts d'approvisionnement ou limitez les dépenses imprévues pour dégager au moins 15% de marge." : "Marge saine permettant le remboursement aisé d'échéances de prêt."
   };
 
@@ -93,9 +98,10 @@ export function calculateCreditScore(
   };
 
   // 4. Gestion et valeur du stock marchand (150 pts max)
-  const totalStockValue = products.reduce((acc, p) => acc + (p.stockQuantity * p.purchasePrice), 0);
-  const outOfStockCount = products.filter(p => p.stockQuantity === 0).length;
-  const lowStockCount = products.filter(p => p.stockQuantity > 0 && p.stockQuantity <= p.minAlertThreshold).length;
+  // Les prestations n'ont pas de stock : elles ne comptent ni dans la valeur du stock ni dans les ruptures
+  const totalStockValue = stockCostValue(products);
+  const outOfStockCount = products.filter(isOutOfStock).length;
+  const lowStockCount = products.filter(isLowStock).length;
 
   let stockScore = 150;
   if (outOfStockCount > 2) stockScore -= 50;
@@ -192,12 +198,14 @@ export function calculateCreditScore(
     eligibilityVerdict = 'HIGH_RISK';
   }
 
-  // Capacité de remboursement mensuel = 35% du bénéfice net mensuel
+  // Capacité de remboursement mensuel = 35% du bénéfice net sur 30 jours
   const monthlyCapacity = Math.max(0, summary30d.netProfit * 0.35);
-  // Montant prêt max conseillé sur 12 mois
-  const rawLoan = monthlyCapacity * 10;
+  // Capital qu'une mensualité égale à cette capacité permet de rembourser (annuité constante, intérêts compris)
+  const annuityFactor = (1 - Math.pow(1 + LOAN_MONTHLY_RATE, -LOAN_MONTHS)) / LOAN_MONTHLY_RATE;
+  const rawLoan = monthlyCapacity * annuityFactor;
   const loanStep = rawLoan >= 200000 ? 50000 : 10000;   // arrondi adapté à la taille du prêt
-  const maxRecommendedLoan = Math.round(rawLoan / loanStep) * loanStep;
+  // Arrondi vers le bas : la mensualité du prêt conseillé ne dépasse jamais la capacité
+  const maxRecommendedLoan = Math.floor(rawLoan / loanStep) * loanStep;
 
   return {
     totalScore,

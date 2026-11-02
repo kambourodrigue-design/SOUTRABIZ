@@ -75,12 +75,12 @@ export const VoiceSaleModal: React.FC<Props> = ({ products, customers, onClose, 
             {res.lines.length === 0 && <p className="text-sm text-stone-500">Aucun article compris. Reformulez la phrase.</p>}
             {res.lines.map((l, i) => (
               <div key={i} className={`flex items-center gap-2 p-2 rounded-xl border ${l.product ? 'border-emerald-200 bg-emerald-50' : 'border-amber-300 bg-amber-50'}`}>
-                <input type="number" min={1} value={l.qty} onChange={e => setQty(i, parseInt(e.target.value, 10))} className="w-14 px-2 py-1 rounded-lg border border-stone-300 text-sm" />
+                <input type="number" min={1} value={l.qty || ''} placeholder="1" onChange={e => setQty(i, parseInt(e.target.value, 10))} className="w-14 px-2 py-1 rounded-lg border border-stone-300 text-sm" />
                 <Select value={l.product?.id || ''} onChange={e => setProd(i, e.target.value)} className="flex-1 min-w-0 px-2 py-1 rounded-lg border border-stone-300 text-sm">
                   <option value="">« {l.label} » : choisir…</option>
                   {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </Select>
-                {l.product && l.qty > l.product.stockQuantity && <span className="text-[10px] text-rose-700 font-bold">Stock {l.product.stockQuantity}</span>}
+                {l.product && !l.product.isService && l.qty > l.product.stockQuantity && <span className="text-[10px] text-rose-700 font-bold">Stock {l.product.stockQuantity}</span>}
               </div>
             ))}
             {res.payment && <p className="text-xs text-stone-600">Paiement détecté : <b>{res.payment === 'credit' ? 'à crédit' : res.payment === 'mobile' ? 'mobile money (à choisir à l\'encaissement)' : 'espèces'}</b>{res.customerId ? ` • client : ${customers.find(c => c.id === res.customerId)?.name}` : ''}</p>}

@@ -30,6 +30,7 @@ export interface Product {
   stockQuantity: number;   // Quantité disponible
   minAlertThreshold: number; // Seuil d'alerte rupture
   unit: string;            // 'pièce', 'kg', 'carton', 'paquet', 'litre', 'mètre'
+  isService?: boolean;     // Prestation : pas de suivi de stock (jamais en rupture, exclue de la valeur du stock)
   lastRestockedDate?: string;
 }
 
@@ -73,6 +74,7 @@ export interface Expense {
   isRecurring?: boolean;
   supplierId?: string;      // achat chez un fournisseur
   paidAmount?: number;      // montant payé tout de suite (le reste = dette fournisseur)
+  stockIn?: { productId: string; qty: number }[]; // marchandises entrées en stock par cet achat (retirées si l'achat est supprimé)
 }
 
 export interface DebtPayment {
@@ -165,6 +167,20 @@ export type BusinessCategoryType =
   | 'garage_mechanic'   // Garage, Mécanique, Pièces détachées
   | 'services_cyber'    // Services, Bureautique, Cyber, Transferts Mobile Money
   | 'health_pharma'     // Dépôt pharmaceutique, Cosmétique médicale
+  | 'fish_market'       // Poissonnerie, poisson frais/fumé/congelé
+  | 'butcher_poultry'   // Boucherie, volaille, charcuterie
+  | 'bakery_pastry'     // Boulangerie, pâtisserie
+  | 'cereals_agri'      // Céréales, légumes, fruits, produits du terroir
+  | 'agri_inputs'       // Intrants agricoles, engrais, semences, matériel
+  | 'livestock'         // Élevage, bétail, aliments bétail
+  | 'telecom'           // Téléphones, accessoires, SIM, Mobile Money, crédit
+  | 'clothing_shop'     // Mode & vêtements, friperie, chaussures
+  | 'electronics_solar' // Électroménager, électronique, solaire
+  | 'gas_energy'        // Gaz butane, énergie, lubrifiants
+  | 'stationery_books'  // Librairie, papeterie, fournitures scolaires
+  | 'cosmetics_shop'    // Cosmétiques, parfums, produits de beauté
+  | 'laundry_pressing'  // Pressing, blanchisserie
+  | 'artisan_shea'      // Artisanat, cuir, karité, poterie
   | 'other';            // Autre activité
 
 export interface BusinessActivityPreset {

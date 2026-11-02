@@ -126,6 +126,18 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
 
           {/* Total & Payment details */}
           <div className="py-3 border-b border-dashed border-stone-300 space-y-1.5 text-sm">
+            {sale.discount > 0 && (
+              <>
+                <div className="flex justify-between text-xs text-stone-600">
+                  <span>Sous-total :</span>
+                  <span className="font-semibold text-stone-900">{formatCurrency(sale.subtotal, settings.currency)}</span>
+                </div>
+                <div className="flex justify-between text-xs text-rose-600 font-bold">
+                  <span>Réduction :</span>
+                  <span>- {formatCurrency(sale.discount, settings.currency)}</span>
+                </div>
+              </>
+            )}
             <div className="flex justify-between text-base font-black text-stone-950 pt-1">
               <span>TOTAL :</span>
               <span>{formatCurrency(sale.total, settings.currency)}</span>

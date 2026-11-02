@@ -2,7 +2,7 @@ import { newId } from '../../../shared/syncCore';
 import React, { useState, useMemo, useEffect } from 'react';
 import { Product, ShopSettings, Supplier, Expense, PaymentMethod } from '../../types';
 import { SupplierCreditFields } from '../common/SupplierCreditFields';
-import { applyPurchaseCredit } from '../../services/purchases';
+import { applyPurchaseCredit, weightedCost } from '../../services/purchases';
 import { formatCurrency } from '../../services/financials';
 import { 
   Package, 
@@ -21,6 +21,7 @@ import {
 import { Select } from '../common/dialogs';
 import { uiAlert, uiConfirm } from '../common/dialogs';
 import { Thumb } from './Thumb';
+import { isOutOfStock, isLowStock, stockUnits, stockCostValue, stockSalesValue } from '../../services/stockRules';
 import { usePhotos, photoUrl, loadPhotos, compressImage, savePhoto, removePhoto } from '../../services/photos';
 
 interface StockViewProps {
@@ -56,6 +57,7 @@ export const StockView: React.FC<StockViewProps> = ({
   const [formQuantity, setFormQuantity] = useState<number>(10);
   const [formThreshold, setFormThreshold] = useState<number>(5);
   const [formUnit, setFormUnit] = useState('pièce');
+  const [formIsService, setFormIsService] = useState(false);
   // Photo du produit (envoyée à l'enregistrement)
   const photos = usePhotos();
   const [formId, setFormId] = useState('');
@@ -79,15 +81,15 @@ export const StockView: React.FC<StockViewProps> = ({
 
   // Stats
   const totalStockItemsCount = useMemo(() => {
-    return products.reduce((sum, p) => sum + p.stockQuantity, 0);
+    return stockUnits(products);
   }, [products]);
 
   const totalStockCostValue = useMemo(() => {
-    return products.reduce((sum, p) => sum + (p.stockQuantity * p.purchasePrice), 0);
+    return stockCostValue(products);
   }, [products]);
 
   const totalPotentialSalesValue = useMemo(() => {
-    return products.reduce((sum, p) => sum + (p.stockQuantity * p.sellingPrice), 0);
+    return stockSalesValue(products);
   }, [products]);
 
   const potentialProfitValue = totalPotentialSalesValue - totalStockCostValue;
@@ -98,8 +100,8 @@ export const StockView: React.FC<StockViewProps> = ({
       const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.category.toLowerCase().includes(searchQuery.toLowerCase());
       
-      if (filterType === 'out') return matchesSearch && p.stockQuantity === 0;
-      if (filterType === 'low') return matchesSearch && p.stockQuantity > 0 && p.stockQuantity <= p.minAlertThreshold;
+      if (filterType === 'out') return matchesSearch && isOutOfStock(p);
+      if (filterType === 'low') return matchesSearch && isLowStock(p);
       return matchesSearch;
     });
   }, [products, searchQuery, filterType]);
@@ -117,6 +119,7 @@ export const StockView: React.FC<StockViewProps> = ({
       setFormQuantity(existing.stockQuantity);
       setFormThreshold(existing.minAlertThreshold);
       setFormUnit(existing.unit);
+      setFormIsService(!!existing.isService);
     } else {
       setTargetProduct(null);
       setFormName('');
@@ -126,6 +129,7 @@ export const StockView: React.FC<StockViewProps> = ({
       setFormQuantity(10);
       setFormThreshold(5);
       setFormUnit('pièce');
+      setFormIsService(false);
     }
     setIsAddModalOpen(true);
   };
@@ -153,9 +157,10 @@ export const StockView: React.FC<StockViewProps> = ({
               category: formCategory,
               purchasePrice: Number(formPurchasePrice),
               sellingPrice: Number(formSellingPrice),
-              stockQuantity: Number(formQuantity),
-              minAlertThreshold: Number(formThreshold),
+              stockQuantity: formIsService ? 0 : Number(formQuantity),
+              minAlertThreshold: formIsService ? 0 : Number(formThreshold),
               unit: formUnit,
+              isService: formIsService,
             }
           : p
       );
@@ -168,9 +173,10 @@ export const StockView: React.FC<StockViewProps> = ({
         category: formCategory,
         purchasePrice: Number(formPurchasePrice),
         sellingPrice: Number(formSellingPrice),
-        stockQuantity: Number(formQuantity),
-        minAlertThreshold: Number(formThreshold),
+        stockQuantity: formIsService ? 0 : Number(formQuantity),
+        minAlertThreshold: formIsService ? 0 : Number(formThreshold),
         unit: formUnit,
+        isService: formIsService,
       };
       onUpdateProducts([...products, newProd]);
     }
@@ -198,16 +204,10 @@ export const StockView: React.FC<StockViewProps> = ({
     setIsRestockModalOpen(true);
   };
 
-  // Coût moyen pondéré (CMUP) après réapprovisionnement
-  const weightedCost = (oldQty: number, oldPrice: number, newQty: number, newPrice: number) => {
-    const q0 = Math.max(0, oldQty);
-    if (q0 + newQty <= 0) return newPrice;
-    return Math.round((q0 * oldPrice + newQty * newPrice) / (q0 + newQty));
-  };
-
   const handleSaveRestock = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!targetProduct || restockQty <= 0) return;
+    if (!targetProduct) return;
+    if (!(Number(restockQty) > 0)) { uiAlert('Indiquez la quantité reçue (supérieure à 0).'); return; }
 
     // Achat : sortie de trésorerie, et dette fournisseur pour la partie non payée
     const unitPrice = restockNewPurchasePrice > 0 ? Number(restockNewPurchasePrice) : targetProduct.purchasePrice;
@@ -229,6 +229,7 @@ export const StockView: React.FC<StockViewProps> = ({
         paymentMethod: restockMethod,
         supplierId: res.supplierId,
         paidAmount: paid,
+        stockIn: [{ productId: targetProduct.id, qty: Number(restockQty) }],
       });
     }
 
@@ -381,8 +382,8 @@ export const StockView: React.FC<StockViewProps> = ({
             <div className="text-center py-8 text-stone-400 text-sm">Aucun article trouvé pour ce filtre.</div>
           ) : filteredProducts.map(product => {
             const unitMargin = product.sellingPrice - product.purchasePrice;
-            const isOut = product.stockQuantity === 0;
-            const isLow = product.stockQuantity > 0 && product.stockQuantity <= product.minAlertThreshold;
+            const isOut = isOutOfStock(product);
+            const isLow = isLowStock(product);
             return (
               <div key={product.id} className="p-3.5 space-y-2.5">
                 <div className="flex items-start justify-between gap-3">
@@ -397,9 +398,9 @@ export const StockView: React.FC<StockViewProps> = ({
                     </div>
                   </div>
                   <span className={`shrink-0 inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold whitespace-nowrap ${
-                    isOut ? 'bg-rose-100 text-rose-800 border border-rose-200' : isLow ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-emerald-100 text-emerald-800'
+                    product.isService ? 'bg-sky-100 text-sky-800' : isOut ? 'bg-rose-100 text-rose-800 border border-rose-200' : isLow ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-emerald-100 text-emerald-800'
                   }`}>
-                    {product.stockQuantity} {product.unit}
+                    {product.isService ? 'Prestation' : `${product.stockQuantity} ${product.unit}`}
                   </span>
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-center">
@@ -417,7 +418,7 @@ export const StockView: React.FC<StockViewProps> = ({
                   </div>
                 </div>
                 <div className="flex items-center justify-end gap-1.5">
-                  <button onClick={() => handleOpenRestockModal(product)} className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 font-bold text-xs">+ Réappro</button>
+                  {!product.isService && <button onClick={() => handleOpenRestockModal(product)} className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 font-bold text-xs">+ Réappro</button>}
                   <button onClick={() => handleOpenAddModal(product)} className="p-2 rounded-lg text-stone-500 hover:bg-stone-100" title="Modifier"><Edit3 className="w-4 h-4" /></button>
                   <button onClick={() => handleDeleteProduct(product.id)} className="p-2 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-stone-100" title="Supprimer"><Trash2 className="w-4 h-4" /></button>
                 </div>
@@ -448,8 +449,8 @@ export const StockView: React.FC<StockViewProps> = ({
               ) : (
                 filteredProducts.map(product => {
                   const unitMargin = product.sellingPrice - product.purchasePrice;
-                  const isOut = product.stockQuantity === 0;
-                  const isLow = product.stockQuantity > 0 && product.stockQuantity <= product.minAlertThreshold;
+                  const isOut = isOutOfStock(product);
+                  const isLow = isLowStock(product);
 
                   return (
                     <tr key={product.id} className="hover:bg-stone-50/80 transition">
@@ -484,18 +485,21 @@ export const StockView: React.FC<StockViewProps> = ({
 
                       <td className="py-3 px-3 text-center">
                         <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
-                          isOut
+                          product.isService
+                            ? 'bg-sky-100 text-sky-800'
+                            : isOut
                             ? 'bg-rose-100 text-rose-800 border border-rose-200'
                             : isLow
                               ? 'bg-amber-100 text-amber-800 border border-amber-200'
                               : 'bg-emerald-100 text-emerald-800'
                         }`}>
-                          {product.stockQuantity} {product.unit}
+                          {product.isService ? 'Prestation' : `${product.stockQuantity} ${product.unit}`}
                         </span>
                       </td>
 
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          {!product.isService && (
                           <button
                             onClick={() => handleOpenRestockModal(product)}
                             className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs transition"
@@ -503,6 +507,7 @@ export const StockView: React.FC<StockViewProps> = ({
                           >
                             + Réappro
                           </button>
+                          )}
                           <button
                             onClick={() => handleOpenAddModal(product)}
                             className="p-1.5 rounded-lg text-stone-500 hover:text-stone-800 hover:bg-stone-100"
@@ -637,12 +642,21 @@ export const StockView: React.FC<StockViewProps> = ({
                 </span>
               </div>
 
+              <label className="flex items-start gap-2 p-3 rounded-xl bg-sky-50 border border-sky-200 text-xs text-sky-900 cursor-pointer">
+                <input type="checkbox" checked={formIsService} onChange={(e) => setFormIsService(e.target.checked)} className="mt-0.5" data-testid="form-is-service" />
+                <span><strong>C'est une prestation (sans stock)</strong> — coiffure, réparation, lavage, commission… Elle n'est jamais en rupture et ne compte pas dans la valeur du stock.</span>
+              </label>
+
+              {!formIsService && (
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-stone-700">Quantité en stock</label>
                   <input
                     type="number"
-                    value={formQuantity}
+                    step="any"
+                    value={formQuantity || ''}
+                    placeholder="0"
+                    inputMode="decimal"
                     onChange={(e) => setFormQuantity(Number(e.target.value))}
                     className="w-full mt-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-sm font-mono-num"
                   />
@@ -652,12 +666,16 @@ export const StockView: React.FC<StockViewProps> = ({
                   <label className="text-xs font-bold text-stone-700">Seuil d'alerte rupture</label>
                   <input
                     type="number"
-                    value={formThreshold}
+                    step="any"
+                    value={formThreshold || ''}
+                    placeholder="0"
+                    inputMode="decimal"
                     onChange={(e) => setFormThreshold(Number(e.target.value))}
                     className="w-full mt-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-sm font-mono-num"
                   />
                 </div>
               </div>
+              )}
 
               <div className="pt-3 flex gap-2">
                 <button
@@ -699,9 +717,10 @@ export const StockView: React.FC<StockViewProps> = ({
                 <label className="text-xs font-bold text-stone-700">Quantité livrée à ajouter ({targetProduct.unit})</label>
                 <input
                   type="number"
-                  min="1"
-                  required
-                  value={restockQty}
+                  min="0"
+                  step="any"
+                  value={restockQty || ''}
+                  placeholder="0"
                   onChange={(e) => setRestockQty(Number(e.target.value))}
                   className="w-full mt-1 px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl font-mono-num font-bold text-base"
                 />
@@ -714,7 +733,8 @@ export const StockView: React.FC<StockViewProps> = ({
                 <label className="text-xs font-bold text-stone-700">Prix d'achat unitaire de ce lot</label>
                 <input
                   type="number"
-                  value={restockNewPurchasePrice}
+                  value={restockNewPurchasePrice || ''}
+                  placeholder="0"
                   onChange={(e) => setRestockNewPurchasePrice(Number(e.target.value))}
                   className="w-full mt-1 px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl font-mono-num text-sm"
                 />

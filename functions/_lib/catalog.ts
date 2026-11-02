@@ -132,7 +132,7 @@ export async function renderCatalog(env: Env, slugRaw: string, origin = ''): Pro
 
   const cur = String(st.currency || 'XOF');
   const items = rows.map((r) => { try { return JSON.parse(r.json); } catch { return null; } })
-    .filter((p: any) => p && p.name && Number(p.sellingPrice) > 0 && Number(p.stockQuantity) > 0)
+    .filter((p: any) => p && p.name && Number(p.sellingPrice) > 0 && (p.isService === true || Number(p.stockQuantity) > 0))
     .sort((a: any, b: any) => String(a.category).localeCompare(String(b.category), 'fr') || String(a.name).localeCompare(String(b.name), 'fr'));
 
   const rawPhone = String(st.phone || '');

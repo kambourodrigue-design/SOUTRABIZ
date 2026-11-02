@@ -124,9 +124,9 @@ export const StockView: React.FC<StockViewProps> = ({
       setTargetProduct(null);
       setFormName('');
       setFormCategory('Alimentation');
-      setFormPurchasePrice(1000);
-      setFormSellingPrice(1300);
-      setFormQuantity(10);
+      setFormPurchasePrice(0);
+      setFormSellingPrice(0);
+      setFormQuantity(0);
       setFormThreshold(5);
       setFormUnit('pièce');
       setFormIsService(false);
@@ -612,10 +612,11 @@ export const StockView: React.FC<StockViewProps> = ({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-stone-700">Prix d'Achat unitaire</label>
+                  <label className="text-xs font-bold text-stone-700">Prix d'Achat unitaire {formIsService && <span className="font-normal text-stone-500">(optionnel)</span>}</label>
                   <input
                     type="number"
-                    required
+                    inputMode="decimal"
+                    placeholder="0"
                     value={formPurchasePrice || ''}
                     onChange={(e) => setFormPurchasePrice(Number(e.target.value))}
                     className="w-full mt-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-sm font-mono-num"
@@ -626,8 +627,10 @@ export const StockView: React.FC<StockViewProps> = ({
                   <label className="text-xs font-bold text-stone-700">Prix de Vente unitaire *</label>
                   <input
                     type="number"
+                    inputMode="decimal"
                     required
                     value={formSellingPrice || ''}
+                    placeholder="0"
                     onChange={(e) => setFormSellingPrice(Number(e.target.value))}
                     className="w-full mt-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-sm font-mono-num font-bold text-emerald-800"
                   />
@@ -644,7 +647,7 @@ export const StockView: React.FC<StockViewProps> = ({
 
               <label className="flex items-start gap-2 p-3 rounded-xl bg-sky-50 border border-sky-200 text-xs text-sky-900 cursor-pointer">
                 <input type="checkbox" checked={formIsService} onChange={(e) => setFormIsService(e.target.checked)} className="mt-0.5" data-testid="form-is-service" />
-                <span><strong>C'est une prestation (sans stock)</strong> — coiffure, réparation, lavage, commission… Elle n'est jamais en rupture et ne compte pas dans la valeur du stock.</span>
+                <span><strong>C'est une prestation (sans stock)</strong> — coiffure, réparation, lavage, commission… Elle n'est jamais en rupture et ne compte pas dans la valeur du stock. <em>Décochez pour un produit vendu en stock (mèches, pièces…). Le prix d'achat peut rester vide.</em></span>
               </label>
 
               {!formIsService && (

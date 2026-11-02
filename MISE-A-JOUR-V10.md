@@ -10,3 +10,4 @@
 - **Suppression d'un achat** : propose de retirer du stock les quantités que l'achat avait ajoutées (achats enregistrés à partir de cette version).
 - **Réapprovisionnement** : message clair si la quantité est 0 ; les quantités décimales (2,5 kg) sont acceptées.
 - **Tests** : `tests/calculs.test.ts` (28 tests sur la réduction, la trésorerie, les achats, le stock, les périodes et le prêt). Lancer : `npx tsx tests/calculs.test.ts`.
+- **Prestation** : le prix d'achat n'est plus obligatoire (vide = 0), pour les services sans coût. La case « prestation » se coche ou se décoche article par article : coiffure (prestation) et vente de mèches (produit en stock) cohabitent.

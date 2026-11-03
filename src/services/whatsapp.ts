@@ -45,7 +45,8 @@ export function generateReceiptWhatsAppUrl(
   lines.push(`Mode de paiement : ${sale.paymentMethod.toUpperCase()}`);
   
   if (sale.isCredit) {
-    lines.push(`⚠️ *Achat à crédit - Reste dû : ${formatCurrency(sale.total, settings.currency)}*`);
+    if (sale.amountPaid > 0) lines.push(`✅ Acompte versé : ${formatCurrency(sale.amountPaid, settings.currency)}`);
+    lines.push(`⚠️ *Achat à crédit - Reste dû : ${formatCurrency(sale.total - (sale.amountPaid || 0), settings.currency)}*`);
     if (sale.creditDueDate) {
       const dueDate = new Date(sale.creditDueDate).toLocaleDateString('fr-FR');
       lines.push(`Date convenue de règlement : ${dueDate}`);

@@ -11,3 +11,18 @@
 - **Réapprovisionnement** : message clair si la quantité est 0 ; les quantités décimales (2,5 kg) sont acceptées.
 - **Tests** : `tests/calculs.test.ts` (28 tests sur la réduction, la trésorerie, les achats, le stock, les périodes et le prêt). Lancer : `npx tsx tests/calculs.test.ts`.
 - **Prestation** : le prix d'achat n'est plus obligatoire (vide = 0), pour les services sans coût. La case « prestation » se coche ou se décoche article par article : coiffure (prestation) et vente de mèches (produit en stock) cohabitent.
+- **Rayons / catégories** : la liste des rayons d'un article propose d'abord ceux de votre activité, puis les rayons généraux, puis ceux de toutes les autres activités (regroupés par activité). Un nouvel article démarre sur le premier rayon de votre activité.
+
+## Audit des calculs (v10d)
+- **Arrondis de caisse** : les totaux de ligne avec quantité décimale (1,1 × 1000) sont arrondis ; le sous-total, le coût et le stock restant n'accumulent plus de restes (1100,0000000000002, 0,19999999999999998). Évitait le refus « montant reçu inférieur au total » pour un paiement exact.
+- **Moyenne mensuelle (6 mois)** : divisée par le nombre de mois depuis la première vente, et non plus toujours par 6 (une boutique récente voyait sa moyenne divisée à tort).
+- **Plafond de crédit** : jusqu'ici jamais utilisé. Une vente à crédit qui fait dépasser le plafond du client demande maintenant confirmation.
+- **Réduction** : avertissement quand elle fait vendre sous le prix d'achat.
+- **Tests** : 30 tests (`npx tsx tests/calculs.test.ts`).
+- Points constatés et non modifiés : voir le rapport d'audit.
+
+## Annulation de vente et acompte (v10e)
+- **Acompte à la caisse** : en vente « À crédit », champ « Acompte versé maintenant » avec son mode de paiement. L'acompte entre en trésorerie (espèces, Mobile Money…), seul le reste devient dette du client. Reçu écran, PDF et WhatsApp : « Acompte versé » et « Reste dû ».
+- **Annulation de vente** : Tableau de bord → « Historique / Annuler ». Réservé au propriétaire et au gérant (pas au caissier). L'annulation remet les articles en stock, réduit la dette du client du reste dû, et la vente disparaît des ventes, bénéfices et trésorerie (acompte compris : il est à rendre au client).
+- **Dernières transactions** : la liste du tableau de bord affichait les 5 plus anciennes ventes au lieu des 5 plus récentes ; corrigé.
+- Aucune migration. 36 tests.

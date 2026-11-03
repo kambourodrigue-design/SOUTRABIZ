@@ -136,3 +136,12 @@ export function calculateSummaryForPeriod(sales: Sale[], expenses: Expense[], da
     digitalPaymentsRatio,
   };
 }
+
+/** Nombre de mois d'activité dans une série mensuelle : on compte à partir du premier mois avec des ventes (au moins 1), pour ne pas diluer la moyenne d'une boutique récente. */
+export function activeMonths<T extends { revenue: number }>(months: T[]): number {
+  const first = months.findIndex(m => m.revenue > 0);
+  return first < 0 ? 1 : months.length - first;
+}
+
+/** Total d'une ligne de vente : arrondi pour éviter les restes de calcul (ex. 1,1 × 1000 = 1100,0000000000002). */
+export const lineTotal = (qty: number, price: number): number => Math.round(qty * price * 100) / 100;

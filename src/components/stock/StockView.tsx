@@ -1,6 +1,7 @@
 import { newId } from '../../../shared/syncCore';
 import React, { useState, useMemo, useEffect } from 'react';
-import { Product, ShopSettings, Supplier, Expense, PaymentMethod } from '../../types';
+import { Product, ShopSettings, Supplier, Expense, PaymentMethod, BusinessCategoryType } from '../../types';
+import { BUSINESS_PRESETS, getPresetForCategory } from '../../services/businessPresets';
 import { SupplierCreditFields } from '../common/SupplierCreditFields';
 import { applyPurchaseCredit, weightedCost } from '../../services/purchases';
 import { formatCurrency } from '../../services/financials';
@@ -123,7 +124,7 @@ export const StockView: React.FC<StockViewProps> = ({
     } else {
       setTargetProduct(null);
       setFormName('');
-      setFormCategory('Alimentation');
+      setFormCategory(getPresetForCategory(settings.businessCategory as BusinessCategoryType).suggestedCategories[0] || 'Divers');
       setFormPurchasePrice(0);
       setFormSellingPrice(0);
       setFormQuantity(0);
@@ -142,6 +143,23 @@ export const StockView: React.FC<StockViewProps> = ({
     catch (x) { setPhotoErr((x as Error).message); } finally { setPhotoBusy(false); }
   };
   const currentPhoto = formPreview || (!dropPhoto && formId && photos.map[formId] ? photoUrl(formId, photos.map[formId]) : '');
+
+  // Rayons proposés : ceux de votre activité d'abord, puis ceux de toutes les autres activités.
+  const categoryGroups = React.useMemo(() => {
+    const seen = new Set<string>();
+    const groups: { label: string; items: string[] }[] = [];
+    const add = (label: string, items: string[]) => {
+      const fresh = items.filter(c => c && !seen.has(c));
+      fresh.forEach(c => seen.add(c));
+      if (fresh.length) groups.push({ label, items: fresh });
+    };
+    const own = getPresetForCategory(settings.businessCategory as BusinessCategoryType);
+    add(`Votre activité : ${own.title}`, own.suggestedCategories);
+    add('Général', ['Alimentation', 'Boissons', 'Hygiène & Entretien', 'Quincaillerie', 'Cosmétique', 'Divers']);
+    Object.values(BUSINESS_PRESETS).forEach(pr => { if (pr.id !== own.id) add(`${pr.icon} ${pr.title}`, pr.suggestedCategories); });
+    if (formCategory && !seen.has(formCategory)) groups.push({ label: 'Rayon actuel', items: [formCategory] });
+    return groups;
+  }, [settings.businessCategory, formCategory]);
 
   const handleSaveProduct = (e: React.FormEvent) => {
     e.preventDefault();
@@ -589,12 +607,11 @@ export const StockView: React.FC<StockViewProps> = ({
                     onChange={(e) => setFormCategory(e.target.value)}
                     className="w-full mt-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-sm"
                   >
-                    <option value="Alimentation">Alimentation</option>
-                    <option value="Boissons">Boissons</option>
-                    <option value="Hygiène & Entretien">Hygiène & Entretien</option>
-                    <option value="Quincaillerie">Quincaillerie</option>
-                    <option value="Cosmétique">Cosmétique</option>
-                    <option value="Divers">Divers</option>
+                    {categoryGroups.map(g => (
+                      <optgroup key={g.label} label={g.label}>
+                        {g.items.map(c => <option key={c} value={c}>{c}</option>)}
+                      </optgroup>
+                    ))}
                   </Select>
                 </div>
 

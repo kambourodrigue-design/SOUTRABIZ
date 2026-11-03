@@ -1,7 +1,7 @@
 import { newId } from '../../../shared/syncCore';
 import React, { useState, useMemo, useEffect } from 'react';
 import { Product, SaleItem, Sale, PaymentMethod, Customer, ShopSettings } from '../../types';
-import { formatCurrency, getPaymentMethodDetails } from '../../services/financials';
+import { formatCurrency, getPaymentMethodDetails, lineTotal } from '../../services/financials';
 import { ReceiptModal } from './ReceiptModal';
 import { VoiceSaleModal } from './VoiceSaleModal';
 import { 
@@ -21,7 +21,7 @@ import {
   Mic
 } from 'lucide-react';
 import { Select } from '../common/dialogs';
-import { uiAlert } from '../common/dialogs';
+import { uiAlert, uiConfirm } from '../common/dialogs';
 import { isOutOfStock as outOfStockRule, isLowStock as lowStockRule } from '../../services/stockRules';
 
 interface POSViewProps {
@@ -74,6 +74,8 @@ export const POSView: React.FC<POSViewProps> = ({
   const [newCustomerName, setNewCustomerName] = useState<string>('');
   const [newCustomerPhone, setNewCustomerPhone] = useState<string>('');
   const [creditDueDate, setCreditDueDate] = useState<string>('');
+  const [depositInput, setDepositInput] = useState<number>(0);
+  const [depositMethod, setDepositMethod] = useState<PaymentMethod>('cash');
   
   // Post-sale receipt state
   const [completedSale, setCompletedSale] = useState<Sale | null>(null);
@@ -96,16 +98,18 @@ export const POSView: React.FC<POSViewProps> = ({
 
   // Cart calculations
   const cartSubtotal = useMemo(() => {
-    return cart.reduce((sum, item) => sum + item.totalPrice, 0);
+    return Math.round(cart.reduce((sum, item) => sum + item.totalPrice, 0));
   }, [cart]);
 
   // Réduction accordée au client (montant en FCFA), jamais supérieure au sous-total
   const [discountInput, setDiscountInput] = useState<number>(0);
   const cartDiscount = Math.min(Math.max(0, Math.round(discountInput || 0)), cartSubtotal);
   const cartTotal = cartSubtotal - cartDiscount;
+  // Acompte versé à la vente (vente à crédit) : jamais négatif, toujours inférieur au total
+  const deposit = Math.min(Math.max(0, Math.round(depositInput || 0)), cartTotal);
 
   const cartTotalCost = useMemo(() => {
-    return cart.reduce((sum, item) => sum + (item.costPrice * item.quantity), 0);
+    return Math.round(cart.reduce((sum, item) => sum + (item.costPrice * item.quantity), 0));
   }, [cart]);
 
   const cartTotalItemsCount = useMemo(() => {
@@ -123,7 +127,7 @@ export const POSView: React.FC<POSViewProps> = ({
       if (existing) {
         return prev.map(item => 
           item.productId === product.id 
-            ? { ...item, quantity: item.quantity + 1, totalPrice: (item.quantity + 1) * item.unitPrice }
+            ? { ...item, quantity: item.quantity + 1, totalPrice: lineTotal(item.quantity + 1, item.unitPrice) }
             : item
         );
       } else {
@@ -153,8 +157,8 @@ export const POSView: React.FC<POSViewProps> = ({
       let next = [...prev];
       for (const { product, qty } of lines) {
         const ex = next.find(i => i.productId === product.id);
-        if (ex) next = next.map(i => i.productId === product.id ? { ...i, quantity: i.quantity + qty, totalPrice: (i.quantity + qty) * i.unitPrice } : i);
-        else next.push({ productId: product.id, productName: product.name, quantity: qty, unitPrice: product.sellingPrice, totalPrice: qty * product.sellingPrice, costPrice: product.purchasePrice });
+        if (ex) next = next.map(i => i.productId === product.id ? { ...i, quantity: i.quantity + qty, totalPrice: lineTotal(i.quantity + qty, i.unitPrice) } : i);
+        else next.push({ productId: product.id, productName: product.name, quantity: qty, unitPrice: product.sellingPrice, totalPrice: lineTotal(qty, product.sellingPrice), costPrice: product.purchasePrice });
       }
       return next;
     });
@@ -176,7 +180,7 @@ export const POSView: React.FC<POSViewProps> = ({
           return {
             ...item,
             quantity: newQty,
-            totalPrice: newQty * item.unitPrice,
+            totalPrice: lineTotal(newQty, item.unitPrice),
           };
         }
         return item;
@@ -188,6 +192,8 @@ export const POSView: React.FC<POSViewProps> = ({
   const handleOpenCheckout = () => {
     if (cart.length === 0) return;
     setAmountPaid(cartTotal);
+    setDepositInput(0);
+    setDepositMethod('cash');
     setIsCheckoutOpen(true);
   };
 
@@ -209,7 +215,7 @@ export const POSView: React.FC<POSViewProps> = ({
   }, [cartTotal]);
 
   // Submit sale
-  const handleFinalizeSale = () => {
+  const handleFinalizeSale = async () => {
     if (cart.length === 0) return;
     for (const it of cart) {
       const prod = products.find(x => x.id === it.productId);
@@ -224,6 +230,18 @@ export const POSView: React.FC<POSViewProps> = ({
     if (paymentMethod === 'credit' && !selectedCustomerId && !newCustomerName.trim()) {
       uiAlert('Vente à crédit : choisissez un client ou saisissez son nom pour enregistrer la dette.');
       return;
+    }
+    if (paymentMethod === 'credit' && deposit >= cartTotal && cartTotal > 0) {
+      uiAlert("L'acompte couvre déjà tout le total : choisissez un mode de paiement normal (espèces, Mobile Money…) au lieu de « À crédit ».");
+      return;
+    }
+    // Plafond de crédit : prévenir (sans bloquer) quand la dette du client dépasserait ce qui lui est accordé.
+    if (paymentMethod === 'credit' && selectedCustomerId) {
+      const cu = customers.find(c => c.id === selectedCustomerId);
+      if (cu && cu.creditLimit > 0 && cu.totalDebt + (cartTotal - deposit) > cu.creditLimit) {
+        const ok = await uiConfirm(`${cu.name} doit déjà ${formatCurrency(cu.totalDebt, settings.currency)}. Avec cette vente, sa dette sera de ${formatCurrency(cu.totalDebt + (cartTotal - deposit), settings.currency)}, au-dessus de son plafond de ${formatCurrency(cu.creditLimit, settings.currency)}. Continuer ?`);
+        if (!ok) return;
+      }
     }
     // Espèces : le montant reçu doit couvrir la vente (sinon, passer en « À crédit »).
     if (paymentMethod === 'cash' && amountPaid < cartTotal) {
@@ -258,7 +276,7 @@ export const POSView: React.FC<POSViewProps> = ({
       // If credit sale, increment customer's debt
       if (paymentMethod === 'credit' && customerId) {
         updatedCustomers = updatedCustomers.map(c => 
-          c.id === customerId ? { ...c, totalDebt: c.totalDebt + cartTotal } : c
+          c.id === customerId ? { ...c, totalDebt: c.totalDebt + (cartTotal - deposit) } : c
         );
       }
     }
@@ -269,7 +287,7 @@ export const POSView: React.FC<POSViewProps> = ({
       if (cartItem && !p.isService) {
         return {
           ...p,
-          stockQuantity: Math.max(0, p.stockQuantity - cartItem.quantity)
+          stockQuantity: Math.max(0, Math.round((p.stockQuantity - cartItem.quantity) * 1000) / 1000)
         };
       }
       return p;
@@ -277,7 +295,7 @@ export const POSView: React.FC<POSViewProps> = ({
 
     const isCredit = paymentMethod === 'credit';
     // Mobile Money / banque : le client paie exactement le total ; seul le cash donne lieu à de la monnaie.
-    const finalAmountPaid = isCredit ? 0 : paymentMethod === 'cash' ? amountPaid : cartTotal;
+    const finalAmountPaid = isCredit ? deposit : paymentMethod === 'cash' ? amountPaid : cartTotal;
     const changeGiven = paymentMethod === 'cash' ? Math.max(0, amountPaid - cartTotal) : 0;
 
     const invoiceNumber = `FAC-${new Date().getFullYear()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
@@ -298,6 +316,7 @@ export const POSView: React.FC<POSViewProps> = ({
       customerName: customerName || undefined,
       isCredit,
       creditDueDate: isCredit && creditDueDate ? new Date(creditDueDate).toISOString() : undefined,
+      depositMethod: isCredit && deposit > 0 ? depositMethod : undefined,
       status: 'completed',
       invoiceNumber
     };
@@ -307,6 +326,7 @@ export const POSView: React.FC<POSViewProps> = ({
     setCompletedSale(newSale);
     setCart([]);
     setDiscountInput(0);
+    setDepositInput(0);
   };
 
   return (
@@ -527,6 +547,9 @@ export const POSView: React.FC<POSViewProps> = ({
                     />
                   </div>
                 </div>
+                {cartDiscount > 0 && cartTotal < cartTotalCost && (
+                  <p className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1">⚠️ Avec cette réduction, vous vendez en dessous de votre prix d'achat (perte de {formatCurrency(cartTotalCost - cartTotal, settings.currency)}).</p>
+                )}
                 {cartDiscount > 0 && (
                   <div className="flex justify-between items-center text-xs text-rose-600 font-bold">
                     <span>Réduction appliquée</span>
@@ -730,6 +753,43 @@ export const POSView: React.FC<POSViewProps> = ({
                     />
                   </div>
                 )}
+
+                {/* Acompte */}
+                <div className="space-y-1.5 p-3 rounded-xl bg-white border border-red-200">
+                  <label htmlFor="pos-deposit" className="text-xs text-stone-700 font-bold">💵 Acompte versé maintenant (optionnel) :</label>
+                  <input
+                    id="pos-deposit"
+                    data-testid="pos-deposit"
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    max={cartTotal}
+                    placeholder="0"
+                    value={depositInput || ''}
+                    onChange={(e) => setDepositInput(Math.min(cartTotal, Math.max(0, Number(e.target.value))))}
+                    className="w-full px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl text-right font-black font-mono-num text-sm text-stone-900"
+                  />
+                  {deposit > 0 && (
+                    <>
+                      <Select
+                        value={depositMethod}
+                        onChange={(e) => setDepositMethod(e.target.value as PaymentMethod)}
+                        className="w-full px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl text-xs sm:text-sm text-stone-900 font-medium"
+                      >
+                        <option value="cash">💵 Espèces</option>
+                        <option value="wave">🌊 Wave</option>
+                        <option value="orange_money">🍊 Orange Money</option>
+                        <option value="mtn_momo">💛 MTN MoMo</option>
+                        <option value="moov_money">💙 Moov Money</option>
+                        <option value="bank_transfer">🏦 Banque / Virement</option>
+                      </Select>
+                      <div className="flex justify-between text-xs font-bold text-red-700">
+                        <span>Reste à payer (dette) :</span>
+                        <span className="font-mono-num">{formatCurrency(cartTotal - deposit, settings.currency)}</span>
+                      </div>
+                    </>
+                  )}
+                </div>
 
                 {/* Due Date */}
                 <div className="space-y-1">

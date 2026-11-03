@@ -150,7 +150,8 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
 
             {sale.isCredit ? (
               <div className="p-2.5 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs font-bold text-center mt-2">
-                Achat à crédit — Reste dû : {formatCurrency(sale.total, settings.currency)}
+                {sale.amountPaid > 0 && <div className="text-emerald-800 font-semibold mb-0.5">Acompte versé : {formatCurrency(sale.amountPaid, settings.currency)}</div>}
+                Achat à crédit — Reste dû : {formatCurrency(sale.total - (sale.amountPaid || 0), settings.currency)}
                 {sale.creditDueDate && (
                   <div className="text-[11px] font-normal text-red-700 mt-0.5">
                     Échéance : {new Date(sale.creditDueDate).toLocaleDateString('fr-FR')}

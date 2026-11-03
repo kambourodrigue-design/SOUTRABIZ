@@ -108,13 +108,14 @@ export async function buildReceiptPdf(sale: Sale, settings: ShopSettings): Promi
   row('TOTAL', money(sale.total), true, green);
   row('Paiement', clean(getPaymentMethodDetails(sale.paymentMethod).label));
   if (sale.isCredit) {
+    if (sale.amountPaid > 0) row('Acompte versé', money(sale.amountPaid));
     y += 1;
     doc.setFillColor(254, 226, 226);
     doc.roundedRect(M, y - 4, W - 2 * M, sale.creditDueDate ? 12 : 8, 1.5, 1.5, 'F');
     doc.setTextColor(153, 27, 27);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9.5);
-    doc.text(`Achat à crédit - Reste dû : ${money(sale.total)}`, W / 2, y + 1, { align: 'center' });
+    doc.text(`Achat à crédit - Reste dû : ${money(sale.total - (sale.amountPaid || 0))}`, W / 2, y + 1, { align: 'center' });
     if (sale.creditDueDate) {
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8.5);

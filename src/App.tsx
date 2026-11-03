@@ -27,6 +27,7 @@ import { LandingPage } from './components/landing/LandingPage';
 
 import { Logo } from './components/brand/Logo';
 import { DailyDashboard } from './components/dashboard/DailyDashboard';
+import { SalesHistoryModal } from './components/sales/SalesHistoryModal';
 import { POSView } from './components/pos/POSView';
 import { StockView } from './components/stock/StockView';
 import { ExpensesView } from './components/expenses/ExpensesView';
@@ -238,6 +239,25 @@ export default function App() {
     setCustomers(updatedCustomers);
   };
 
+  const [showSalesHistory, setShowSalesHistory] = useState(false);
+  // Annulation d'une vente saisie par erreur : stock remis, dette du client corrigée, vente exclue des chiffres.
+  const handleCancelSale = (saleId: string) => {
+    if (readOnly) { blocked(); return; }
+    if (!isDemo && shopRole === 'cashier') return;
+    const sale = sales.find(x => x.id === saleId);
+    if (!sale || sale.status === 'cancelled') return;
+    setSales(prev => prev.map(x => x.id === saleId ? { ...x, status: 'cancelled' as const, cancelledAt: new Date().toISOString() } : x));
+    setProducts(prev => prev.map(p => {
+      if (p.isService) return p;
+      const back = sale.items.filter(i => i.productId === p.id).reduce((n, i) => n + i.quantity, 0);
+      return back > 0 ? { ...p, stockQuantity: Math.round((p.stockQuantity + back) * 1000) / 1000 } : p;
+    }));
+    if (sale.isCredit && sale.customerId) {
+      const unpaid = Math.max(0, sale.total - (sale.amountPaid || 0));
+      setCustomers(prev => prev.map(c => c.id === sale.customerId ? { ...c, totalDebt: Math.max(0, c.totalDebt - unpaid) } : c));
+    }
+  };
+
   const handleAddExpense = (newExpense: Expense) => {
     if (readOnly) { blocked(); return; }
     setExpenses(prev => [newExpense, ...prev]);
@@ -429,6 +449,7 @@ export default function App() {
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 lg:p-6 pb-24 xl:pb-8">
         {activeTab === 'dashboard' && (
+          <>
           <DailyDashboard
             sales={sales}
             expenses={expenses}
@@ -441,7 +462,12 @@ export default function App() {
             onQuickSale={() => setActiveTab('pos')}
             onQuickExpense={() => setActiveTab('expenses')}
             onQuickDebt={() => setActiveTab('debts')}
+            onOpenSalesHistory={() => setShowSalesHistory(true)}
           />
+          {showSalesHistory && (
+            <SalesHistoryModal sales={sales} settings={settings} canCancel={!readOnly && (isDemo || shopRole !== 'cashier')} onCancel={handleCancelSale} onClose={() => setShowSalesHistory(false)} />
+          )}
+          </>
         )}
 
         {activeTab === 'pos' && readOnly && (

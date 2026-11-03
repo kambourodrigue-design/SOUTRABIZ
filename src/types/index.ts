@@ -59,6 +59,8 @@ export interface Sale {
   customerName?: string;
   isCredit: boolean;
   creditDueDate?: string;
+  depositMethod?: PaymentMethod; // vente à crédit : mode de paiement de l'acompte (amountPaid)
+  cancelledAt?: string;
   status: 'completed' | 'cancelled' | 'pending_payment';
   invoiceNumber: string;
 }

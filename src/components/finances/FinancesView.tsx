@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Sale, Expense, ShopSettings, Product, Customer, Supplier } from '../../types';
-import { formatCurrency, calculateSummaryForPeriod, localDay } from '../../services/financials';
+import { formatCurrency, calculateSummaryForPeriod, localDay, activeMonths } from '../../services/financials';
 import { ProfitPeriodCard } from './ProfitPeriodCard';
 import { 
   ResponsiveContainer, 
@@ -428,7 +428,7 @@ export const FinancesView: React.FC<FinancesViewProps> = ({
           <div className="p-3 bg-stone-50 rounded-2xl border border-stone-100">
             <span className="text-[11px] font-semibold text-stone-500">Moyenne Mensuelle</span>
             <div className="text-base sm:text-lg font-black text-stone-900 font-mono-num mt-0.5">
-              {formatCurrency(Math.round(sixMonthsTotalRevenue / 6), settings.currency)}
+              {formatCurrency(Math.round(sixMonthsTotalRevenue / activeMonths(monthlyData)), settings.currency)}
             </div>
             <div className="text-[10px] text-stone-500 mt-0.5">
               Revenu moyen récurrent

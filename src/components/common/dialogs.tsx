@@ -101,12 +101,15 @@ const textOf = (n: React.ReactNode): string => {
   return '';
 };
 
-interface Opt { value: string; label: string; disabled: boolean }
+interface Opt { value: string; label: string; disabled: boolean; header?: boolean }
 const collect = (children: React.ReactNode, out: Opt[] = []): Opt[] => {
   React.Children.forEach(children, (c) => {
     if (!React.isValidElement(c)) return;
     const p: any = c.props;
-    if (c.type === 'option') {
+    if (c.type === 'optgroup') {
+      out.push({ value: `__group:${String(p.label)}`, label: String(p.label ?? ''), disabled: true, header: true });
+      collect(p.children, out);
+    } else if (c.type === 'option') {
       const label = textOf(p.children).replace(/\s+/g, ' ').trim();
       out.push({ value: p.value !== undefined ? String(p.value) : label, label, disabled: !!p.disabled });
     } else if (p && p.children) collect(p.children, out);
@@ -120,7 +123,7 @@ export const Select: React.FC<React.SelectHTMLAttributes<HTMLSelectElement>> = (
 }) => {
   const [open, setOpen] = useState(false);
   const opts = collect(children);
-  const cur = opts.find((o) => o.value === String(value ?? ''));
+  const cur = opts.find((o) => !o.header && o.value === String(value ?? ''));
   const pick = (v: string) => {
     setOpen(false);
     onChange?.({ target: { value: v, name }, currentTarget: { value: v, name } } as unknown as React.ChangeEvent<HTMLSelectElement>);
@@ -149,6 +152,7 @@ export const Select: React.FC<React.SelectHTMLAttributes<HTMLSelectElement>> = (
         <div className="fixed inset-0 z-[190] flex items-end sm:items-center justify-center bg-black/60 p-3" onClick={() => setOpen(false)}>
           <div role="listbox" className="w-full max-w-sm max-h-[75vh] overflow-y-auto rounded-2xl bg-white border border-stone-200 shadow-2xl divide-y divide-stone-100" onClick={(e) => e.stopPropagation()}>
             {opts.map((o) => {
+              if (o.header) return <div key={o.value} className="px-4 py-2 text-[11px] font-extrabold tracking-wide uppercase bg-stone-50 text-stone-500 sticky top-0">{o.label}</div>;
               const sel = o.value === String(value ?? '');
               return (
                 <button

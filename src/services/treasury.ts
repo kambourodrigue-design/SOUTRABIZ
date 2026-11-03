@@ -56,7 +56,8 @@ export function computeTreasury(
   };
 
   for (const s of sales) {
-    if (s.status === 'cancelled' || s.isCredit) continue;
+    if (s.status === 'cancelled') continue;
+    if (s.isCredit) { if (s.amountPaid > 0) inflow(s.depositMethod || 'cash', Math.min(s.amountPaid, s.total), s.date); continue; }   // acompte d'une vente à crédit
     inflow(s.paymentMethod, s.total, s.date);
   }
   for (const c of customers) for (const p of c.payments || []) inflow(p.paymentMethod, p.amount, p.date);

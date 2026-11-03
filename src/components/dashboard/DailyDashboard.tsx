@@ -3,7 +3,7 @@ import { FeedbackCard } from './FeedbackCard';
 import React, { useMemo } from 'react';
 import { BUSINESS_PRESETS } from '../../services/businessPresets';
 import { Sale, Expense, Customer, Supplier, Product, ShopSettings, CreditScoreResult } from '../../types';
-import { formatCurrency, localDay } from '../../services/financials';
+import { formatCurrency, localDay, activeMonths } from '../../services/financials';
 import { 
   ResponsiveContainer, 
   AreaChart, 
@@ -46,6 +46,7 @@ interface DailyDashboardProps {
   onQuickSale: () => void;
   onQuickExpense: () => void;
   onQuickDebt: () => void;
+  onOpenSalesHistory?: () => void;
 }
 
 export const DailyDashboard: React.FC<DailyDashboardProps> = ({
@@ -60,6 +61,7 @@ export const DailyDashboard: React.FC<DailyDashboardProps> = ({
   onQuickSale,
   onQuickExpense,
   onQuickDebt,
+  onOpenSalesHistory,
 }) => {
   // Compute today's data
   const todayStr = localDay(new Date());
@@ -397,7 +399,7 @@ export const DailyDashboard: React.FC<DailyDashboardProps> = ({
           <div className="p-2.5 bg-stone-50 rounded-xl border border-stone-100">
             <span className="text-stone-500 text-[11px]">Moyenne Mensuelle</span>
             <div className="font-black text-emerald-800 font-mono-num text-sm sm:text-base mt-0.5">
-              {formatCurrency(Math.round(sixMonthsTotalRevenue / 6), settings.currency)}
+              {formatCurrency(Math.round(sixMonthsTotalRevenue / activeMonths(monthlySalesTrend)), settings.currency)}
             </div>
           </div>
           <div className="col-span-2 sm:col-span-1 p-2.5 bg-stone-50 rounded-xl border border-stone-100">
@@ -600,12 +602,19 @@ export const DailyDashboard: React.FC<DailyDashboardProps> = ({
               Dernières Transactions Encaissées
             </h3>
           </div>
-          <button
-            onClick={() => onNavigate('pos')}
-            className="text-xs font-bold text-emerald-800 hover:underline flex items-center gap-1"
-          >
-            Ouvrir la caisse <ChevronRight className="w-3.5 h-3.5" />
-          </button>
+          <div className="flex items-center gap-3">
+            {onOpenSalesHistory && (
+              <button onClick={onOpenSalesHistory} data-testid="open-sales-history" className="text-xs font-bold text-stone-700 hover:underline">
+                Historique / Annuler
+              </button>
+            )}
+            <button
+              onClick={() => onNavigate('pos')}
+              className="text-xs font-bold text-emerald-800 hover:underline flex items-center gap-1"
+            >
+              Ouvrir la caisse <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
 
         {sales.length === 0 ? (
@@ -614,7 +623,7 @@ export const DailyDashboard: React.FC<DailyDashboardProps> = ({
           </div>
         ) : (
           <div className="space-y-2.5">
-            {sales.slice(-5).reverse().map((sale) => (
+            {[...sales].filter(x => x.status !== 'cancelled').sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5).map((sale) => (
               <div 
                 key={sale.id}
                 className="flex items-center justify-between p-3 rounded-xl hover:bg-stone-50 border border-stone-100 transition"

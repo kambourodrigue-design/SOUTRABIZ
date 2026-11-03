@@ -1,6 +1,6 @@
 // Tests des calculs. Lancer : npx tsx tests/calculs.test.ts
 import assert from 'node:assert/strict';
-import { calculateSummaryForPeriod, periodStart, formatCurrency } from '../src/services/financials';
+import { calculateSummaryForPeriod, periodStart, formatCurrency, lineTotal, activeMonths } from '../src/services/financials';
 import { computeTreasury, paidNow, creditPart } from '../src/services/treasury';
 import { applyPurchaseCredit, weightedCost } from '../src/services/purchases';
 import { buildDailySummary } from '../src/services/dailySummary';
@@ -112,4 +112,33 @@ t('perte : capacité et prêt à 0', () => {
 console.log('Affichage');
 t('formatCurrency arrondit et formate', () => { assert.ok(formatCurrency(1234.6).includes('1') && formatCurrency(1234.6).endsWith('F CFA')); assert.ok(formatCurrency(0).startsWith('0')); });
 
+
+console.log('Arrondis et moyennes');
+t('ligne à quantité décimale sans reste de calcul', () => { assert.equal(lineTotal(1.1, 1000), 1100); assert.equal(lineTotal(2.3, 1300), 2990); assert.equal(lineTotal(0.1 + 0.2, 1000), 300); });
+t('moyenne mensuelle : seuls les mois depuis la première vente comptent', () => {
+  assert.equal(activeMonths([{ revenue: 0 }, { revenue: 0 }, { revenue: 0 }, { revenue: 0 }, { revenue: 90000 }, { revenue: 60000 }]), 2);
+  assert.equal(activeMonths([{ revenue: 0 }, { revenue: 0 }]), 1);
+  assert.equal(activeMonths([{ revenue: 5 }, { revenue: 0 }, { revenue: 7 }]), 3);
+});
+
+console.log('Acompte et annulation');
+const creditDeposit = (total: number, deposit: number, method: string) => sale({ subtotal: total, discount: 0, total, totalCost: 0, profit: total, paymentMethod: 'credit', isCredit: true, amountPaid: deposit, depositMethod: method });
+t('acompte en espèces : entre en caisse, le reste est une dette', () => {
+  const tr = computeTreasury([creditDeposit(10000, 3000, 'cash')], [], [{ id: 'c', name: 'A', phone: '', totalDebt: 7000, creditLimit: 0, createdAt: now, payments: [] } as any], [], settings);
+  assert.equal(tr.balances.cash, 3000); assert.equal(tr.receivables, 7000);
+});
+t('acompte Mobile Money : va sur le canal mobile', () => {
+  const tr = computeTreasury([creditDeposit(10000, 2500, 'wave')], [], [], [], settings);
+  assert.equal(tr.balances.mobile, 2500); assert.equal(tr.balances.cash, 0);
+});
+t('vente à crédit sans acompte : aucune entrée (comme avant)', () => assert.equal(computeTreasury([creditDeposit(10000, 0, 'cash')], [], [], [], settings).balances.total, 0));
+t('acompte supérieur au total : plafonné au total', () => assert.equal(computeTreasury([creditDeposit(5000, 9000, 'cash')], [], [], [], settings).balances.cash, 5000));
+t('vente annulée : plus aucune entrée, acompte compris', () => {
+  const s = creditDeposit(10000, 3000, 'cash'); s.status = 'cancelled';
+  assert.equal(computeTreasury([s], [], [], [], settings).balances.total, 0);
+});
+t('vente annulée exclue du chiffre d\'affaires et du bénéfice', () => {
+  const a = posSale(10000, 0, 6000, 'cash'); const b = posSale(4000, 0, 2000, 'cash'); b.status = 'cancelled';
+  const r = calculateSummaryForPeriod([a, b], [], 30); assert.equal(r.revenue, 10000); assert.equal(r.grossProfit, 4000); assert.equal(r.totalSalesCount, 1);
+});
 console.log(`\n${n} tests réussis`);

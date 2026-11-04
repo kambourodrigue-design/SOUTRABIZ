@@ -10,6 +10,7 @@
 //  5. Suppressions : conservées sous forme de « pierre tombale » pour que les autres appareils
 //     les voient ; une modification plus récente que la suppression l'emporte.
 
+import { localDayOf } from '../../shared/timezone';
 import {
   COUNTERS, UNIONS, MAX_RECORD_CHARS, SETTINGS_ID, stableStringify,
   type Kind, type ShopRole,
@@ -163,9 +164,9 @@ export function mergeChange(change: Change, stored: StoredRecord | null, role: S
 export interface DayDelta { c: number; r: number; p: number; e: number }
 
 /** Contribution d'un enregistrement aux statistiques journalières de la boutique. */
-export function contribution(kind: Kind, obj: any, deleted: boolean): { day: string; v: DayDelta } | null {
+export function contribution(kind: Kind, obj: any, deleted: boolean, offsetMin = 0): { day: string; v: DayDelta } | null {
   if (deleted || !obj || (kind !== 'sales' && kind !== 'expenses')) return null;
-  const day = typeof obj.date === 'string' && /^\d{4}-\d{2}-\d{2}/.test(obj.date) ? obj.date.slice(0, 10) : null;
+  const day = typeof obj.date === 'string' && /^\d{4}-\d{2}-\d{2}/.test(obj.date) ? localDayOf(obj.date, offsetMin) : null;
   if (!day) return null;
   if (kind === 'sales') {
     if (obj.status && obj.status !== 'completed') return null;

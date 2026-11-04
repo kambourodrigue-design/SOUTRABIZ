@@ -5,6 +5,9 @@ import {
   json, fail, randomHex, hashPassword, readBody, publicUser, type Env, type UserRow,
 } from './util';
 
+import { contribution } from './merge';
+import { countryOffsetMin } from '../../shared/timezone';
+
 const PAGE_SIZE = 25;
 const SECTORS = /^[a-z_]{1,40}$/;
 
@@ -185,3 +188,26 @@ export async function adminUser(req: Request, env: Env, admin: UserRow, id: stri
   return fail('Route inconnue.', 404);
 }
 
+
+/** Recalcule shop_daily (jours à l'heure locale) pour les boutiques dont le pays n'est pas en UTC. */
+export async function adminRecomputeDays(env: Env) {
+  const shops = (await env.DB.prepare(`SELECT shop_id, country FROM shops WHERE country IS NOT NULL AND country <> ''`).all<{ shop_id: string; country: string }>()).results
+    .map(s => ({ id: s.shop_id, off: countryOffsetMin(s.country) })).filter(s => s.off !== 0);
+  let done = 0;
+  for (const s of shops) {
+    const rows = (await env.DB.prepare(`SELECT kind, json FROM records WHERE shop_id = ? AND deleted = 0 AND kind IN ('sales','expenses')`).bind(s.id).all<{ kind: any; json: string }>()).results;
+    const days = new Map<string, { c: number; r: number; p: number; e: number }>();
+    for (const r of rows) {
+      let o: any = null; try { o = JSON.parse(r.json); } catch { continue; }
+      const c = contribution(r.kind, o, false, s.off);
+      if (!c) continue;
+      const d = days.get(c.day) || { c: 0, r: 0, p: 0, e: 0 };
+      d.c += c.v.c; d.r += c.v.r; d.p += c.v.p; d.e += c.v.e; days.set(c.day, d);
+    }
+    const stmts = [env.DB.prepare('DELETE FROM shop_daily WHERE shop_id = ?').bind(s.id)];
+    for (const [day, d] of days) stmts.push(env.DB.prepare('INSERT INTO shop_daily (shop_id, day, sales_count, revenue, profit, expenses) VALUES (?,?,?,?,?,?)').bind(s.id, day, d.c, d.r, d.p, d.e));
+    for (let i = 0; i < stmts.length; i += 90) await env.DB.batch(stmts.slice(i, i + 90));
+    done++;
+  }
+  return json({ ok: true, shops: done });
+}

@@ -1,6 +1,7 @@
 // Comptes : inscription, connexion, mot de passe, session
 
 import { SETTINGS_ID } from '../../shared/syncCore';
+import { attachReferral } from './referral';
 import {
   json, fail, str, normEmail, normPhone, isEmail, randomHex, hashPassword, safeEqual, readBody,
   createSession, sessionCookie, publicUser, checkRate, recordFailure, clearFailures,
@@ -50,6 +51,7 @@ export async function register(req: Request, env: Env) {
                     VALUES (?, 'settings', ?, ?, ?, 0, 1)`)
       .bind(shopId, SETTINGS_ID, shopJson, Date.now()),
   ]);
+  await attachReferral(env, shopId, b.ref);
   const user = (await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(id).first<UserRow>())!;
   const token = await createSession(env, id);
   return json({ user: publicUser(user), shop }, 201, { 'Set-Cookie': sessionCookie(token, SESSION_DAYS * 86400) });

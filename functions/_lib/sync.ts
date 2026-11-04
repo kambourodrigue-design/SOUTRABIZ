@@ -9,6 +9,7 @@
 //    la lecture et l'écriture, la transaction est annulée et on recommence (fusion refaite) ;
 //  - chaque lot a un identifiant : un envoi répété (réponse perdue) n'est jamais appliqué deux fois.
 
+import { countryOffsetMin } from '../../shared/timezone';
 import { isReadOnly } from './billing';
 import {
   MAX_CHANGES, SETTINGS_ID, isKind, type Kind,
@@ -122,7 +123,7 @@ export async function handlePush(req: Request, env: Env, user: UserRow) {
       await new Promise((r) => setTimeout(r, 20 + Math.random() * 40 * Math.min(attempt, 8)));
     }
 
-    const shop = await env.DB.prepare('SELECT seq FROM shops WHERE shop_id = ?').bind(shopId).first<{ seq: number }>();
+    const shop = await env.DB.prepare('SELECT seq, country FROM shops WHERE shop_id = ?').bind(shopId).first<{ seq: number; country: string | null }>();
     if (!shop) return fail('Boutique introuvable.', 404);
 
     // Lecture des versions actuelles en UNE requête
@@ -135,6 +136,7 @@ export async function handlePush(req: Request, env: Env, user: UserRow) {
     const working = new Map<string, StoredRecord>();
     for (const r of existing) working.set(r.kind + ':' + r.id, { json: r.json, t: r.updated_at, deleted: !!r.deleted });
 
+    const tzOff = countryOffsetMin(shop.country);
     const now = Date.now();
     const results: Result[] = [...skipped];
     const writes = new Map<string, { k: Kind; id: string; j: string; t: number; x: number }>();
@@ -157,13 +159,13 @@ export async function handlePush(req: Request, env: Env, user: UserRow) {
         if (stored && !stored.deleted) {
           let oldObj: any = null;
           try { oldObj = JSON.parse(stored.json); } catch { /* ignore */ }
-          const oc = contribution(ch.k, oldObj, false);
+          const oc = contribution(ch.k, oldObj, false, tzOff);
           if (oc) addDelta(oc.day, oc.v, -1);
         }
         if (!out.deleted && out.json) {
           let newObj: any = null;
           try { newObj = JSON.parse(out.json); } catch { /* ignore */ }
-          const nc = contribution(ch.k, newObj, false);
+          const nc = contribution(ch.k, newObj, false, tzOff);
           if (nc) addDelta(nc.day, nc.v, 1);
         }
         writes.set(key, { k: ch.k, id: ch.id, j: out.json || '{}', t: out.t, x: out.deleted ? 1 : 0 });

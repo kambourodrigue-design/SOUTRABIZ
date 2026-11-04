@@ -15,7 +15,8 @@ import { myCatalog, saveCatalog } from '../_lib/catalog';
 import { handleImages } from '../_lib/images';
 import { myFeedback, submitFeedback, publicTestimonials, adminFeedback } from '../_lib/feedback';
 import { hit, adminStats, adminAnnouncements, myAnnouncements, readAnnouncement } from '../_lib/site';
-import { adminList, adminExport, adminUser } from '../_lib/admin';
+import { adminList, adminExport, adminUser, adminRecomputeDays } from '../_lib/admin';
+import { myReferral, adminReferrals } from '../_lib/referral';
 
 export const onRequest: PagesFunction<Env> = async ({ request, env, params }) => {
   try {
@@ -68,6 +69,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
     if (route === 'feedback' && m === 'GET') return await myFeedback(env, user);
     if (route === 'feedback' && m === 'POST') return await submitFeedback(request, env, user);
 
+    if (route === 'referral' && m === 'GET') return await myReferral(env, user);
     if (route === 'billing' && m === 'GET') return await myBilling(env, user);
     if (route === 'billing/pay' && m === 'POST') return await submitPayment(request, env, user);
     if (route === 'billing/moneyfusion/start' && m === 'POST') return await mfStart(request, env, user);
@@ -83,6 +85,8 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
       if (route === 'admin/stats' && m === 'GET') return await adminStats(env);
       if (parts[1] === 'announcements') return await adminAnnouncements(request, env, parts[2]);
       if (parts[1] === 'feedback') return await adminFeedback(request, env, parts[2]);
+      if (route === 'admin/recompute-days' && m === 'POST') return await adminRecomputeDays(env);
+      if (parts[1] === 'referrals') return await adminReferrals(request, env, parts);
       if (route === 'admin/export' && m === 'GET') return await adminExport(env);
       if (parts[1] === 'users' && parts[2]) return await adminUser(request, env, user, parts[2], parts[3]);
     }

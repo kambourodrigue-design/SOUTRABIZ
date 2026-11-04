@@ -1,4 +1,4 @@
--- Nafora — schéma D1 v5 (NOUVELLE installation uniquement).
+-- Nafora — schéma D1 v9 (NOUVELLE installation uniquement).
 -- Si votre base existe déjà (version précédente), exécutez plutôt migration-v3.sql, migration-v4.sql puis migration-v5.sql.
 
 CREATE TABLE IF NOT EXISTS users (
@@ -26,9 +26,13 @@ CREATE TABLE IF NOT EXISTS shops (
   category   TEXT,
   city       TEXT,
   country    TEXT,
-  formalized INTEGER NOT NULL DEFAULT 0
+  formalized INTEGER NOT NULL DEFAULT 0,
+  referral_code TEXT,                                   -- v9 : code de parrainage du commerçant
+  referred_by   TEXT                                    -- v9 : boutique du parrain
 );
 CREATE INDEX IF NOT EXISTS idx_shops_category ON shops(category);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_shops_refcode ON shops(referral_code);
+CREATE INDEX IF NOT EXISTS idx_shops_refby ON shops(referred_by);
 
 -- Un enregistrement = une vente, un produit, un client, une dépense, un fournisseur ou les paramètres.
 CREATE TABLE IF NOT EXISTS records (
@@ -181,3 +185,13 @@ CREATE TABLE IF NOT EXISTS product_images (
   updated_at INTEGER NOT NULL,
   PRIMARY KEY (shop_id, product_id)
 );
+
+-- v9 : parrainage (versements de commissions)
+CREATE TABLE IF NOT EXISTS referral_payouts (
+  id TEXT PRIMARY KEY,
+  shop_id TEXT NOT NULL,
+  amount INTEGER NOT NULL,
+  note TEXT,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_payouts_shop ON referral_payouts(shop_id);

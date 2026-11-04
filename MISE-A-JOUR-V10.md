@@ -26,3 +26,17 @@
 - **Annulation de vente** : Tableau de bord → « Historique / Annuler ». Réservé au propriétaire et au gérant (pas au caissier). L'annulation remet les articles en stock, réduit la dette du client du reste dû, et la vente disparaît des ventes, bénéfices et trésorerie (acompte compris : il est à rendre au client).
 - **Dernières transactions** : la liste du tableau de bord affichait les 5 plus anciennes ventes au lieu des 5 plus récentes ; corrigé.
 - Aucune migration. 36 tests.
+
+## Bilan de gestion en PDF (v10f)
+- Écran **Ratios** → carte « Bilan de gestion (PDF) » : choix du mois (12 derniers), boutons **Télécharger** et **Partager** (WhatsApp, e-mail…).
+- Contenu : phrase résumé en clair, chiffre d'affaires, marge brute, bénéfice net et évolution vs mois précédent, compte de résultat simplifié, ventes par mode de paiement, charges par poste, 5 meilleurs produits, meilleure journée, situation à la date d'édition (argent disponible, créances, dettes fournisseurs, valeur du stock).
+- Mêmes règles de calcul que le reste de l'application (ventes annulées exclues, achats de marchandises non comptés comme charges). Tests : `npx tsx tests/bilan.test.ts`.
+
+## v10g — Bilan annuel, parrainage, jours hors UTC
+
+**Migration à exécuter (console D1, une ligne à la fois) : `migration-v9.sql`** (parrainage). Le bilan annuel et le découpage des jours n'en demandent aucune.
+
+- **Bilan annuel** : Finances → Bilan de gestion → « Année N (complète) » (PDF avec tableau mois par mois).
+- **Parrainage** : chaque propriétaire a un lien `?ref=CODE` (Paramètres → Parrainage : copier, WhatsApp, filleuls, gains). Commission sur les abonnements payés : 5 % dès 1 filleul abonné, 7 % dès 5, 10 % dès 10 (modifiable dans `shared/referral.ts`). Code aussi saisissable à l'inscription. Landing : section « Invitez vos amis, gagnez jusqu'à 10 % ». Conditions : clause 5 bis.
+- **Admin → Parrainage** : liste des parrains, détail des affiliés de chaque commerçant, enregistrement des versements.
+- **Statistiques admin hors UTC** : les jours sont maintenant coupés à l'heure locale du pays de la boutique (`shared/timezone.ts`). Pour corriger l'historique : Admin → Statistiques → « Recalculer les jours (hors UTC) ».

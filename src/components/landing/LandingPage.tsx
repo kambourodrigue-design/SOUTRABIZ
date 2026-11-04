@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { api, PlanSettings, PublicTestimonial } from '../../services/api';
 import { Logo } from '../brand/Logo';
 import { ThemeToggle } from '../common/ThemeToggle';
+import { REFERRAL_TIERS, REFERRAL_MAX_PCT } from '../../../shared/referral';
 
 const SHOWCASE: [string, string, string, string][] = [
   ['ventes', 'Gestion des ventes', 'Suivez vos ventes en toute simplicité.', 'Commerçante qui suit ses ventes sur son téléphone avec Nafora'],
@@ -255,6 +256,27 @@ export const LandingPage: React.FC<Props> = ({ onLogin, onRegister }) => {
           </div>
         ) : (
           <p className="mt-6 text-center text-stone-600">Nafora est <b>gratuit pendant la phase de lancement</b>. Créez votre compte et profitez de toutes les fonctions.</p>)}
+      </section>
+
+      <section className="bg-gradient-to-b from-amber-50 to-white border-y border-amber-200" aria-labelledby="parrainage" data-testid="landing-referral">
+        <div className="max-w-4xl mx-auto px-4 py-12 text-center">
+          <p className="text-xs font-bold uppercase tracking-wider text-amber-700">Programme de parrainage</p>
+          <h2 id="parrainage" className="text-2xl sm:text-3xl font-black mt-1">Invitez vos amis, gagnez jusqu'à {REFERRAL_MAX_PCT} %</h2>
+          <p className="mt-2 text-stone-600 max-w-2xl mx-auto">Chaque commerçant reçoit son lien personnel. Quand un commerçant que vous avez invité s'abonne, vous touchez une commission sur son paiement.</p>
+          <div className="mt-6 grid sm:grid-cols-3 gap-3">
+            {REFERRAL_TIERS.map(t => (
+              <div key={t.min} className="rounded-2xl bg-white border border-amber-200 p-4">
+                <p className="text-3xl font-black text-emerald-700">{t.pct} %</p>
+                <p className="text-sm text-stone-600 mt-1">dès {t.min} ami{t.min > 1 ? 's' : ''} abonné{t.min > 1 ? 's' : ''}</p>
+              </div>))}
+          </div>
+          <ol className="mt-6 grid sm:grid-cols-3 gap-3 text-left text-sm">
+            <li className="rounded-xl bg-stone-50 p-3"><b>1. Créez votre compte</b><br />Votre lien de parrainage est dans Paramètres.</li>
+            <li className="rounded-xl bg-stone-50 p-3"><b>2. Partagez-le</b><br />Sur WhatsApp, à vos amis commerçants.</li>
+            <li className="rounded-xl bg-stone-50 p-3"><b>3. Gagnez</b><br />Une commission sur chaque abonnement payé, versée en Mobile Money.</li>
+          </ol>
+          <button onClick={onRegister} className={`${btn} mt-6 bg-amber-400 text-stone-950 hover:bg-amber-300`} data-testid="landing-referral-cta">Créer mon compte et mon lien</button>
+        </div>
       </section>
 
       <section className="bg-white border-y border-stone-200" aria-labelledby="faq">

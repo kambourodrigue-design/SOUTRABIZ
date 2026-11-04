@@ -2,6 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { Sale, Expense, ShopSettings, Product, Customer, Supplier } from '../../types';
 import { formatCurrency, calculateSummaryForPeriod, localDay, activeMonths } from '../../services/financials';
 import { ProfitPeriodCard } from './ProfitPeriodCard';
+import { downloadBilanPdf, shareBilanPdf, monthLabel } from '../../services/bilanPdf';
+import { uiAlert, Select } from '../common/dialogs';
 import { 
   ResponsiveContainer, 
   AreaChart, 
@@ -49,6 +51,24 @@ export const FinancesView: React.FC<FinancesViewProps> = ({
   customers = [],
   suppliers = [],
 }) => {
+  const [bilanKey, setBilanKey] = useState(() => { const n = new Date(); return `${n.getFullYear()}-${n.getMonth()}`; });
+  const [bilanBusy, setBilanBusy] = useState(false);
+  const bilanOptions = useMemo(() => {
+    const out: { key: string; label: string }[] = []; const n = new Date();
+    for (let i = 0; i < 12; i++) { const d = new Date(n.getFullYear(), n.getMonth() - i, 1); out.push({ key: `${d.getFullYear()}-${d.getMonth()}`, label: monthLabel(d.getFullYear(), d.getMonth()) }); }
+    out.push({ key: `${n.getFullYear()}-all`, label: `Année ${n.getFullYear()} (complète)` });
+    out.push({ key: `${n.getFullYear() - 1}-all`, label: `Année ${n.getFullYear() - 1} (complète)` });
+    return out;
+  }, []);
+  const runBilan = async (mode: 'download' | 'share') => {
+    const [ys, ms] = bilanKey.split('-'); const y = Number(ys); const m = ms === 'all' ? null : Number(ms);
+    setBilanBusy(true);
+    try {
+      if (mode === 'download') await downloadBilanPdf(sales, expenses, products, customers, suppliers, settings, y, m);
+      else await shareBilanPdf(sales, expenses, products, customers, suppliers, settings, y, m);
+    } catch { uiAlert("Impossible de générer le PDF pour le moment. Réessayez."); }
+    finally { setBilanBusy(false); }
+  };
   const [chartMode, setChartMode] = useState<'area' | 'bar'>('area');
   const [chartMetric, setChartMetric] = useState<'sales_profit' | 'sales_expenses'>('sales_profit');
 
@@ -248,6 +268,23 @@ export const FinancesView: React.FC<FinancesViewProps> = ({
       </div>
 
       <ProfitPeriodCard sales={sales} expenses={expenses} settings={settings} />
+
+      {/* Bilan de gestion en PDF */}
+      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-stone-200 shadow-xs" data-testid="bilan-card">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+          <div>
+            <h3 className="font-black text-stone-900 text-sm sm:text-base">📄 Bilan de gestion (PDF)</h3>
+            <p className="text-xs text-stone-500 mt-0.5">Mensuel ou annuel : chiffre d'affaires, bénéfice, charges, meilleurs produits et situation de la boutique. Pour votre comptable ou votre banque.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={bilanKey} onChange={(e) => setBilanKey(e.target.value)} className="px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-bold text-stone-800 min-w-[9rem]">
+              {bilanOptions.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
+            </Select>
+            <button disabled={bilanBusy} onClick={() => runBilan('download')} data-testid="bilan-download" className="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-black disabled:opacity-60">{bilanBusy ? 'Création…' : 'Télécharger'}</button>
+            <button disabled={bilanBusy} onClick={() => runBilan('share')} className="px-3.5 py-2 rounded-xl border border-emerald-300 text-emerald-800 text-xs font-black hover:bg-emerald-50 disabled:opacity-60">Partager</button>
+          </div>
+        </div>
+      </div>
 
       {/* Ratios Grid (30 Days) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

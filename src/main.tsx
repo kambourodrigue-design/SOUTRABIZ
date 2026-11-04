@@ -1,3 +1,4 @@
+import { captureReferral } from './services/referralLink';
 import { openSupport } from './services/support';
 import React from 'react';
 import {createRoot} from 'react-dom/client';
@@ -6,6 +7,7 @@ import App from './App.tsx';
 import './index.css';
 import { api } from './services/api';
 import { initTheme } from './services/theme';
+captureReferral();
 
 initTheme();
 

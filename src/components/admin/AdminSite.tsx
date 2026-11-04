@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { api, SiteStats, AdminAnnouncement } from '../../services/api';
 import { formatCurrency } from '../../services/financials';
 import { Select } from '../common/dialogs';
-import { uiConfirm } from '../common/dialogs';
+import { uiConfirm, uiAlert } from '../common/dialogs';
 
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR').format(Math.round(n));
 const card = 'bg-white rounded-2xl border border-stone-200 p-4';
@@ -39,6 +39,10 @@ export const AdminStatsPanel: React.FC = () => {
   const kp: [string, string][] = [['Commerçants', fmt(t.merchants)], ['Actifs (7 j)', fmt(t.active7d)], ['Inscriptions (30 j)', fmt(t.signups30d)], ['Visites (30 j)', fmt(t.visits30d)], ['Employés', fmt(t.teamMembers)], ['Ventes enregistrées', fmt(t.sales)], ['Volume cumulé', formatCurrency(t.revenue, 'XOF' as any)], ['Comptes suspendus', fmt(t.suspended)]];
   return (
     <div className="space-y-4" data-testid="admin-stats">
+      <div className="flex justify-end">
+        <button data-testid="recompute-days" onClick={async () => { if (!(await uiConfirm("Recalculer les jours des statistiques à l'heure locale des pays hors UTC ?"))) return; try { const r = await api.adminRecomputeDays(); await uiAlert(`${r.shops} boutique(s) recalculée(s).`); api.adminStats().then(setD); } catch (e) { uiAlert((e as Error).message); } }}
+          className="text-xs font-bold px-3 py-1.5 rounded-lg border border-stone-300 bg-white">Recalculer les jours (hors UTC)</button>
+      </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">{kp.map(([l, v]) => <div key={l} className={card}><div className="text-xs text-stone-500">{l}</div><div className="text-xl font-black text-stone-900">{v}</div></div>)}</div>
       <div className="grid md:grid-cols-2 gap-3">
         <Bars label="Visites du site" color="var(--c-cyan)" data={d.series.map(s => ({ day: s.day, v: s.visits }))} />

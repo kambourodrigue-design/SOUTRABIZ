@@ -1,5 +1,6 @@
 import { Logo } from '../brand/Logo';
 import React, { useState } from 'react';
+import { savedReferral, clearReferral } from '../../services/referralLink';
 import { UserAccount, ShopSettings, BusinessCategoryType } from '../../types';
 import { api, ApiError } from '../../services/api';
 import { BUSINESS_PRESETS } from '../../services/businessPresets';
@@ -52,6 +53,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [regCountry, setRegCountry] = useState("Côte d'Ivoire");
   const [regPassword, setRegPassword] = useState('');
   const [regPassword2, setRegPassword2] = useState('');
+  const [regRef, setRegRef] = useState(savedReferral());
   const [regError, setRegError] = useState<string | null>(null);
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
@@ -115,7 +117,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         businessCategory: regSector,
         city: regCity,
         country: regCountry,
+        ref: regRef.trim() || undefined,
       });
+      clearReferral();
       onAuthSuccess(res.user, res.shop, true);
       onClose();
     } catch (err) {
@@ -378,6 +382,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
             </div>
 
+            <div>
+              <label className="text-xs font-bold text-stone-700">Code de parrainage (optionnel)</label>
+              <input type="text" value={regRef} maxLength={12} onChange={(e) => setRegRef(e.target.value.toUpperCase())} data-testid="reg-ref"
+                placeholder="Si un ami vous a invité" className="w-full mt-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-sm" />
+            </div>
             <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-bold text-stone-700">Mot de passe * (8 car. min.)</label>

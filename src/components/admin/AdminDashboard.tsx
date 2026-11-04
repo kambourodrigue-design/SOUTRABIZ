@@ -1,3 +1,4 @@
+import { AdminReferralsPanel } from './AdminReferrals';
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { AdminStatsPanel, AdminMessagesPanel } from './AdminSite';
 import { AdminMonitorPanel, AdminBillingPanel, AdminFeedbackPanel } from './AdminOps';
@@ -61,7 +62,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onI
   const [planShop, setPlanShop] = useState<{ id: string; name: string } | null>(null);
   const [inspectUser, setInspectUser] = useState<{ user: UserAccount; shop: ShopSettings } | null>(null);
   const reqId = useRef(0);
-  const [sub, setSub] = useState<'users' | 'stats' | 'messages' | 'billing' | 'feedback' | 'monitor'>('users');
+  const [sub, setSub] = useState<'users' | 'stats' | 'messages' | 'billing' | 'referrals' | 'feedback' | 'monitor'>('users');
 
   useEffect(() => {
     const t = setTimeout(() => { setSearchQuery(searchInput.trim()); setPage(1); }, 350);
@@ -192,7 +193,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onI
       </div>
 
       <div className="flex gap-1.5 overflow-x-auto" role="tablist">
-        {([['users', 'Commerçants'], ['stats', 'Statistiques du site'], ['messages', 'Messages'], ['billing', 'Abonnements'], ['feedback', 'Avis'], ['monitor', 'Surveillance']] as const).map(([id, l]) => (
+        {([['users', 'Commerçants'], ['stats', 'Statistiques du site'], ['messages', 'Messages'], ['billing', 'Abonnements'], ['referrals', 'Parrainage'], ['feedback', 'Avis'], ['monitor', 'Surveillance']] as const).map(([id, l]) => (
           <button key={id} role="tab" aria-selected={sub === id} onClick={() => setSub(id)} data-testid={`admin-tab-${id}`}
             className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap ${sub === id ? 'bg-stone-900 text-white' : 'bg-white border border-stone-200 text-stone-700'}`}>{l}</button>
         ))}
@@ -200,6 +201,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onI
       {sub === 'stats' && <AdminStatsPanel />}
       {sub === 'messages' && <AdminMessagesPanel />}
       {sub === 'billing' && <AdminBillingPanel />}
+      {sub === 'referrals' && <AdminReferralsPanel />}
       {sub === 'feedback' && <AdminFeedbackPanel />}
       {sub === 'monitor' && <AdminMonitorPanel />}
       {sub === 'users' && (<>

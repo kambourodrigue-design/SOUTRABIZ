@@ -69,8 +69,17 @@ export interface TeamMember {
 
 export interface RegisterInput {
   fullName: string; email: string; phone: string; password: string;
-  shopName: string; businessCategory: string; city: string; country: string;
+  shopName: string; businessCategory: string; city: string; country: string; ref?: string;
 }
+
+export interface ReferralItem { name: string; city: string; joinedAt: string; state: 'paid' | 'trial'; paid: number; commission: number }
+export interface ReferralInfo {
+  enabled: boolean; code?: string; tiers?: { min: number; pct: number }[]; currency?: string; price12?: number;
+  invited?: number; paying?: number; pct?: number; totalPaid?: number; earned?: number; paidOut?: number; balance?: number;
+  next?: { need: number; pct: number } | null; items?: ReferralItem[];
+}
+export interface AdminReferrer { shopId: string; shopName: string; city: string; owner: string; phone: string; code: string; invited: number; paying: number; pct: number; earned: number; paidOut: number; balance: number }
+export interface AdminReferralDetail extends ReferralInfo { shopId: string; shopName: string; referredBy: string | null; payouts: { amount: number; note: string | null; created_at: string }[] }
 
 export interface Announcement { id: string; title: string; body: string; level: 'info' | 'important'; createdAt: string; read: boolean }
 /** Réglages publicitaires (AdSense). Composant AdSlot prêt, pas encore branché : voir note de livraison. */
@@ -124,6 +133,11 @@ export const api = {
   adminFeedbackSet: (id: string, status: 'new' | 'published' | 'hidden') => call<{ ok: true }>('PUT', `admin/feedback/${id}`, { status }),
   adminFeedbackDelete: (id: string) => call<{ ok: true }>('DELETE', `admin/feedback/${id}`),
   catalogSave: (b: { slug: string; on: boolean; intro: string }) => call<{ slug: string; on: boolean; intro: string }>('PUT', 'catalog', b),
+  referral: () => call<ReferralInfo>('GET', 'referral', undefined, 8000),
+  adminReferrals: () => call<{ enabled: boolean; currency: string; items: AdminReferrer[] }>('GET', 'admin/referrals'),
+  adminReferral: (shopId: string) => call<AdminReferralDetail>('GET', `admin/referrals/${shopId}`),
+  adminReferralPayout: (shopId: string, amount: number, note: string) => call<AdminReferralDetail>('POST', `admin/referrals/${shopId}/payout`, { amount, note }),
+  adminRecomputeDays: () => call<{ ok: true; shops: number }>('POST', 'admin/recompute-days', {}, 60000),
   adminBilling: () => call<{ settings: BillingAdminSettings; pending: PaymentRow[]; recent: PaymentRow[]; revenue30d: number; approved30d: number; activeSubs: number }>('GET', 'admin/billing'),
   adminBillingSave: (b: Partial<BillingAdminSettings>) => call<{ settings: BillingAdminSettings }>('PUT', 'admin/billing', b),
   adminPayDecide: (id: string, action: 'approve' | 'reject', note?: string) => call<{ ok: true }>('POST', `admin/billing/payments/${id}/${action}`, { note }),

@@ -16,7 +16,7 @@ export const ReferralPanel: React.FC = () => {
   return (
     <div className="bg-white border border-stone-200 rounded-2xl p-4 space-y-3" data-testid="referral-panel">
       <div>
-        <h3 className="font-bold text-stone-900">🤝 Parrainez vos amis, gagnez jusqu'à {max} %</h3>
+        <h3 className="font-bold text-stone-900">🤝 Parrainez, gagnez jusqu'à {max}&nbsp;%</h3>
         <p className="text-xs text-stone-600 mt-0.5">Vous touchez une commission sur chaque abonnement payé par un commerçant que vous avez invité.</p>
       </div>
       <div className="flex gap-2">

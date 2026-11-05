@@ -40,3 +40,9 @@
 - **Parrainage** : chaque propriétaire a un lien `?ref=CODE` (Paramètres → Parrainage : copier, WhatsApp, filleuls, gains). Commission sur les abonnements payés : 5 % dès 1 filleul abonné, 7 % dès 5, 10 % dès 10 (modifiable dans `shared/referral.ts`). Code aussi saisissable à l'inscription. Landing : section « Invitez vos amis, gagnez jusqu'à 10 % ». Conditions : clause 5 bis.
 - **Admin → Parrainage** : liste des parrains, détail des affiliés de chaque commerçant, enregistrement des versements.
 - **Statistiques admin hors UTC** : les jours sont maintenant coupés à l'heure locale du pays de la boutique (`shared/timezone.ts`). Pour corriger l'historique : Admin → Statistiques → « Recalculer les jours (hors UTC) ».
+
+## v10h — Paramètres refaits (4 onglets)
+Boutique (identité, contact/monnaie, trésorerie de départ, statut légal repliable, bouton Enregistrer toujours visible) · Abonnement (offre + parrainage) · Équipe (employés + catalogue en ligne) · Aide (assistance, sauvegarde, mot de passe, effacement de données replié). Fichiers : SettingsModal.tsx, ReferralPanel.tsx. Aucune migration.
+
+## v10i — Domaine nafora.link
+index.html : balises canonical, og:url, og:image/twitter:image en adresse absolue (aperçus WhatsApp/Facebook). sitemap.xml.ts et robots.txt.ts : adresse officielle https://nafora.link. Aucune migration.

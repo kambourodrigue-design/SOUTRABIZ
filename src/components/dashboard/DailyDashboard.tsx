@@ -526,12 +526,12 @@ export const DailyDashboard: React.FC<DailyDashboardProps> = ({
       {/* Two Column Layout: Daily Tip + Bank Readiness Card */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         
-        {/* Soutra / Daily Coaching Tip */}
+        {/* Nafora / Daily Coaching Tip */}
         <div className="bg-gradient-to-br from-stone-900 to-stone-800 rounded-2xl p-5 text-white shadow-md flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-2 text-amber-400 text-xs font-bold">
               <Sparkles className="w-4 h-4" />
-              <span>CONSEIL DE GESTION SOUTRA • {randomTip.tag}</span>
+              <span>CONSEIL DE GESTION NAFORA • {randomTip.tag}</span>
             </div>
             <h3 className="font-extrabold text-base sm:text-lg mt-2 text-white">
               {randomTip.title}

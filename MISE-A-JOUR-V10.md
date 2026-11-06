@@ -46,3 +46,17 @@ Boutique (identité, contact/monnaie, trésorerie de départ, statut légal repl
 
 ## v10i — Domaine nafora.link
 index.html : balises canonical, og:url, og:image/twitter:image en adresse absolue (aperçus WhatsApp/Facebook). sitemap.xml.ts et robots.txt.ts : adresse officielle https://nafora.link. Aucune migration.
+
+## v10k — E-mails automatiques
+**Migration : `migration-v10.sql`** (2 colonnes, une ligne à la fois dans la console D1). **Secret Cloudflare à ajouter : `RESEND_API_KEY`** (Pages → Paramètres → Variables et secrets). Optionnels : `MAIL_FROM` (défaut `Nafora <contact@nafora.link>`), `MAIL_REPLY_TO`. Le domaine nafora.link doit être vérifié dans Resend (lignes DNS à copier dans Cloudflare).
+- Inscription : l'adresse e-mail reste optionnelle ; si elle est renseignée, les e-mails ci-dessous sont envoyés.
+- E-mail de bienvenue à l'inscription (premiers pas, lien de parrainage, WhatsApp).
+- Rappel de fin d'essai, une seule fois : au dernier jour de l'essai ou après sa fin, quand le commerçant ouvre l'application (prix des abonnements inclus).
+- Sans clé ou sans migration : rien n'est envoyé et rien ne casse.
+
+## v10m — Ajustement de stock, inventaire, Marketing admin
+**Migration : `migration-v11.sql`** (désinscription + campagnes ; une ligne à la fois dans la console D1). `migration-v10.sql` (e-mails automatiques) doit aussi être faite.
+- **Stocks → bouton « Ajuster »** par article : casse, périmé, vol, perte, consommation personnelle, correction après comptage, retrouvé. Une perte est une charge valorisée au prix d'achat (catégorie « Pertes de stock »), **sans sortie d'argent** ; la consommation personnelle est un prélèvement (hors bénéfice). Historique des 30 derniers ajustements par article.
+- **Stocks → « Inventaire »** : on saisit les quantités comptées, l'application calcule les écarts, corrige le stock et enregistre UNE charge pour les pertes.
+- **Admin → Marketing** : e-mails promotionnels (4 modèles), listes (tous, nouveaux, inactifs, abonnés, non abonnés), test à soi-même, envoi par lots de 50, historique, lien de désinscription automatique (page publique /api/unsubscribe).
+- Variables optionnelles : `MAIL_FROM`, `MAIL_REPLY_TO`.

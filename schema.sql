@@ -13,7 +13,10 @@ CREATE TABLE IF NOT EXISTS users (
   shop_id       TEXT NOT NULL,
   shop_role     TEXT NOT NULL DEFAULT 'owner',         -- 'owner', 'manager' ou 'cashier'
   created_at    TEXT NOT NULL,
-  last_login_at TEXT NOT NULL
+  last_login_at TEXT NOT NULL,
+  mail_welcome_at TEXT,                                 -- v10 : e-mail de bienvenue envoyé
+  mail_trial_at   TEXT,                                 -- v10 : rappel de fin d'essai envoyé
+  mail_optout     INTEGER NOT NULL DEFAULT 0            -- v11 : s'est désinscrit des e-mails marketing
 );
 CREATE INDEX IF NOT EXISTS idx_users_shop ON users(shop_id);
 
@@ -195,3 +198,14 @@ CREATE TABLE IF NOT EXISTS referral_payouts (
   created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_payouts_shop ON referral_payouts(shop_id);
+
+-- v11 : campagnes e-mail (marketing)
+CREATE TABLE IF NOT EXISTS mail_campaigns (
+  id TEXT PRIMARY KEY,
+  subject TEXT NOT NULL,
+  audience TEXT NOT NULL,
+  total INTEGER NOT NULL DEFAULT 0,
+  sent INTEGER NOT NULL DEFAULT 0,
+  failed INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL
+);

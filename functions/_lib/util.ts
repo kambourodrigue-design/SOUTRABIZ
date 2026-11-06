@@ -6,6 +6,11 @@ export interface Env {
   DB: D1Database;
   ADMIN_EMAIL?: string;
   SUPPORT_WHATSAPP?: string;
+  /** E-mails automatiques (Resend) : clé API (secret), expéditeur et adresse de réponse (optionnels) */
+  RESEND_API_KEY?: string;
+  RESEND_API_URL?: string;     // (tests) adresse alternative de l'API d'envoi
+  MAIL_FROM?: string;
+  MAIL_REPLY_TO?: string;
   SUPPORT_HOURS?: string;
   /** Liaison Workers AI (Cloudflare Pages → Paramètres → Liaisons → Workers AI, nom : AI) */
   AI?: { run(model: string, input: unknown): Promise<any> };

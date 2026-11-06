@@ -17,8 +17,9 @@ import { myFeedback, submitFeedback, publicTestimonials, adminFeedback } from '.
 import { hit, adminStats, adminAnnouncements, myAnnouncements, readAnnouncement } from '../_lib/site';
 import { adminList, adminExport, adminUser, adminRecomputeDays } from '../_lib/admin';
 import { myReferral, adminReferrals } from '../_lib/referral';
+import { adminMailing, unsubscribe } from '../_lib/marketing';
 
-export const onRequest: PagesFunction<Env> = async ({ request, env, params }) => {
+export const onRequest: PagesFunction<Env> = async ({ request, env, params, waitUntil }) => {
   try {
     const parts = ([] as string[]).concat((params.path as string | string[]) || []);
     const route = parts.join('/');
@@ -30,11 +31,12 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
       if (origin && origin !== new URL(request.url).origin) return fail('Origine refusée.', 403);
     }
 
-    if (route === 'auth/register' && m === 'POST') return await register(request, env);
+    if (route === 'auth/register' && m === 'POST') return await register(request, env, waitUntil);
     if (route === 'auth/login' && m === 'POST') return await login(request, env);
     if (route === 'auth/logout' && m === 'POST') return await logout(request, env);
     if (route === 'auth/forgot' && m === 'POST') return await forgot(request, env);
 
+    if (route === 'unsubscribe' && m === 'GET') return await unsubscribe(new URL(request.url), env);
     if (route === 'hit' && m === 'POST') return await hit(env);
     if (route === 'billing/moneyfusion/webhook' && m === 'POST') return await mfWebhook(request, env);
     if (route === 'plans' && m === 'GET') return await publicPlans(env);
@@ -45,7 +47,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
     if (route === 'log' && m === 'POST') return await clientLog(request, env, user);
     if (!user) return fail('Non connecté.', 401);
 
-    if (route === 'auth/me' && m === 'GET') return await me(request, env, user);
+    if (route === 'auth/me' && m === 'GET') return await me(request, env, user, waitUntil);
     if (route === 'auth/password' && m === 'POST') return await changePassword(request, env, user);
 
     if (route === 'sync' && m === 'GET') return await handlePull(request, env, user);
@@ -86,6 +88,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
       if (parts[1] === 'announcements') return await adminAnnouncements(request, env, parts[2]);
       if (parts[1] === 'feedback') return await adminFeedback(request, env, parts[2]);
       if (route === 'admin/recompute-days' && m === 'POST') return await adminRecomputeDays(env);
+      if (parts[1] === 'mailing') return await adminMailing(request, env, user, parts);
       if (parts[1] === 'referrals') return await adminReferrals(request, env, parts);
       if (route === 'admin/export' && m === 'GET') return await adminExport(env);
       if (parts[1] === 'users' && parts[2]) return await adminUser(request, env, user, parts[2], parts[3]);

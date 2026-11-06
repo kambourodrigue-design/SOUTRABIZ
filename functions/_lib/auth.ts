@@ -2,13 +2,14 @@
 
 import { SETTINGS_ID } from '../../shared/syncCore';
 import { attachReferral } from './referral';
+import { mailWelcome, maybeTrialReminder } from './mail';
 import {
   json, fail, str, normEmail, normPhone, isEmail, randomHex, hashPassword, safeEqual, readBody,
   createSession, sessionCookie, publicUser, checkRate, recordFailure, clearFailures,
   getCookie, sha256, COOKIE, SESSION_DAYS, type Env, type UserRow,
 } from './util';
 
-export async function register(req: Request, env: Env) {
+export async function register(req: Request, env: Env, run: (p: Promise<unknown>) => void = () => {}) {
   const b = await readBody(req, 20_000);
   const name = str(b.fullName, 100);
   const email = normEmail(b.email);
@@ -52,6 +53,9 @@ export async function register(req: Request, env: Env) {
       .bind(shopId, SETTINGS_ID, shopJson, Date.now()),
   ]);
   await attachReferral(env, shopId, b.ref);
+  if (email && !isAdmin) {
+    run(mailWelcome(env, email, name, shopId).then(async ok => { if (ok) { try { await env.DB.prepare('UPDATE users SET mail_welcome_at = ? WHERE id = ?').bind(new Date().toISOString(), id).run(); } catch { /* migration v10 absente */ } } }));
+  }
   const user = (await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(id).first<UserRow>())!;
   const token = await createSession(env, id);
   return json({ user: publicUser(user), shop }, 201, { 'Set-Cookie': sessionCookie(token, SESSION_DAYS * 86400) });
@@ -119,7 +123,8 @@ export async function logout(req: Request, env: Env) {
   return json({ ok: true }, 200, { 'Set-Cookie': sessionCookie('', 0) });
 }
 
-export async function me(req: Request, env: Env, user: UserRow) {
+export async function me(req: Request, env: Env, user: UserRow, run: (p: Promise<unknown>) => void = () => {}) {
+  await maybeTrialReminder(env, user, run);
   const shopRow = await env.DB.prepare('SELECT settings FROM shops WHERE shop_id=?').bind(user.shop_id).first<any>();
   const shop = shopRow ? JSON.parse(shopRow.settings) : null;
   if (new URL(req.url).searchParams.get('v') === '3') return json({ user: publicUser(user), shop });

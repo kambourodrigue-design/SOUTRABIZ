@@ -18,6 +18,7 @@ export type ExpenseCategory =
   | 'taxes'            // Taxes municipales, Patente, Impôts
   | 'personal_draw'    // Prélèvement personnel (Séparation pro/perso)
   | 'maintenance'      // Réparations / Imprévus
+  | 'stock_loss'       // Pertes de stock (casse, vol, périmé, écart d'inventaire) : une charge sans sortie d'argent
   | 'other';           // Autre dépense
 
 export interface Product {
@@ -32,6 +33,7 @@ export interface Product {
   unit: string;            // 'pièce', 'kg', 'carton', 'paquet', 'litre', 'mètre'
   isService?: boolean;     // Prestation : pas de suivi de stock (jamais en rupture, exclue de la valeur du stock)
   lastRestockedDate?: string;
+  stockLog?: { d: string; delta: number; reason: string; note?: string }[]; // historique des ajustements (30 derniers)
 }
 
 export interface SaleItem {
@@ -76,6 +78,7 @@ export interface Expense {
   isRecurring?: boolean;
   supplierId?: string;      // achat chez un fournisseur
   paidAmount?: number;      // montant payé tout de suite (le reste = dette fournisseur)
+  noCash?: boolean;         // aucune sortie d'argent (perte de stock, consommation personnelle)
   stockIn?: { productId: string; qty: number }[]; // marchandises entrées en stock par cet achat (retirées si l'achat est supprimé)
 }
 

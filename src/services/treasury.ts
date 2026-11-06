@@ -16,8 +16,8 @@ export const channelOf = (m: PaymentMethod | string): Channel | null => {
 
 /** Montant d'une dépense réellement sorti de la caisse (un achat à crédit n'en sort qu'une partie). */
 export const paidNow = (e: Expense): number =>
-  typeof e.paidAmount === 'number' ? Math.min(Math.max(0, e.paidAmount), e.amount) : e.amount;
-export const creditPart = (e: Expense): number => Math.max(0, e.amount - paidNow(e));
+  e.noCash ? 0 : typeof e.paidAmount === 'number' ? Math.min(Math.max(0, e.paidAmount), e.amount) : e.amount;
+export const creditPart = (e: Expense): number => e.noCash ? 0 : Math.max(0, e.amount - paidNow(e));
 
 /** Un achat de marchandises n'est pas une charge : son coût est déjà dans le coût des ventes. */
 export const isStockPurchase = (e: Expense) => e.category === 'supply';

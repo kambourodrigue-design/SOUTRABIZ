@@ -72,6 +72,10 @@ export interface RegisterInput {
   shopName: string; businessCategory: string; city: string; country: string; ref?: string;
 }
 
+export interface MailingInfo { configured: boolean; ready: boolean; audiences: Record<string, { label: string; count: number }>; campaigns: { id: string; subject: string; audience: string; total: number; sent: number; failed: number; created_at: string }[] }
+export interface MailingPayload { subject: string; body: string; audience: string; ctaLabel?: string; ctaUrl?: string }
+export interface MailingSendResult { ok: boolean; test?: boolean; to?: string; campaignId?: string; total?: number; sent?: number; failed?: number; next?: number; done?: boolean; error?: string }
+
 export interface ReferralItem { name: string; city: string; joinedAt: string; state: 'paid' | 'trial'; paid: number; commission: number }
 export interface ReferralInfo {
   enabled: boolean; code?: string; tiers?: { min: number; pct: number }[]; currency?: string; price12?: number;
@@ -138,6 +142,8 @@ export const api = {
   adminReferral: (shopId: string) => call<AdminReferralDetail>('GET', `admin/referrals/${shopId}`),
   adminReferralPayout: (shopId: string, amount: number, note: string) => call<AdminReferralDetail>('POST', `admin/referrals/${shopId}/payout`, { amount, note }),
   adminRecomputeDays: () => call<{ ok: true; shops: number }>('POST', 'admin/recompute-days', {}, 60000),
+  adminMailing: () => call<MailingInfo>('GET', 'admin/mailing'),
+  adminMailingSend: (p: MailingPayload & { test?: boolean; offset?: number; campaignId?: string }) => call<MailingSendResult>('POST', 'admin/mailing/send', p, 60000),
   adminBilling: () => call<{ settings: BillingAdminSettings; pending: PaymentRow[]; recent: PaymentRow[]; revenue30d: number; approved30d: number; activeSubs: number }>('GET', 'admin/billing'),
   adminBillingSave: (b: Partial<BillingAdminSettings>) => call<{ settings: BillingAdminSettings }>('PUT', 'admin/billing', b),
   adminPayDecide: (id: string, action: 'approve' | 'reject', note?: string) => call<{ ok: true }>('POST', `admin/billing/payments/${id}/${action}`, { note }),

@@ -17,11 +17,15 @@ import {
   X,
   TrendingUp,
   Boxes,
-  ImagePlus
+  ImagePlus,
+  ClipboardCheck,
+  SlidersHorizontal
 } from 'lucide-react';
 import { Select } from '../common/dialogs';
 import { uiAlert, uiConfirm } from '../common/dialogs';
 import { Thumb } from './Thumb';
+import { AdjustModal, InventoryModal } from './StockAdjust';
+import { AdjustResult } from '../../services/stockAdjust';
 import { isOutOfStock, isLowStock, stockUnits, stockCostValue, stockSalesValue } from '../../services/stockRules';
 import { usePhotos, photoUrl, loadPhotos, compressImage, savePhoto, removePhoto } from '../../services/photos';
 
@@ -49,6 +53,15 @@ export const StockView: React.FC<StockViewProps> = ({
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isRestockModalOpen, setIsRestockModalOpen] = useState(false);
   const [targetProduct, setTargetProduct] = useState<Product | null>(null);
+  const [adjustProduct, setAdjustProduct] = useState<Product | null>(null);
+  const [showInventory, setShowInventory] = useState(false);
+  const applyAdjust = (r: AdjustResult) => {
+    const changed = new Map(r.products.map(p => [p.id, p]));
+    onUpdateProducts(products.map(p => changed.get(p.id) || p));
+    if (onAddExpense) r.expenses.forEach(e => onAddExpense(e));
+    setAdjustProduct(null); setShowInventory(false);
+    uiAlert(r.lossValue > 0 ? `Stock corrigé. Perte enregistrée : ${formatCurrency(r.lossValue, settings.currency)} (visible dans Dépenses).` : 'Stock corrigé.');
+  };
 
   // Form states
   const [formName, setFormName] = useState('');
@@ -290,13 +303,19 @@ export const StockView: React.FC<StockViewProps> = ({
           </p>
         </div>
 
-        <button
-          onClick={() => handleOpenAddModal()}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-sm shadow-sm transition active:scale-95 shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Ajouter un Article</span>
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <button onClick={() => setShowInventory(true)} data-testid="open-inventory"
+            className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-white border border-emerald-700 text-emerald-800 font-bold text-sm transition active:scale-95">
+            <ClipboardCheck className="w-4 h-4" /><span>Inventaire</span>
+          </button>
+          <button
+            onClick={() => handleOpenAddModal()}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-sm shadow-sm transition active:scale-95"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Ajouter un Article</span>
+          </button>
+        </div>
       </div>
 
       {/* Stock Value KPI Cards */}
@@ -437,6 +456,7 @@ export const StockView: React.FC<StockViewProps> = ({
                 </div>
                 <div className="flex items-center justify-end gap-1.5">
                   {!product.isService && <button onClick={() => handleOpenRestockModal(product)} className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 font-bold text-xs">+ Réappro</button>}
+                  {!product.isService && <button onClick={() => setAdjustProduct(product)} data-testid={`adjust-${product.id}`} className="px-3 py-1.5 rounded-lg bg-amber-50 text-amber-800 font-bold text-xs">Ajuster</button>}
                   <button onClick={() => handleOpenAddModal(product)} className="p-2 rounded-lg text-stone-500 hover:bg-stone-100" title="Modifier"><Edit3 className="w-4 h-4" /></button>
                   <button onClick={() => handleDeleteProduct(product.id)} className="p-2 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-stone-100" title="Supprimer"><Trash2 className="w-4 h-4" /></button>
                 </div>
@@ -524,6 +544,15 @@ export const StockView: React.FC<StockViewProps> = ({
                             title="Ajouter du stock reçu du fournisseur"
                           >
                             + Réappro
+                          </button>
+                          )}
+                          {!product.isService && (
+                          <button
+                            onClick={() => setAdjustProduct(product)}
+                            className="p-1.5 rounded-lg text-amber-700 hover:bg-amber-50"
+                            title="Ajuster le stock (casse, perte, vol, comptage)"
+                          >
+                            <SlidersHorizontal className="w-4 h-4" />
                           </button>
                           )}
                           <button
@@ -718,6 +747,9 @@ export const StockView: React.FC<StockViewProps> = ({
           </div>
         </div>
       )}
+
+      {adjustProduct && <AdjustModal product={adjustProduct} settings={settings} onApply={applyAdjust} onClose={() => setAdjustProduct(null)} />}
+      {showInventory && <InventoryModal products={products} settings={settings} onApply={applyAdjust} onClose={() => setShowInventory(false)} />}
 
       {/* Restock Modal */}
       {isRestockModalOpen && targetProduct && (

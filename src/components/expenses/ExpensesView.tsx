@@ -319,9 +319,11 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
                       <span className="font-medium text-stone-600">{catDetails.label}</span>
                       <span>•</span>
                       <span>{new Date(expense.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
-                      <span className={`px-1.5 py-0.5 rounded text-[10px] ${payDetails.badgeBg}`}>
+                      {expense.noCash
+                        ? <span className="px-1.5 py-0.5 rounded text-[10px] bg-stone-100 text-stone-600 border border-stone-200">Sans sortie d'argent</span>
+                        : <span className={`px-1.5 py-0.5 rounded text-[10px] ${payDetails.badgeBg}`}>
                         {payDetails.label}
-                      </span>
+                      </span>}
                     </div>
                     {creditPart(expense) > 0 && (
                       <p className="text-[11px] font-bold text-indigo-700 mt-1 break-words">

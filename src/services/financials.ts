@@ -68,6 +68,8 @@ export function getExpenseCategoryDetails(category: ExpenseCategory): { label: s
       return { label: 'Taxes Mairie, ODP & Impôts', iconColor: 'text-rose-600' };
     case 'personal_draw':
       return { label: 'Prélèvement personnel (Famille/Patron)', iconColor: 'text-purple-600' };
+    case 'stock_loss':
+      return { label: 'Pertes de stock (casse, vol, périmé)', iconColor: 'text-rose-600' };
     case 'maintenance':
       return { label: 'Réparations & Imprévus', iconColor: 'text-stone-600' };
     case 'other':

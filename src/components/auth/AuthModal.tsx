@@ -347,7 +347,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
 
               <div>
-                <label className="text-xs font-bold text-stone-700">Email (optionnel)</label>
+                <label className="text-xs font-bold text-stone-700">Email (optionnel, pour recevoir votre message de bienvenue)</label>
                 <input
                   type="email"
                   placeholder="contact@exemple.com"
